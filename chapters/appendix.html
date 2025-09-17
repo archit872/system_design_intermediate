@@ -1,0 +1,131 @@
+<!-- /chapters/appendix.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Appendix — Pitfalls, Checklists & Progression</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Appendix with consolidated pitfalls, checklists, and progression map from beginner through advanced system design.">
+  <meta property="og:title" content="Appendix — Pitfalls, Checklists & Progression">
+  <meta property="og:description" content="Common mistakes, review checklist, and a roadmap for progressing beyond intermediate level.">
+  <base href="../">
+  <link rel="stylesheet" href="styles/theme.css">
+  <script defer src="scripts/app.js"></script>
+</head>
+<body>
+  <!-- ================= NAV (Canonical; verbatim) ================= -->
+  <nav class="app-nav">
+    <div class="bar">
+      <div class="brand"><a href="index.html">System Design</a></div>
+      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
+      <div class="spacer"></div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="chapters/ch01.html">Chapters</a>
+        <a href="chapters/appendix.html" aria-current="page">Appendix</a>
+        <a href="chapters/glossary.html">Glossary</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="page-hero container">
+    <div class="badge">Appendix</div>
+    <h1>Pitfalls, Checklists &amp; Progression</h1>
+    <p>
+      This appendix distills lessons into a set of <strong>pitfalls to avoid</strong>, a
+      <strong>review checklist</strong> for design work, and a <strong>progression map</strong>
+      for advancing from beginner to advanced system design competence.
+    </p>
+  </header>
+
+  <main class="container">
+    <!-- PITFALLS -->
+    <section class="section">
+      <h2>Top 10 Pitfalls &amp; Fixes</h2>
+      <ol>
+        <li><strong>Over-engineering early</strong> → <em>Fix:</em> Start simple, add only under proven load.</li>
+        <li><strong>Premature sharding</strong> → <em>Fix:</em> Scale vertically/read replicas first; shard when node limits reached.</li>
+        <li><strong>Missing SLOs</strong> → <em>Fix:</em> Define SLIs + SLOs before debating architecture.</li>
+        <li><strong>No observability</strong> → <em>Fix:</em> Instrument RED/USE metrics, logs, and traces from day one.</li>
+        <li><strong>Retry storms</strong> → <em>Fix:</em> Exponential backoff + jitter, idempotency, bounded retries.</li>
+        <li><strong>Ignoring data privacy</strong> → <em>Fix:</em> Apply data minimization, encryption, and compliance flows.</li>
+        <li><strong>One-size-fits-all DB</strong> → <em>Fix:</em> Match store to workload; evaluate specialized stores carefully.</li>
+        <li><strong>Microservices dogma</strong> → <em>Fix:</em> Modular monolith → selective service extraction.</li>
+        <li><strong>No rollback plan</strong> → <em>Fix:</em> Feature flags, canaries, expand–contract migrations.</li>
+        <li><strong>Skipping postmortems</strong> → <em>Fix:</em> Make them blameless, actionable, and required.</li>
+      </ol>
+    </section>
+
+    <!-- CHECKLIST -->
+    <section class="section">
+      <h2>System Design Review Checklist</h2>
+      <ul>
+        <li>Requirements clear? Functional + non-functional, with SLIs/SLOs.</li>
+        <li>Data model and storage choice justified? Scaling strategy explicit?</li>
+        <li>Communication patterns defined? Sync/async trade-offs noted?</li>
+        <li>Reliability features: retries, idempotency, failover, backpressure.</li>
+        <li>Security: authN/authZ, encryption, privacy, compliance hooks.</li>
+        <li>Observability: RED/USE metrics, logs, traces, alerting tied to SLOs.</li>
+        <li>Trade-offs documented? At least two options considered per major decision.</li>
+        <li>Failure scenarios explored? Rollback and recovery paths defined.</li>
+        <li>Operational load measured? Runbooks, automation, toil caps.</li>
+        <li>Progression plan: what evolves with growth, what stays simple now?</li>
+      </ul>
+      <div class="callout success">
+        <strong>Usage:</strong> Bring this checklist to every design review; iterate until all boxes ticked.
+      </div>
+    </section>
+
+    <!-- PROGRESSION -->
+    <section class="section">
+      <h2>Progression Map</h2>
+      <div class="grid two-col">
+        <div class="card">
+          <h3>Beginner End Goals</h3>
+          <ul>
+            <li>Core vocabulary (client, server, API, DB).</li>
+            <li>Basic workflows (CRUD, cache, request flow).</li>
+            <li>Lightweight case studies (URL shortener, feed).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Intermediate End Goals</h3>
+          <ul>
+            <li>Applied competence in mid-scale designs.</li>
+            <li>Ability to evaluate trade-offs with diagrams.</li>
+            <li>Capstone project with end-to-end architecture.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Advanced Entry Point</h3>
+          <ul>
+            <li>Multi-region consistency (consensus, Raft, Paxos).</li>
+            <li>Formal models (TLA+, model checking).</li>
+            <li>Cost-aware scaling and distributed algorithms.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout info">
+        <strong>Tip:</strong> Use your capstone project as a springboard into advanced topics—add multi-region, model a consensus log, or simulate chaos.
+      </div>
+    </section>
+
+    <!-- NEXT/PREV -->
+    <nav class="next-prev" aria-label="Chapter navigation">
+      <a href="chapters/ch10.html" rel="prev">Previous: Pitfalls, Anti-Patterns &amp; Next Steps</a>
+      <a href="chapters/glossary.html" rel="next">Next: Glossary of Terms</a>
+    </nav>
+
+    <!-- CHECKLIST COMMENT -->
+    <!--
+    - [x] theme.css+app.js loaded
+    - [x] <base> correct
+    - [x] Canonical nav verbatim
+    - [x] Pager prev/next valid
+    - [x] Coverage: pitfalls, checklist, progression
+    - [x] Head/meta ok
+    -->
+  </main>
+</body>
+</html>

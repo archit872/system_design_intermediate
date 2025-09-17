@@ -1,0 +1,423 @@
+<!-- /chapters/ch03.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chapter 3 — Communication & Networking in System Design</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chapter 3 applies networking fundamentals to distributed systems. Compare synchronous vs. asynchronous communication, API gateways vs. reverse proxies, and failure-handling patterns like retries, backoff, and circuit breakers.">
+  <meta property="og:title" content="Chapter 3 — Communication & Networking in System Design">
+  <meta property="og:description" content="From TCP/IP and DNS to gateways and circuit breakers—design fast, reliable communication paths with clear trade-offs.">
+  <base href="../">
+  <link rel="stylesheet" href="styles/theme.css">
+  <script defer src="scripts/app.js"></script>
+</head>
+<body>
+  <!-- ================= NAV (Canonical; verbatim) ================= -->
+  <nav class="app-nav">
+    <div class="bar">
+      <div class="brand"><a href="index.html">System Design</a></div>
+      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
+      <div class="spacer"></div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="chapters/ch01.html">Chapters</a>
+        <a href="chapters/appendix.html">Appendix</a>
+        <a href="chapters/glossary.html">Glossary</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="page-hero container">
+    <div class="badge">Chapter 3</div>
+    <h1>Communication &amp; Networking in System Design</h1>
+    <p>
+      Distributed systems succeed or fail on the quality of their <strong>communication paths</strong>.
+      This chapter connects networking fundamentals—<abbr title="Transmission Control Protocol / Internet Protocol">TCP/IP</abbr>,
+      <abbr title="Domain Name System maps names to IP addresses">DNS</abbr>, and <abbr title="Software that distributes traffic across servers">load balancers</abbr>—to practical patterns:
+      synchronous vs. asynchronous calls, <strong>API gateways</strong>, <strong>reverse proxies</strong>, and resilience tools like
+      <abbr title="Automatic retry strategy that increases delay after each failure">exponential backoff</abbr> and
+      <abbr title="Fails fast after repeated errors to prevent cascading failures">circuit breakers</abbr>.
+    </p>
+  </header>
+
+  <main class="container">
+    <!-- ============== PREREQS & OBJECTIVES ============== -->
+    <section class="section">
+      <div class="grid two-col">
+        <div class="card">
+          <h2>Prerequisites</h2>
+          <ul>
+            <li>Basic understanding of request–response flows and service decomposition.</li>
+            <li>Familiarity with HTTP semantics (<abbr title="GET, POST, PUT, DELETE">verbs</abbr>, status codes).</li>
+            <li>Comfort with basic reliability concepts: <abbr title="Service Level Indicator / Objective">SLIs/SLOs</abbr>, retries, and timeouts.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Learning Objectives</h2>
+          <ul>
+            <li>Ground designs in networking building blocks: TCP/IP, DNS, L4/L7 <abbr title="Layer of the OSI model (Transport/Application)">layers</abbr>, and load balancing.</li>
+            <li>Choose between synchronous and asynchronous communication with explicit trade-offs.</li>
+            <li>Apply gateways and reverse proxies safely with <abbr title="Cross-cutting concerns such as auth, rate limits, observability">policy</abbr> and observability.</li>
+            <li>Handle failures with retries, backoff, timeouts, hedging, and circuit breakers.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 1: NETWORKING FUNDAMENTALS REFRESHER ============== -->
+    <section class="section">
+      <h2>1) Networking Fundamentals Refresher</h2>
+      <p>
+        Every request traverses layers. At L3/L4, IP routes packets and <abbr title="Transport layer protocol providing ordered, reliable delivery">TCP</abbr> establishes
+        connections with congestion control; at L7, HTTP carries semantics. <strong>DNS</strong> resolves a hostname
+        to one or more IPs, often returned with geographically aware answers. A <strong>load balancer</strong> spreads
+        traffic across instances via algorithms such as round-robin, least-connections, or consistent hashing.
+      </p>
+      <p>
+        In cloud environments, you’ll encounter two flavors: <strong>L4 balancers</strong> (operate on TCP/UDP ports,
+        faster and simpler) and <strong>L7 proxies</strong> (understand HTTP, can route by path/headers, perform
+        <abbr title="Transport Layer Security provides encryption and authentication">TLS</abbr> termination, and inject policies).
+        Both are useful: combine L4 for baseline distribution and L7 for smarter routing and policy enforcement.
+      </p>
+      <div class="callout info">
+        <h3>Latency Budget</h3>
+        <p>
+          Think in budgets: if your p95 end-to-end target is 250 ms and you cross three networks (client↔edge,
+          edge↔gateway, gateway↔service), allocate ~80 ms per hop with headroom. This forces disciplined
+          <strong>timeout</strong> and <strong>retry</strong> settings.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 2: SYNC VS ASYNC ============== -->
+    <section class="section">
+      <h2>2) Synchronous vs. Asynchronous Communication</h2>
+      <p>
+        <strong>Synchronous</strong> calls (request/response) are intuitive and keep user flows simple, but they tie
+        availability to every hop. <strong>Asynchronous</strong> messaging via queues or streams breaks tight coupling,
+        absorbs bursts, and enables bulk processing—at the cost of increased <abbr title="Operational work to keep a system healthy">operational</abbr> complexity and
+        eventual consistency. Many robust systems mix both: sync for user-facing paths, async for side effects.
+      </p>
+      <h3>Example: Image Upload</h3>
+      <p>
+        A media service accepts an upload synchronously to return a file ID quickly (< 200 ms), then publishes a
+        “process-image” event to a stream for <abbr title="Generate thumbnails and compressed variants">derivatives</abbr>.
+        The UI polls or subscribes to updates. If processing fails, the message lands in a <abbr title="Dead Letter Queue for messages that can't be processed">DLQ</abbr> for inspection.
+      </p>
+      <h3>Example: Inventory Reservation</h3>
+      <p>
+        For purchases, reservation must be confirmed synchronously to avoid oversell. Downstream notifications,
+        analytics updates, and recommendation signals can be asynchronous to avoid blocking checkout.
+      </p>
+      <div class="callout warn">
+        <strong>Trade-off:</strong> Async gives <em>throughput</em> and <em>resilience</em>; Sync gives <em>predictability</em> and
+        <em>simpler semantics</em>. Choose per user-critical step; document staleness windows and reconciliation.
+      </div>
+    </section>
+
+    <!-- ============== SECTION 3: API GATEWAYS & REVERSE PROXIES ============== -->
+    <section class="section">
+      <h2>3) API Gateways &amp; Reverse Proxies</h2>
+      <p>
+        A <strong>reverse proxy</strong> (e.g., Nginx, Envoy) sits before services, terminating TLS, routing by host/path,
+        and applying basic policies. An <strong>API gateway</strong> builds on that with authentication (<abbr title="Open standard for delegated authorization">OAuth2</abbr> / <abbr title="OpenID Connect identity layer on top of OAuth2">OIDC</abbr>),
+        <abbr title="Restricting request rates per key or principal">rate limiting</abbr>, request/response transformation, schema validation, <abbr title="Cross-Origin Resource Sharing">CORS</abbr>,
+        and <strong>observability</strong> (metrics/tracing). Gateways centralize <em>cross-cutting concerns</em> so services stay slim.
+      </p>
+      <h3>Pattern: Strangler Fig</h3>
+      <p>
+        Place a gateway in front of a monolith; incrementally route paths to new services while keeping old endpoints.
+        This supports gradual decompositions with <strong>canary</strong> and <strong>blue/green</strong> rollouts.
+      </p>
+    </section>
+
+    <!-- ============== SECTION 4: HANDLING FAILURES IN COMMUNICATION ============== -->
+    <section class="section">
+      <h2>4) Handling Failures in Communication</h2>
+      <p>
+        Networks fail in partial, unpredictable ways. Design for <strong>timeouts</strong> (always), <strong>retries</strong> with
+        <strong>exponential backoff</strong> and <strong>jitter</strong>, <strong>circuit breakers</strong>, <strong>bulkheads</strong> (resource isolation),
+        and <strong>hedged requests</strong> for tail latencies. Use <abbr title="Unique value propagated to correlate logs and traces across services">correlation IDs</abbr> to trace a request end-to-end.
+      </p>
+      <h3>Idempotency &amp; Safety</h3>
+      <p>
+        Retries duplicate work. Ensure operations are <strong>idempotent</strong> (same effect if repeated) or protect with
+        an <code>Idempotency-Key</code>. For non-idempotent ops, use transactional outbox and exactly-once consumer semantics
+        where required—or design around <strong>at-least-once</strong> with reconciliation.
+      </p>
+      <div class="callout danger">
+        <strong>Anti-Pattern:</strong> “Retry on <em>any</em> error” without caps or jitter. This causes synchronized
+        thundering herds. Always cap attempts and randomize delay.
+      </div>
+    </section>
+
+    <!-- ============== FIGURE ============== -->
+    <figure>
+      <svg viewBox="0 0 940 300" role="img" aria-label="Communication paths with client, CDN, gateway, services, and async bus">
+        <rect x="0" y="0" width="940" height="300" fill="#0f141b" rx="12"/>
+        <g font-family="ui-sans-serif,system-ui,Roboto,Inter,Arial" font-size="12" fill="#e6edf3">
+          <rect x="30" y="120" width="120" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="50" y="155">Client</text>
+
+          <rect x="180" y="50" width="150" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="210" y="85">CDN / Edge</text>
+
+          <rect x="180" y="180" width="150" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="205" y="215">L4/L7 LB</text>
+
+          <rect x="360" y="120" width="170" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="392" y="155">API Gateway</text>
+
+          <rect x="560" y="50" width="150" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="590" y="85">Service A</text>
+
+          <rect x="560" y="180" width="150" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="590" y="215">Service B</text>
+
+          <rect x="740" y="120" width="170" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="765" y="155">Queue / Stream</text>
+
+          <!-- arrows -->
+          <line x1="150" y1="150" x2="180" y2="80" stroke="#4cc2ff" stroke-width="3"/>
+          <polygon points="178,80 168,75 168,85" fill="#4cc2ff"/>
+          <line x1="150" y1="150" x2="180" y2="210" stroke="#4cc2ff" stroke-width="3"/>
+          <polygon points="178,210 168,205 168,215" fill="#4cc2ff"/>
+
+          <line x1="330" y1="80" x2="360" y2="150" stroke="#7a87ff" stroke-width="3"/>
+          <polygon points="358,150 348,145 348,155" fill="#7a87ff"/>
+
+          <line x1="330" y1="210" x2="360" y2="150" stroke="#7a87ff" stroke-width="3"/>
+          <polygon points="358,150 348,145 348,155" fill="#7a87ff"/>
+
+          <line x1="530" y1="150" x2="560" y2="80" stroke="#4cc2ff" stroke-width="3"/>
+          <polygon points="558,80 548,75 548,85" fill="#4cc2ff"/>
+
+          <line x1="530" y1="150" x2="560" y2="210" stroke="#4cc2ff" stroke-width="3"/>
+          <polygon points="558,210 548,205 548,215" fill="#4cc2ff"/>
+
+          <line x1="710" y1="80" x2="740" y2="150" stroke="#7a87ff" stroke-width="3"/>
+          <polygon points="738,150 728,145 728,155" fill="#7a87ff"/>
+          <line x1="710" y1="210" x2="740" y2="150" stroke="#7a87ff" stroke-width="3"/>
+          <polygon points="738,150 728,145 728,155" fill="#7a87ff"/>
+        </g>
+      </svg>
+      <figcaption>User path via Edge/LB → Gateway → Services. Side effects flow to a queue/stream asynchronously.</figcaption>
+    </figure>
+
+    <!-- ============== ANALOGY ============== -->
+    <section class="section">
+      <h2>Analogy: The Postal System</h2>
+      <p>
+        A synchronous call is like a phone conversation—immediate but both parties must be available.
+        Asynchronous messaging is mail: you drop a letter in a <em>queue</em>, routing centers (brokers)
+        sort and forward it, and the recipient processes later. Express mail (priority topics), return
+        receipts (acknowledgements), and <abbr title="A separate queue where undeliverable messages go">dead letters</abbr> all have clear parallels.
+        Use the right mode based on urgency, reliability, and cost.
+      </p>
+    </section>
+
+    <!-- ============== COMPARE & CONTRAST ============== -->
+    <section class="section">
+      <h2>Compare &amp; Contrast: API Gateway vs. Reverse Proxy</h2>
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>Reverse Proxy</th><th>API Gateway</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Primary Role</td><td>TLS, routing, basic policies</td><td>AuthN/AuthZ, rate limits, schema &amp; transformations</td></tr>
+          <tr><td>Protocol Awareness</td><td>L7 HTTP aware, minimal payload insight</td><td>Deep API awareness (OpenAPI/Protobuf)</td></tr>
+          <tr><td>Observability</td><td>Access logs, basic metrics</td><td>Request tracing, per-consumer analytics, quotas</td></tr>
+          <tr><td>Change Scope</td><td>Infra-centric</td><td>Product/API-centric</td></tr>
+          <tr><td>Operational Cost</td><td>Lower</td><td>Higher, but centralizes cross-cutting concerns</td></tr>
+        </tbody>
+      </table>
+      <div class="callout success">
+        <strong>Guideline:</strong> Start with a reverse proxy. Add gateway features as your API surface and consumer
+        diversity grow. Keep service code simple by pushing cross-cutting concerns “left” into the gateway.
+      </div>
+    </section>
+
+    <!-- ============== EXAMPLES WITH PATTERNS ============== -->
+    <section class="section">
+      <h2>Patterns in Practice</h2>
+      <h3>Example 1: Retries with Exponential Backoff &amp; Jitter</h3>
+      <p>
+        Suppose Service A calls Service B with a 200 ms timeout. On failure, retry up to <strong>3</strong> times with
+        base delay 50 ms, multiplier 2, and ±20% jitter. Cap total budget to 600 ms to protect user latency.
+        Mark operations <strong>idempotent</strong>, propagate a <code>X-Correlation-ID</code>, and record structured logs.
+      </p>
+      <pre class="code" data-lang="Pseudo">
+attempt = 0
+delay = 50ms
+while attempt &lt;= 3:
+  try call B (timeout 200ms)
+  if success: return
+  if transient error: sleep(jitter(delay)); delay *= 2; attempt++
+  else: break
+fail fast; trip circuit on consecutive errors
+      </pre>
+
+      <h3>Example 2: Hedged Reads for Tail Latency</h3>
+      <p>
+        For read-heavy endpoints with rare slow nodes, issue a second request after p95 latency elapses
+        (e.g., 120 ms). Cancel the loser. This reduces tail latency but increases load—apply carefully and
+        gate behind feature flags.
+      </p>
+    </section>
+
+    <!-- ============== CASE STUDY ============== -->
+    <section class="section">
+      <h2>Case Study: Dispatching in a Ride-Hailing Service (≈200 words)</h2>
+      <p>
+        Dispatch decides which driver gets a ride request. The path must be <strong>low latency</strong> and
+        <strong>highly available</strong>. Early versions used synchronous calls from the mobile app to a monolith,
+        which then called multiple microservices (pricing, maps, driver availability). During spikes, a slow
+        dependency stalled the entire flow. The team redesigned the path: the app sends a synchronous request
+        to an <strong>edge gateway</strong> with <strong>strict timeouts</strong> (p95 150 ms). The gateway fans out to
+        services using <strong>hedged reads</strong> for maps, applies <strong>circuit breakers</strong> to non-critical
+        enrichments, and immediately returns a provisional offer. Side effects—driver notifications, analytics,
+        surge model updates—are published asynchronously to a <strong>stream</strong>. If a downstream system lags,
+        the user still gets an assignment, and the system reconciles later. Observability includes RED metrics,
+        <strong>distributed tracing</strong>, and synthetic probes from key regions. Result: stable p95 latency with
+        bounded tails and fewer cascading failures. Trade-off: higher infra cost and more moving parts, offset by
+        business impact.
+      </p>
+    </section>
+
+    <!-- ============== RESOURCES ============== -->
+    <section class="section">
+      <h2>Recommended Resources &amp; Why</h2>
+      <div class="resource-list">
+        <div class="item">
+          <div><strong>Nginx &amp; Envoy Documentation</strong></div>
+          <div class="meta">Authoritative guidance on reverse proxying, TLS termination, routing, and observability hooks.</div>
+        </div>
+        <div class="item">
+          <div><strong>High Scalability Blog (Networking Case Studies)</strong></div>
+          <div class="meta">Real incidents that highlight failure modes and tail latency mitigation techniques.</div>
+        </div>
+        <div class="item">
+          <div><strong>Google SRE Book / Workbook</strong></div>
+          <div class="meta">Timeouts, retries, and error budgets connected to user-facing reliability.</div>
+        </div>
+        <div class="item">
+          <div><strong>“Release It!” Patterns</strong></div>
+          <div class="meta">Circuit breakers, bulkheads, and stability patterns for production systems.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== PRACTICE TASKS ============== -->
+    <section class="section practice">
+      <h2>Practice</h2>
+
+      <div class="task">
+        <h3>Add Retry + Backoff to an API Design</h3>
+        <p class="meta"><span>⏱️ 30–45 min</span> · <span>Success: explicit timeouts, capped retries, jitter, and idempotency rationale</span></p>
+        <p>Pick one synchronous hop in your system. Specify error budget, timeouts, retry policy, and logs/metrics you’ll emit.</p>
+      </div>
+
+      <div class="task">
+        <h3>Diagram Communication Paths in a Microservices App</h3>
+        <p class="meta"><span>⏱️ 40–60 min</span> · <span>Success: annotated diagram with sync vs. async paths and failure containment</span></p>
+        <p>Show client→edge→gateway→services. Mark which calls can degrade gracefully. Identify one bulkhead boundary.</p>
+      </div>
+
+      <div class="task">
+        <h3>Gateway vs. Reverse Proxy Decision</h3>
+        <p class="meta"><span>⏱️ 20–30 min</span> · <span>Success: table across 5 criteria; clear recommendation</span></p>
+        <p>For your current API surface and consumers, decide what to run today and what to add later as needs grow.</p>
+      </div>
+    </section>
+
+    <!-- ============== MASTERY CHECK ============== -->
+    <section class="section mastery">
+      <h2>Mastery Check</h2>
+      <div class="quiz-controls">
+        <button class="btn" data-quiz-toggle="open">Open all answers</button>
+        <button class="btn" data-quiz-toggle="close">Close all</button>
+      </div>
+
+      <details>
+        <summary>1) When do you prefer async over sync?</summary>
+        <div>
+          <p>When the work is non-critical to the user’s immediate flow, benefits from batching, or needs burst absorption.
+             Examples: notifications, analytics, search indexing. Document staleness windows and reconciliation.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>2) What’s a sane default timeout and retry policy?</summary>
+        <div>
+          <p>Set timeouts slightly above the p95 for that hop; cap retries (e.g., 2–3) with exponential backoff + jitter and
+             a total budget below the user’s latency target. Require idempotency or use outbox patterns.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>3) How does a circuit breaker protect upstreams?</summary>
+        <div>
+          <p>After repeated failures/timeouts, it opens to fail fast, preventing thread/connection exhaustion and cascading
+             failures. It half-opens to test recovery before fully closing.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>4) Gateway vs. reverse proxy: which for partner APIs?</summary>
+        <div>
+          <p>A gateway. You need auth, quotas, schema validation, and analytics per consumer. A reverse proxy is sufficient
+             for internal routing without rich policy.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>5) What are bulkheads?</summary>
+        <div>
+          <p>Isolation boundaries (pools/quotas) that prevent one noisy neighbor from starving others—e.g., separate thread
+             pools or connection pools per dependency.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>6) Give a concrete correlation ID practice.</summary>
+        <div>
+          <p>Generate a UUID at the edge, inject as <code>X-Correlation-ID</code> in all upstream requests, log it in structured
+             logs, and propagate in trace context to tie metrics and logs together.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============== RECAP & NEXT STEPS ============== -->
+    <section class="section">
+      <h2>Recap &amp; Next Steps</h2>
+      <p>
+        You connected layers (DNS, TCP, L4/L7) to application decisions (sync vs. async, gateway vs. proxy) and
+        learned to tame failures with timeouts, retries with backoff/jitter, hedging, and circuit breakers.
+        Next, in Chapter 4, you’ll design <strong>data management &amp; storage</strong> for scale and consistency.
+      </p>
+    </section>
+
+    <!-- ============== NEXT/PREV ============== -->
+    <nav class="next-prev" aria-label="Chapter navigation">
+      <a href="chapters/ch02.html" rel="prev">Previous: Designing Core Building Blocks of Systems</a>
+      <a href="chapters/ch04.html" rel="next">Next: Data Management &amp; Storage Patterns</a>
+    </nav>
+
+    <!-- ============== HIDDEN CHECKLIST COMMENT ============== -->
+    <!--
+    - [x] theme.css+app.js loaded
+    - [x] <base> present & correct (../)
+    - [x] Canonical nav verbatim; active link handled by app.js
+    - [x] Pager prev/next valid (ch02 ↔ ch04)
+    - [x] ≥1,200 words; ≥2 examples; 1 case study; 1 compare/contrast; 1 analogy
+    - [x] Resources 3–6 with rationale
+    - [x] Practice 3–5 w/ criteria
+    - [x] Mastery 5–7 with sample answers
+    - [x] ≥8 terms glossarized; ≥1 figure
+    - [x] Head/meta ok
+    -->
+  </main>
+</body>
+</html>

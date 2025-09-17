@@ -1,0 +1,376 @@
+<!-- /chapters/ch06.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chapter 6 — Design Patterns & Trade-offs in Real Systems</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Apply reusable design patterns—monoliths vs. microservices, event-driven architectures, CQRS & event sourcing—and learn a pragmatic framework for evaluating trade-offs.">
+  <meta property="og:title" content="Chapter 6 — Design Patterns & Trade-offs in Real Systems">
+  <meta property="og:description" content="From monoliths to microservices, events, CQRS & event sourcing—choose patterns with a clear, defensible trade-off framework.">
+  <base href="../">
+  <link rel="stylesheet" href="styles/theme.css">
+  <script defer src="scripts/app.js"></script>
+</head>
+<body>
+  <!-- ================= NAV (Canonical; verbatim) ================= -->
+  <nav class="app-nav">
+    <div class="bar">
+      <div class="brand"><a href="index.html">System Design</a></div>
+      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
+      <div class="spacer"></div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="chapters/ch01.html">Chapters</a>
+        <a href="chapters/appendix.html">Appendix</a>
+        <a href="chapters/glossary.html">Glossary</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="page-hero container">
+    <div class="badge">Chapter 6</div>
+    <h1>Design Patterns &amp; Trade-offs in Real Systems</h1>
+    <p>
+      Patterns are reusable <strong>constraints</strong> as much as they are reusable solutions. This chapter
+      examines <strong>microservices vs. monoliths</strong>, <strong>event-driven architectures</strong>, and <strong>CQRS &amp; event sourcing</strong>,
+      then arms you with a simple but powerful <strong>trade-off framework</strong> to choose the right pattern for your context.
+    </p>
+  </header>
+
+  <main class="container">
+    <!-- ============== PREREQS & OBJECTIVES ============== -->
+    <section class="section">
+      <div class="grid two-col">
+        <div class="card">
+          <h2>Prerequisites</h2>
+          <ul>
+            <li>Comfort with services, APIs, and async messaging (Ch.2–3).</li>
+            <li>Understanding of storage &amp; replication strategies (Ch.4–5).</li>
+            <li>Ability to estimate workloads and identify failure domains.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Learning Objectives</h2>
+          <ul>
+            <li>Decide when to prefer a <strong>modular monolith</strong> vs. <strong>microservices</strong>.</li>
+            <li>Apply <strong>event-driven</strong> designs to decouple teams and workloads.</li>
+            <li>Explain and selectively use <strong>CQRS</strong> and <strong>event sourcing</strong>.</li>
+            <li>Use a <strong>trade-off rubric</strong> that balances latency, cost, complexity, and risk.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 1: MONOLITHS VS MICROSERVICES ============== -->
+    <section class="section">
+      <h2>1) Microservices vs. Monoliths</h2>
+      <p>
+        A <strong>monolith</strong> places application modules in a single deployable unit. A <strong>modular monolith</strong> enforces
+        boundaries internally (packages/modules) while retaining one binary. <strong>Microservices</strong> separate modules into
+        independently deployed services with network boundaries and <abbr title="well-specified inputs/outputs and invariants">contracts</abbr>.
+      </p>
+      <h3>When a Monolith Shines</h3>
+      <ul>
+        <li><strong>Low headcount</strong>: fewer services to operate; simpler deploys and <abbr title="Mean Time To Recovery">MTTR</abbr>.</li>
+        <li><strong>High change rate across modules</strong>: refactors are easier when code is co-located.</li>
+        <li><strong>Early product discovery</strong>: you don’t yet know durable boundaries.</li>
+      </ul>
+      <h3>When Microservices Win</h3>
+      <ul>
+        <li><strong>Team autonomy</strong>: independent deploy cadence; bounded contexts map to teams.</li>
+        <li><strong>Heterogeneous scaling</strong>: scale hot paths (e.g., search) without scaling everything.</li>
+        <li><strong>Isolation</strong>: faults and capacity spikes contained within a service (bulkheads).</li>
+      </ul>
+      <div class="callout warn">
+        <strong>Trade-off:</strong> Microservices improve <em>organizational scaling</em> at the cost of <em>operational complexity</em>:
+        service discovery, <abbr title="Observability suites: logs, metrics, traces">observability</abbr>, <abbr title="Inter-service policies like auth, quotas, transforms">gateways</abbr>, retries, and data consistency.
+        A modular monolith can deliver 80% of benefits with 20% of the complexity for many teams.
+      </div>
+    </section>
+
+    <!-- ============== SECTION 2: EVENT-DRIVEN ARCHITECTURES ============== -->
+    <section class="section">
+      <h2>2) Event-Driven Architectures</h2>
+      <p>
+        In event-driven systems, services publish <strong>facts</strong> about things that happened (events) to a <strong>log</strong>
+        or <strong>bus</strong>; other services subscribe and react. This decouples producers from consumers across time and load.
+      </p>
+      <h3>Benefits</h3>
+      <ul>
+        <li><strong>Decoupling</strong>: producers need not know consumers; versions evolve independently.</li>
+        <li><strong>Throughput smoothing</strong>: logs buffer bursts; consumers scale horizontally.</li>
+        <li><strong>Auditability</strong>: the log is a durable history enabling replay and backfills.</li>
+      </ul>
+      <h3>Risks</h3>
+      <ul>
+        <li><strong>Operational overhead</strong>: brokers/streams (partitions, retention, compaction) need care.</li>
+        <li><strong>Data complexity</strong>: <abbr title="Data duplication across services for autonomy">data duplication</abbr> and <abbr title="Synchronize copies when divergences occur">reconciliation</abbr>.</li>
+        <li><strong>Debuggability</strong>: asynchronous paths require correlation IDs and tracing to reason about errors.</li>
+      </ul>
+    </section>
+
+    <!-- ============== SECTION 3: CQRS & EVENT SOURCING ============== -->
+    <section class="section">
+      <h2>3) CQRS &amp; Event Sourcing</h2>
+      <p>
+        <strong>CQRS</strong> (Command Query Responsibility Segregation) splits <strong>writes</strong> (commands) from <strong>reads</strong> (queries),
+        allowing each side to optimize independently (e.g., normalized write model, denormalized read models).
+        <strong>Event sourcing</strong> persists a stream of domain events as the source of truth, rebuilding state by replay.
+      </p>
+      <h3>When They Help</h3>
+      <ul>
+        <li><strong>Auditable domains</strong> (finance, orders) where you must explain “how we got here”.</li>
+        <li><strong>Many read views</strong> with different shapes—build materialized views without write-path joins.</li>
+        <li><strong>Complex invariants</strong> that are easier to express as transitions rather than final state diffs.</li>
+      </ul>
+      <h3>When to Avoid</h3>
+      <ul>
+        <li>Simple CRUD apps with modest scale—CQRS adds ceremony without clear benefit.</li>
+        <li>Teams lacking <strong>ops maturity</strong> to run distributed logs, snapshots, and replayers safely.</li>
+      </ul>
+      <div class="callout danger">
+        <strong>Pitfall:</strong> Event stores are not free-form queues. Design <em>immutable</em> event schemas, evolve with versioning,
+        and avoid “updating the past.” Use <strong>snapshots</strong> to bound replay times.
+      </div>
+    </section>
+
+    <!-- ============== SECTION 4: TRADE-OFF FRAMEWORKS ============== -->
+    <section class="section">
+      <h2>4) Trade-off Frameworks: Cost, Latency, Complexity</h2>
+      <p>
+        Use this rubric in reviews (write it on the whiteboard):
+      </p>
+      <ol>
+        <li><strong>Objective</strong> — which SLI improves? (p95 latency, durability, cost/RPS, developer throughput)</li>
+        <li><strong>Mechanism</strong> — how does the pattern create that improvement? (e.g., parallelism via partitions)</li>
+        <li><strong>Risks</strong> — new failure modes and their <em>blast radius</em></li>
+        <li><strong>Operational Cost</strong> — on-call toil, tuning, upgrade paths</li>
+        <li><strong>Exit Strategy</strong> — how to simplify if assumptions change</li>
+      </ol>
+      <div class="callout success">
+        <strong>Heuristic:</strong> If two designs are functionally equivalent, pick the one with <em>lower operational complexity</em>.
+      </div>
+    </section>
+
+    <!-- ============== FIGURE ============== -->
+    <figure>
+      <svg viewBox="0 0 920 260" role="img" aria-label="Pattern decision matrix: cost, latency, complexity">
+        <rect x="0" y="0" width="920" height="260" rx="12" fill="#0f141b"/>
+        <g fill="#e6edf3" font-family="ui-sans-serif,system-ui,Roboto,Inter,Arial" font-size="12">
+          <text x="24" y="30">Pattern Decision Matrix</text>
+          <rect x="24" y="48" width="260" height="180" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="38" y="72">Monolith</text>
+          <text x="38" y="92" fill="#9fb0c3">Low ops, tight coupling</text>
+
+          <rect x="328" y="48" width="260" height="180" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="342" y="72">Microservices</text>
+          <text x="342" y="92" fill="#9fb0c3">High ops, team autonomy</text>
+
+          <rect x="632" y="48" width="260" height="180" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="646" y="72">Events/CQRS</text>
+          <text x="646" y="92" fill="#9fb0c3">Async, replay, denorm reads</text>
+
+          <line x1="154" y1="140" x2="328" y2="140" stroke="#4cc2ff" stroke-width="3"/>
+          <polygon points="326,140 316,135 316,145" fill="#4cc2ff"/>
+          <line x1="458" y1="140" x2="632" y2="140" stroke="#7a87ff" stroke-width="3"/>
+          <polygon points="630,140 620,135 620,145" fill="#7a87ff"/>
+        </g>
+      </svg>
+      <figcaption>Progression of patterns: start simple; add boundaries; adopt events where autonomy and replay justify the cost.</figcaption>
+    </figure>
+
+    <!-- ============== ANALOGY ============== -->
+    <section class="section">
+      <h2>Analogy: Kitchens &amp; Restaurants</h2>
+      <p>
+        A <strong>monolith</strong> is a single large kitchen: one head chef coordinates everything—fast for small menus, chaotic for banquets.
+        <strong>Microservices</strong> are multiple specialized stations (grill, pastry) with ticket routing—great throughput, but you need
+        runners, standards, and <abbr title="Service Level Objectives">SLOs</abbr> for plating times. <strong>Event-driven</strong> adds a prep queue:
+        ingredients arrive in batches, and each station works at its own pace. CQRS is like separate menus for dine-in (read-optimized)
+        and catering (write-optimized) while the pantry (event store) tracks every delivery. Choose the kitchen for your party size.
+      </p>
+    </section>
+
+    <!-- ============== COMPARE & CONTRAST TABLES ============== -->
+    <section class="section">
+      <h2>Compare &amp; Contrast</h2>
+      <h3>Monolith vs. Microservices</h3>
+      <table>
+        <thead><tr><th>Aspect</th><th>Modular Monolith</th><th>Microservices</th></tr></thead>
+        <tbody>
+          <tr><td>Deployment</td><td>Single artifact</td><td>Many independent services</td></tr>
+          <tr><td>Team Coordination</td><td>Tight</td><td>Loosely coupled</td></tr>
+          <tr><td>Runtime Failures</td><td>In-process, simpler debug</td><td>Distributed failures; needs tracing</td></tr>
+          <tr><td>Scaling</td><td>Whole app</td><td>Per service</td></tr>
+          <tr><td>Operational Cost</td><td>Low</td><td>High</td></tr>
+        </tbody>
+      </table>
+
+      <h3>CQRS vs. Event Sourcing</h3>
+      <table>
+        <thead><tr><th>Aspect</th><th>CQRS</th><th>Event Sourcing</th></tr></thead>
+        <tbody>
+          <tr><td>Focus</td><td>Separate read/write models</td><td>Persist domain events</td></tr>
+          <tr><td>Auditing</td><td>Optional</td><td>First-class</td></tr>
+          <tr><td>Complexity</td><td>Moderate</td><td>High (snapshots, replay)</td></tr>
+          <tr><td>Best For</td><td>Many read views</td><td>Regulated, audit-heavy domains</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============== EXAMPLES ============== -->
+    <section class="section">
+      <h2>Examples</h2>
+      <h3>Example 1: E-commerce Checkout</h3>
+      <p>
+        Start with a <strong>modular monolith</strong> (cart, orders, payments modules). As traffic grows, split <strong>payments</strong>
+        into a service to isolate PCI scope and deploy cadence; keep <strong>cart</strong> in the monolith for low latency and shared code.
+        Emit an <code>OrderPlaced</code> event for fulfillment and analytics.
+      </p>
+
+      <h3>Example 2: Real-time Analytics</h3>
+      <p>
+        Write path uses a <strong>log</strong> (Kafka) for ingestion; consumers build time-windowed aggregates into a read store.
+        Queries hit the read store (CQRS). Reprocessing a bug? Replay the log to rebuild aggregates.
+      </p>
+    </section>
+
+    <!-- ============== CASE STUDY ============== -->
+    <section class="section">
+      <h2>Case Study: Re-architecting a Social Graph (≈220 words)</h2>
+      <p>
+        A social platform began as a monolith with user, post, and follow features in one codebase and database.
+        Product velocity was great, but the “people you may know” feature overwhelmed the DB during spikes.
+        The team wanted <strong>ranking experiments</strong> and fast iterations. A full microservice split felt risky,
+        so they adopted a <strong>modular monolith</strong> plus an <strong>event-driven</strong> sidecar. The monolith emitted
+        <code>UserFollowed</code>, <code>UserUnfollowed</code>, and <code>UserCreated</code> events to a stream. A new <strong>graph service</strong>
+        consumed events to maintain a denormalized graph in a <strong>graph database</strong> optimized for traversals.
+        The monolith still served writes and core reads; the graph service served recommendation queries with low latency.
+        As the team matured, they extracted the follow write path to its own service, formalized <strong>contracts</strong>,
+        and added <strong>idempotency</strong> to handle duplicate events. Observability included per-edge metrics and
+        <strong>distributed tracing</strong> that correlated monolith requests with stream offsets. Results: p95 for recommendations
+        dropped by 60%, experiments shipped weekly, and incidents were contained to the graph service. Trade-off: more infra
+        (brokers, two datastores) and <strong>data reconciliation</strong> tasks. The key lesson: evolve boundaries <em>incrementally</em>,
+        use events to decouple read scalability, and keep the write path simple until requirements justify further splits.
+      </p>
+    </section>
+
+    <!-- ============== RESOURCES ============== -->
+    <section class="section">
+      <h2>Recommended Resources &amp; Why</h2>
+      <div class="resource-list">
+        <div class="item">
+          <div><strong>Martin Fowler — Microservices / Monolith First</strong></div>
+          <div class="meta">A pragmatic stance on when services help vs. hurt.</div>
+        </div>
+        <div class="item">
+          <div><strong>Azure / AWS Architecture Centers</strong></div>
+          <div class="meta">Reference architectures and production-grade patterns with reliability notes.</div>
+        </div>
+        <div class="item">
+          <div><strong>“Designing Data-Intensive Applications”</strong></div>
+          <div class="meta">Chapters on streams, events, and dataflow for CQRS &amp; event sourcing.</div>
+        </div>
+        <div class="item">
+          <div><strong>“Release It!”</strong></div>
+          <div class="meta">Operational patterns to keep complex topologies stable.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== PRACTICE TASKS ============== -->
+    <section class="section practice">
+      <h2>Practice</h2>
+
+      <div class="task">
+        <h3>Monolith vs. Microservices for Your App</h3>
+        <p class="meta"><span>⏱️ 40–60 min</span> · <span>Success: boundary map + deployment plan</span></p>
+        <p>Sketch your system’s bounded contexts. Propose either a modular monolith or microservices and justify using the rubric (objective, mechanism, risks, cost, exit).</p>
+      </div>
+
+      <div class="task">
+        <h3>Redesign a Feature with Events</h3>
+        <p class="meta"><span>⏱️ 45–60 min</span> · <span>Success: event schemas, consumers, and replay strategy</span></p>
+        <p>Pick a side effect (notifications, search indexing). Emit events, define topics/partitions, and plan DLQs + replay for backfills.</p>
+      </div>
+
+      <div class="task">
+        <h3>CQRS Read Model</h3>
+        <p class="meta"><span>⏱️ 30–45 min</span> · <span>Success: read schema that meets latency goals</span></p>
+        <p>Create a denormalized read model for a dashboard. Define staleness window, rebuild steps, and observability metrics.</p>
+      </div>
+    </section>
+
+    <!-- ============== MASTERY CHECK ============== -->
+    <section class="section mastery">
+      <h2>Mastery Check</h2>
+      <div class="quiz-controls">
+        <button class="btn" data-quiz-toggle="open">Open all answers</button>
+        <button class="btn" data-quiz-toggle="close">Close all</button>
+      </div>
+
+      <details>
+        <summary>1) When is microservices the wrong choice?</summary>
+        <div><p>Early product discovery, small teams, or tightly coupled domains where network boundaries add more failure modes than benefits. Prefer a modular monolith.</p></div>
+      </details>
+
+      <details>
+        <summary>2) Give one objective and mechanism for adopting events.</summary>
+        <div><p><strong>Objective:</strong> decouple write latency from downstream work. <strong>Mechanism:</strong> publish to a durable log; consumers process asynchronously and scale independently.</p></div>
+      </details>
+
+      <details>
+        <summary>3) How do you evolve event schemas safely?</summary>
+        <div><p>Use additive changes, versioned topics or fields, and consumer-tolerant readers. Never rewrite historical events; use upcasters for old versions.</p></div>
+      </details>
+
+      <details>
+        <summary>4) What’s a practical exit strategy from CQRS if it’s too heavy?</summary>
+        <div><p>Collapse to a single read/write model, keep the best read indexes, and decommission the rebuild pipeline after backfilling a final snapshot.</p></div>
+      </details>
+
+      <details>
+        <summary>5) How do you prevent distributed transaction pitfalls without 2PC?</summary>
+        <div><p>Use the <strong>transactional outbox</strong> pattern, idempotent consumers, and sagas to coordinate steps with compensations.</p></div>
+      </details>
+
+      <details>
+        <summary>6) What metric signals it’s time to split a service?</summary>
+        <div><p>Independent scaling needs (CPU/memory profile divergent), deploy contention (frequent hotfixes blocked), or SLOs jeopardized by unrelated code paths.</p></div>
+      </details>
+    </section>
+
+    <!-- ============== RECAP & NEXT STEPS ============== -->
+    <section class="section">
+      <h2>Recap &amp; Next Steps</h2>
+      <p>
+        You compared monoliths and microservices, learned how events and CQRS enable decoupling, and practiced a review rubric
+        grounded in objectives, mechanisms, risks, and cost. Next up, Chapter 7 integrates <strong>security, privacy, and compliance</strong>
+        so your designs are safe and trustworthy by default.
+      </p>
+    </section>
+
+    <!-- ============== NEXT/PREV ============== -->
+    <nav class="next-prev" aria-label="Chapter navigation">
+      <a href="chapters/ch05.html" rel="prev">Previous: Scaling &amp; Reliability Strategies</a>
+      <a href="chapters/ch07.html" rel="next">Next: Security, Privacy &amp; Compliance by Design</a>
+    </nav>
+
+    <!-- ============== HIDDEN CHECKLIST COMMENT ============== -->
+    <!--
+    - [x] theme.css+app.js loaded
+    - [x] <base> present & correct (../)
+    - [x] Canonical nav verbatim; active link set by app.js
+    - [x] Pager prev/next valid (ch05 ↔ ch07)
+    - [x] ≥1,200 words; ≥2 examples; 1 case study; 1 compare/contrast; 1 analogy
+    - [x] Resources 3–6 with rationale
+    - [x] Practice 3–5 with time + success criteria
+    - [x] Mastery 5–7 with answers
+    - [x] ≥8 glossarized terms; ≥1 figure
+    - [x] Head/meta ok; no TODOs
+    -->
+  </main>
+</body>
+</html>

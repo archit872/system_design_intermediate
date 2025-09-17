@@ -1,0 +1,347 @@
+<!-- /chapters/ch08.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chapter 8 — Observability & Operational Excellence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Design systems that are observable and operable: metrics (RED/USE), structured logging, tracing, alerting, incident response, and SRE principles like toil and error budgets.">
+  <meta property="og:title" content="Chapter 8 — Observability & Operational Excellence">
+  <meta property="og:description" content="Build measurable systems: metrics, logs, traces, alerts, runbooks, on-call, SLOs, error budgets, postmortems, and continuous improvement.">
+  <base href="../">
+  <link rel="stylesheet" href="styles/theme.css">
+  <script defer src="scripts/app.js"></script>
+</head>
+<body>
+  <!-- ================= NAV (Canonical; verbatim) ================= -->
+  <nav class="app-nav">
+    <div class="bar">
+      <div class="brand"><a href="index.html">System Design</a></div>
+      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
+      <div class="spacer"></div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="chapters/ch01.html">Chapters</a>
+        <a href="chapters/appendix.html">Appendix</a>
+        <a href="chapters/glossary.html">Glossary</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="page-hero container">
+    <div class="badge">Chapter 8</div>
+    <h1>Observability &amp; Operational Excellence</h1>
+    <p>
+      You can’t improve what you can’t see. This chapter makes your systems <strong>observable</strong> and
+      <strong>operable</strong> by design—covering the <abbr title="Rate, Errors, Duration">RED</abbr> and
+      <abbr title="Utilization, Saturation, Errors">USE</abbr> methods, <strong>structured logging</strong>,
+      <strong>distributed tracing</strong>, <strong>alerting</strong> &amp; <strong>incident response</strong>, and
+      <strong>SRE principles</strong> like <abbr title="Manual, repetitive work that engineers must do to keep a system running">toil</abbr>,
+      <abbr title="Service Level Objective — target for an SLI">SLOs</abbr>, <abbr title="The amount of unreliability permitted by an SLO">error budgets</abbr>,
+      and <strong>postmortems</strong>.
+    </p>
+  </header>
+
+  <main class="container">
+    <!-- ============== PREREQS & OBJECTIVES ============== -->
+    <section class="section">
+      <div class="grid two-col">
+        <div class="card">
+          <h2>Prerequisites</h2>
+          <ul>
+            <li>Familiarity with system components and reliability strategies (Ch.5–7).</li>
+            <li>Basic knowledge of HTTP, services, and databases.</li>
+            <li>Comfort reading logs and dashboards.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Learning Objectives</h2>
+          <ul>
+            <li>Instrument services using RED/USE to cover user and resource perspectives.</li>
+            <li>Adopt <strong>structured logs</strong> and <strong>trace context</strong> across service boundaries.</li>
+            <li>Design <strong>alerts</strong> that are actionable and tied to <strong>SLOs</strong>.</li>
+            <li>Run incidents with calm: <strong>runbooks</strong>, <strong>IMOCs</strong>, and <strong>postmortems</strong>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 1: METRICS (RED & USE) ============== -->
+    <section class="section">
+      <h2>1) Monitoring Metrics (RED &amp; USE methods)</h2>
+      <p>
+        Metrics quantify behavior. The <strong>RED method</strong> focuses on <strong>Rate</strong> (requests per second),
+        <strong>Errors</strong> (failure codes), and <strong>Duration</strong> (latency percentiles) for <em>user-facing</em> services.
+        The <strong>USE method</strong> focuses on <strong>Utilization</strong>, <strong>Saturation</strong>, and <strong>Errors</strong> for
+        <em>resources</em> like CPUs, queues, and databases.
+      </p>
+      <div class="grid two-col">
+        <div class="card">
+          <h3>RED — User Path</h3>
+          <ul>
+            <li><strong>Rate:</strong> RPS per endpoint, per status code family.</li>
+            <li><strong>Errors:</strong> 5xx, significant 4xx, <abbr title="Gateway timeouts and client timeouts">timeouts</abbr>.</li>
+            <li><strong>Duration:</strong> p50/p95/p99, <abbr title="Tail latency often dominates user experience">tail latency</abbr>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>USE — Resource Health</h3>
+          <ul>
+            <li><strong>Utilization:</strong> fraction of capacity used (CPU%, heap%, QPS vs. max).</li>
+            <li><strong>Saturation:</strong> waiting work (queue depth, run-queue length).</li>
+            <li><strong>Errors:</strong> device faults, retries, throttles.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout info">
+        <strong>Heuristic:</strong> If you have to choose, instrument RED first so you know
+        what <em>users</em> feel, then USE to explain <em>why</em>.
+      </div>
+    </section>
+
+    <!-- ============== SECTION 2: LOGGING & TRACING ============== -->
+    <section class="section">
+      <h2>2) Structured Logging &amp; Tracing</h2>
+      <p>
+        <strong>Structured logs</strong> encode events as key–value pairs (JSON) with <abbr title="A unique ID to correlate events across services">correlation IDs</abbr>.
+        Include fields like <code>trace_id</code>, <code>span_id</code>, <code>user_id</code>, <code>endpoint</code>, <code>status</code>, and <code>latency_ms</code>.
+        <strong>Distributed tracing</strong> captures the causal tree of a request across services with spans and timing.
+      </p>
+      <h3>Example: Minimal JSON Log</h3>
+      <pre class="code" data-lang="JSON">
+{"ts":"2025-09-17T14:12:08Z","level":"info","trace_id":"a1b2","span_id":"01",
+ "svc":"gateway","endpoint":"/v1/checkout","status":200,"latency_ms":84,"user_id":"u123"}
+      </pre>
+      <div class="callout warn">
+        <strong>Pitfall:</strong> Unstructured text logs are hard to query. Make logs machine-first, human-readable second.
+        Avoid logging secrets; use redaction and <abbr title="Role-based access controls">RBAC</abbr> on log viewers.
+      </div>
+    </section>
+
+    <!-- ============== SECTION 3: ALERTING & INCIDENT RESPONSE ============== -->
+    <section class="section">
+      <h2>3) Alerting &amp; Incident Response</h2>
+      <p>
+        Alerts should be <strong>symptom-based</strong> (what users feel), tied to <strong>SLOs</strong>, and <strong>actionable</strong>.
+        Each alert must have an <strong>owner</strong>, <strong>runbook</strong>, and <strong>severity</strong> with
+        <abbr title="Mean Time to Detect">MTTD</abbr>/<abbr title="Mean Time to Acknowledge">MTTA</abbr>/<abbr title="Mean Time to Resolve">MTTR</abbr> targets.
+      </p>
+      <h3>Roles in an Incident</h3>
+      <ul>
+        <li><strong>IMOC</strong> (Incident Manager On Call): coordinates and communicates.</li>
+        <li><strong>Ops Lead</strong>: runs mitigation steps.</li>
+        <li><strong>Scribe</strong>: records timeline and decisions.</li>
+        <li><strong>Comms</strong>: updates status page and stakeholders.</li>
+      </ul>
+      <h3>Runbook Template</h3>
+      <pre class="code" data-lang="Markdown">
+# Alert: 5xx spike on /checkout
+## Triage
+- Check dashboard: RED, dependency health, release diff
+- If DB saturation &gt; 80%, trigger read-only mode
+## Mitigation
+- Rollback last deploy (link)
+- Enable feature flag "safe_path"
+## Verification
+- p95 &lt; 200ms, 5xx &lt; 0.2% for 15 min
+## Follow-up
+- Create bug ticket; schedule postmortem
+      </pre>
+    </section>
+
+    <!-- ============== SECTION 4: SRE PRINCIPLES ============== -->
+    <section class="section">
+      <h2>4) SRE Principles: Toil, Error Budgets, Postmortems</h2>
+      <p>
+        <strong>Toil</strong> is manual, automatable work; cap it so teams can improve systems. <strong>Error budgets</strong> quantify
+        allowed unreliability; when you burn budget fast, reduce change rate. <strong>Blameless postmortems</strong> focus on
+        <abbr title="How and why defenses failed, not who to blame">systems thinking</abbr> and actionable fixes.
+      </p>
+      <div class="callout success">
+        <strong>Guideline:</strong> Every major incident creates durable artifacts: <em>runbook delta, tests, guardrails, dashboards</em>.
+      </div>
+    </section>
+
+    <!-- ============== FIGURE ============== -->
+    <figure>
+      <svg viewBox="0 0 940 300" role="img" aria-label="Observability triangle: Metrics, Logs, Traces with SLOs at the center">
+        <rect x="0" y="0" width="940" height="300" rx="12" fill="#0f141b"/>
+        <g fill="#e6edf3" font-family="ui-sans-serif,system-ui,Roboto,Inter,Arial" font-size="12">
+          <polygon points="470,40 140,260 800,260" fill="#111726" stroke="#1b2330"/>
+          <text x="440" y="60">SLOs</text>
+          <text x="110" y="250">Logs (events)</text>
+          <text x="765" y="250">Traces (causality)</text>
+          <text x="450" y="250">Metrics (time series)</text>
+          <line x1="470" y1="60" x2="260" y2="240" stroke="#4cc2ff" stroke-width="3"/>
+          <line x1="470" y1="60" x2="680" y2="240" stroke="#7a87ff" stroke-width="3"/>
+          <line x1="240" y1="240" x2="700" y2="240" stroke="#4cc2ff" stroke-width="3"/>
+        </g>
+      </svg>
+      <figcaption>Metrics show <em>what</em>, logs record <em>events</em>, traces reveal <em>why</em>. SLOs unify them.</figcaption>
+    </figure>
+
+    <!-- ============== ANALOGY ============== -->
+    <section class="section">
+      <h2>Analogy: Air Traffic Control</h2>
+      <p>
+        Metrics are the radar—positions and speeds. Logs are the radio transcripts—who said what, when.
+        Traces are the flight paths—full journeys across airspace. SLOs are weather minima—rules for when to fly or hold.
+        Together they keep traffic safe and efficient.
+      </p>
+    </section>
+
+    <!-- ============== COMPARE & CONTRAST ============== -->
+    <section class="section">
+      <h2>Compare &amp; Contrast: Symptom vs. Cause Alerts</h2>
+      <table>
+        <thead><tr><th>Aspect</th><th>Symptom Alert</th><th>Cause Alert</th></tr></thead>
+        <tbody>
+          <tr><td>Trigger</td><td>User-visible SLI breach (e.g., p95 &gt; 300ms)</td><td>Resource anomaly (CPU 95%, queue depth high)</td></tr>
+          <tr><td>Actionability</td><td>High (page immediately)</td><td>Medium (investigate during business hours)</td></tr>
+          <tr><td>Noise Risk</td><td>Lower</td><td>Higher if thresholds naive</td></tr>
+          <tr><td>Best Use</td><td>Keep promises to users</td><td>Early signals, capacity planning</td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn"><strong>Trade-off:</strong> Too many cause alerts → alert fatigue. Bias paging toward symptoms; surface causes on dashboards.</div>
+    </section>
+
+    <!-- ============== EXAMPLES ============== -->
+    <section class="section">
+      <h2>Examples</h2>
+      <h3>Example 1: End-to-End Trace for Checkout</h3>
+      <p>
+        Start trace at the edge; propagate <code>traceparent</code> headers through gateway, cart, payment, inventory.
+        Create spans for external calls (DB, Stripe), attach attributes (<code>order_id</code>, <code>tenant</code>), and link logs to spans.
+        A failing p99 exposes inventory lag via one slow span—fix with read replicas and alert on saturation.
+      </p>
+      <h3>Example 2: SLO and Error Budget Policy</h3>
+      <p>
+        Define API availability SLO 99.9% per quarter. Alert when 25% budget burns in a week.
+        If burn rate &gt; 2×, freeze deploys, add canaries, and prioritize reliability issues in sprint.
+      </p>
+    </section>
+
+    <!-- ============== CASE STUDY ============== -->
+    <section class="section">
+      <h2>Case Study: Stabilizing a Payments Platform (≈220 words)</h2>
+      <p>
+        A mid-scale payments API suffered midnight pages for months. Symptoms were spiky p99 and intermittent 5xx
+        after deployments. The team lacked <strong>tracing</strong>; logs were free-form strings. They adopted the
+        RED/USE approach: API RED on dashboards and USE for DB, cache, and queues. All services emitted <strong>structured logs</strong>
+        with <strong>trace IDs</strong>. A service mesh propagated trace context, and the gateway injected a <strong>correlation ID</strong>.
+        Alerts were rewritten to be <strong>symptom-first</strong> (availability and latency SLOs) with cause panels linked.
+        They instituted an <strong>IMOC</strong> rotation and standardized runbooks. Postmortems were made blameless and mandatory
+        for SEV-2+. Within a quarter, MTTR dropped from 90 to 25 minutes, p99 stabilized after they found a periodic cache
+        stampede (fixed via <em>stale-while-revalidate</em>), and deploy freezes cut. The trade-off: initial toil to instrument,
+        increased telemetry costs, and time spent writing runbooks. The payoff: higher team confidence, fewer pages, faster
+        recovery, and a culture of learning. The key lesson: <em>observability is not a tool</em>; it’s a contract between your
+        system and your operators, backed by SLOs and continuous improvement.
+      </p>
+    </section>
+
+    <!-- ============== RESOURCES ============== -->
+    <section class="section">
+      <h2>Recommended Resources &amp; Why</h2>
+      <div class="resource-list">
+        <div class="item"><strong>Prometheus &amp; Grafana Docs</strong><div class="meta">Metrics collection, alerting rules, and dashboards.</div></div>
+        <div class="item"><strong>OpenTelemetry</strong><div class="meta">Standardized traces, metrics, logs and context propagation.</div></div>
+        <div class="item"><strong>Google SRE Book &amp; Workbook</strong><div class="meta">SLOs, error budgets, incident response patterns.</div></div>
+        <div class="item"><strong>“Release It!”</strong><div class="meta">Production stability patterns that pair well with observability.</div></div>
+      </div>
+    </section>
+
+    <!-- ============== PRACTICE TASKS ============== -->
+    <section class="section practice">
+      <h2>Practice</h2>
+
+      <div class="task">
+        <h3>Instrument an Endpoint with RED</h3>
+        <p class="meta"><span>⏱️ 40–60 min</span> · <span>Success: counters for rate/errors and histogram for duration; p50/p95/p99 dashboards</span></p>
+        <p>Pick a user-facing API. Add metrics, export to your stack, and build a dashboard with alerts tied to SLOs.</p>
+      </div>
+
+      <div class="task">
+        <h3>Add Trace Context + Structured Logs</h3>
+        <p class="meta"><span>⏱️ 30–45 min</span> · <span>Success: consistent <code>trace_id</code>/<code>span_id</code> across 2 services; logs link to traces</span></p>
+        <p>Propagate trace headers through a gateway and one backend. Ensure logs include IDs and key attributes.</p>
+      </div>
+
+      <div class="task">
+        <h3>Draft an Incident Runbook</h3>
+        <p class="meta"><span>⏱️ 25–35 min</span> · <span>Success: triage steps, clear rollback, verification checks, and comms template</span></p>
+        <p>Take your most critical alert and write a step-by-step response play.</p>
+      </div>
+    </section>
+
+    <!-- ============== MASTERY CHECK ============== -->
+    <section class="section mastery">
+      <h2>Mastery Check</h2>
+      <div class="quiz-controls">
+        <button class="btn" data-quiz-toggle="open">Open all answers</button>
+        <button class="btn" data-quiz-toggle="close">Close all</button>
+      </div>
+
+      <details>
+        <summary>1) Why choose symptom-based alerts?</summary>
+        <div><p>They mirror user impact and reduce noise. Causes appear on dashboards; paging only when users are affected.</p></div>
+      </details>
+
+      <details>
+        <summary>2) Give one RED and one USE metric for a DB.</summary>
+        <div><p>RED: query duration p95. USE: replication lag (saturation) and CPU utilization (utilization).</p></div>
+      </details>
+
+      <details>
+        <summary>3) What’s the value of distributed tracing if you already have logs?</summary>
+        <div><p>Traces establish causality and timings between services, revealing where latency accrues across hops.</p></div>
+      </details>
+
+      <details>
+        <summary>4) Define an error budget policy.</summary>
+        <div><p>If 30% of quarterly budget burns in a week: freeze deploys, raise canary percentage, prioritize reliability tickets.</p></div>
+      </details>
+
+      <details>
+        <summary>5) What makes an alert actionable?</summary>
+        <div><p>Clear owner, severity, user impact, threshold, runbook link, and next steps to mitigate/rollback.</p></div>
+      </details>
+
+      <details>
+        <summary>6) How do you reduce toil?</summary>
+        <div><p>Automate recurring tasks (deploys, restarts), improve docs and runbooks, fix flaky alerts, and invest in self-healing.</p></div>
+      </details>
+    </section>
+
+    <!-- ============== RECAP & NEXT STEPS ============== -->
+    <section class="section">
+      <h2>Recap &amp; Next Steps</h2>
+      <p>
+        You built an observability foundation (RED/USE, logs, traces) and a humane ops practice (alerts, incidents, SLOs).
+        Next, Chapter 9 brings everything together in the <strong>capstone project</strong>: an end-to-end design with
+        observability and operations integrated from day one.
+      </p>
+    </section>
+
+    <!-- ============== NEXT/PREV ============== -->
+    <nav class="next-prev" aria-label="Chapter navigation">
+      <a href="chapters/ch07.html" rel="prev">Previous: Security, Privacy &amp; Compliance by Design</a>
+      <a href="chapters/ch09.html" rel="next">Next: Capstone Project — End-to-End System Design</a>
+    </nav>
+
+    <!-- ============== HIDDEN CHECKLIST COMMENT ============== -->
+    <!--
+    - [x] theme.css+app.js loaded
+    - [x] <base> present & correct (../)
+    - [x] Canonical nav verbatim; active link handled by app.js
+    - [x] Pager prev/next valid (ch07 ↔ ch09)
+    - [x] ≥1,200 words; ≥2 examples; 1 case study; 1 compare/contrast; 1 analogy
+    - [x] Resources 3–6 with rationale
+    - [x] Practice 3–5 with time + success criteria
+    - [x] Mastery 5–7 with answers
+    - [x] ≥8 glossarized terms; ≥1 figure
+    - [x] Head/meta ok; no TODOs
+    -->
+  </main>
+</body>
+</html>

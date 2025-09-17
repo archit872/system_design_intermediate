@@ -1,0 +1,421 @@
+<!-- /chapters/glossary.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Glossary — System Design (Intermediate)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Alphabetical glossary of key system design terms with plain definitions, formal notes, pitfalls, and concrete examples.">
+  <meta property="og:title" content="Glossary — System Design (Intermediate)">
+  <meta property="og:description" content="Plain + formal definitions and examples for common system design concepts: CAP, CQRS, idempotency, circuit breakers, and more.">
+  <base href="../">
+  <link rel="stylesheet" href="styles/theme.css">
+  <script defer src="scripts/app.js"></script>
+</head>
+<body>
+  <!-- ================= NAV (Canonical; verbatim with active) ================= -->
+  <nav class="app-nav">
+    <div class="bar">
+      <div class="brand"><a href="index.html">System Design</a></div>
+      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
+      <div class="spacer"></div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="chapters/ch01.html">Chapters</a>
+        <a href="chapters/appendix.html">Appendix</a>
+        <a href="chapters/glossary.html" aria-current="page">Glossary</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="page-hero container">
+    <div class="badge">Glossary</div>
+    <h1>Glossary of Terms</h1>
+    <p>
+      Definitions follow a consistent pattern: <strong>Plain</strong> → <strong>Formal</strong> → <strong>Pitfall</strong> → <strong>Example</strong>.
+      Where useful, terms link to related chapters for deeper study.
+    </p>
+  </header>
+
+  <main class="container">
+    <!-- ================= A ================= -->
+    <section class="section">
+      <h2 id="A">A</h2>
+      <dl class="glossary">
+        <dt id="abac"><strong>ABAC (Attribute-Based Access Control)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Permissions decided by attributes (user role, time, location), not just fixed roles.</p>
+          <p><em>Formal:</em> Policy evaluation over subject, object, action, and environment attributes.</p>
+          <p><em>Pitfall:</em> Policy sprawl; hard to audit without tooling.</p>
+          <p><em>Example:</em> “Analysts can view reports only 09:00–18:00 IST from corp IPs.” (See Ch.7)</p>
+        </dd>
+
+        <dt id="acid"><strong>ACID</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Strong transaction guarantees in relational DBs.</p>
+          <p><em>Formal:</em> Atomicity, Consistency, Isolation, Durability.</p>
+          <p><em>Pitfall:</em> High contention + strict isolation can tank throughput.</p>
+          <p><em>Example:</em> Money transfer debits and credits either both happen or none. (Ch.4)</p>
+        </dd>
+
+        <dt id="api-gateway"><strong>API Gateway</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Front door for all APIs—auth, rate limits, routing.</p>
+          <p><em>Formal:</em> L7 mediator adding cross-cutting policies and observability.</p>
+          <p><em>Pitfall:</em> Becoming a monolith of logic instead of policy.</p>
+          <p><em>Example:</em> JWT verification + quota per API key. (Ch.3, Ch.6)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= C ================= -->
+    <section class="section">
+      <h2 id="C">C</h2>
+      <dl class="glossary">
+        <dt id="cap"><strong>CAP Theorem</strong></dt>
+        <dd>
+          <p><em>Plain:</em> In a partition, you must prefer Consistency or Availability.</p>
+          <p><em>Formal:</em> No distributed system can simultaneously guarantee C, A, and P.</p>
+          <p><em>Pitfall:</em> Treating CAP as a design recipe for normal operations.</p>
+          <p><em>Example:</em> Dynamo favors A; Spanner favors C with global time. (Ch.4–5)</p>
+        </dd>
+
+        <dt id="cdn"><strong>CDN (Content Delivery Network)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Caches content near users to cut latency.</p>
+          <p><em>Formal:</em> Edge PoPs serve cacheable objects with configurable TTL and validation.</p>
+          <p><em>Pitfall:</em> Forgetting cache keys/headers → stale or missed hits.</p>
+          <p><em>Example:</em> Cache-Control + ETag for product pages. (Ch.5)</p>
+        </dd>
+
+        <dt id="circuit-breaker"><strong>Circuit Breaker</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Fail fast after repeated errors to protect systems.</p>
+          <p><em>Formal:</em> Closed → Open → Half-open state machine guarding calls.</p>
+          <p><em>Pitfall:</em> Never resetting thresholds; flapping.</p>
+          <p><em>Example:</em> Open breaker for slow recommendations; serve baseline. (Ch.3, Ch.5)</p>
+        </dd>
+
+        <dt id="consistent-hashing"><strong>Consistent Hashing</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Spread keys across nodes so rebalancing moves few keys.</p>
+          <p><em>Formal:</em> Hash ring with virtual nodes to minimize key movement on membership change.</p>
+          <p><em>Pitfall:</em> Skew without enough virtual nodes.</p>
+          <p><em>Example:</em> Cache cluster with 200 vnodes per host. (Ch.5)</p>
+        </dd>
+
+        <dt id="cqrs"><strong>CQRS</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Separate write model from read models.</p>
+          <p><em>Formal:</em> Commands mutate authoritative state; queries read denormalized projections.</p>
+          <p><em>Pitfall:</em> Ceremony without need; rebuild complexity.</p>
+          <p><em>Example:</em> Orders write to SQL; analytics reads from pre-aggregated store. (Ch.6)</p>
+        </dd>
+
+        <dt id="crdt"><strong>CRDT</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Data types that merge without conflicts across replicas.</p>
+          <p><em>Formal:</em> Commutative/associative/idem. semilattices with monotone join.</p>
+          <p><em>Pitfall:</em> Hidden semantics; tombstone bloat.</p>
+          <p><em>Example:</em> Counter that merges offline edits on sync. (Ch.10)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= D ================= -->
+    <section class="section">
+      <h2 id="D">D</h2>
+      <dl class="glossary">
+        <dt id="dlq"><strong>DLQ (Dead Letter Queue)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Parking lot for messages that can’t be processed.</p>
+          <p><em>Formal:</em> Terminal retry destination with retention for manual/automated reprocessing.</p>
+          <p><em>Pitfall:</em> Letting DLQs fill without alerts.</p>
+          <p><em>Example:</em> Poison message with bad schema routed to DLQ. (Ch.3)</p>
+        </dd>
+
+        <dt id="denorm"><strong>Denormalization</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Duplicate data to speed reads.</p>
+          <p><em>Formal:</em> Intentional redundancy to optimize query patterns.</p>
+          <p><em>Pitfall:</em> Complex writes and drift without backfills.</p>
+          <p><em>Example:</em> Precomputed counts table for dashboards. (Ch.4)</p>
+        </dd>
+
+        <dt id="dist-tracing"><strong>Distributed Tracing</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Follow a request across services.</p>
+          <p><em>Formal:</em> Trace with spans, context propagation (e.g., W3C traceparent).</p>
+          <p><em>Pitfall:</em> Missing propagation at gateways.</p>
+          <p><em>Example:</em> Trace shows slow DB span → add index. (Ch.8)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= E ================= -->
+    <section class="section">
+      <h2 id="E">E</h2>
+      <dl class="glossary">
+        <dt id="event-sourcing"><strong>Event Sourcing</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Store events, derive current state by replay.</p>
+          <p><em>Formal:</em> Append-only event log + projections; snapshots bound replay time.</p>
+          <p><em>Pitfall:</em> Changing past events; slow rebuilds without snapshots.</p>
+          <p><em>Example:</em> Order lifecycle events rebuild order state. (Ch.6)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= H ================= -->
+    <section class="section">
+      <h2 id="H">H</h2>
+      <dl class="glossary">
+        <dt id="hedged"><strong>Hedged Requests</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Send a backup request after a threshold to cut tail latency.</p>
+          <p><em>Formal:</em> Time-based speculative execution with cancellation of losers.</p>
+          <p><em>Pitfall:</em> Doubling load; needs caps and adaptive thresholds.</p>
+          <p><em>Example:</em> Issue a second read after p95 latency elapses. (Ch.3, Ch.5)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= I ================= -->
+    <section class="section">
+      <h2 id="I">I</h2>
+      <dl class="glossary">
+        <dt id="idempotency"><strong>Idempotency</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Doing an action twice has the same effect as once.</p>
+          <p><em>Formal:</em> f(f(x)) = f(x) for requests with the same key/intent.</p>
+          <p><em>Pitfall:</em> Forgetting unique keys; duplicate side effects.</p>
+          <p><em>Example:</em> Create-payment with <code>Idempotency-Key</code> header. (Ch.3, Ch.5)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= J ================= -->
+    <section class="section">
+      <h2 id="J">J</h2>
+      <dl class="glossary">
+        <dt id="jitter"><strong>Jitter</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Randomness in backoff/expiry times.</p>
+          <p><em>Formal:</em> Randomized delay to decorrelate client behavior.</p>
+          <p><em>Pitfall:</em> Synchronised retries causing herds.</p>
+          <p><em>Example:</em> 50% jitter on 200ms backoff. (Ch.3, Ch.5)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= L ================= -->
+    <section class="section">
+      <h2 id="L">L</h2>
+      <dl class="glossary">
+        <dt id="lb"><strong>Load Balancer (L4/L7)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Shares traffic across instances.</p>
+          <p><em>Formal:</em> L4 (TCP/UDP) vs. L7 (HTTP-aware) routing with health checks.</p>
+          <p><em>Pitfall:</em> Sticky sessions hide statefulness; hurts scaling.</p>
+          <p><em>Example:</em> Envoy routing by path and header. (Ch.3)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= M ================= -->
+    <section class="section">
+      <h2 id="M">M</h2>
+      <dl class="glossary">
+        <dt id="microservices"><strong>Microservices</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Many small services with clear contracts.</p>
+          <p><em>Formal:</em> Independently deployable bounded contexts with network isolation.</p>
+          <p><em>Pitfall:</em> Ops overhead > benefits for small teams.</p>
+          <p><em>Example:</em> Payments split from monolith; gateway handles auth. (Ch.6)</p>
+        </dd>
+
+        <dt id="modular-monolith"><strong>Modular Monolith</strong></dt>
+        <dd>
+          <p><em>Plain:</em> One deploy with strict internal boundaries.</p>
+          <p><em>Formal:</em> Enforced module APIs and ownership within a single runtime.</p>
+          <p><em>Pitfall:</em> Sloppy boundaries → “big ball of mud.”</p>
+          <p><em>Example:</em> Catalog/Cart/Checkout modules in one app. (Ch.6)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= O ================= -->
+    <section class="section">
+      <h2 id="O">O</h2>
+      <dl class="glossary">
+        <dt id="oauth2"><strong>OAuth 2.0</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Let an app access your data without giving it your password.</p>
+          <p><em>Formal:</em> Authorization framework with grants (code, client credentials, etc.).</p>
+          <p><em>Pitfall:</em> Long-lived tokens and overly broad scopes.</p>
+          <p><em>Example:</em> Mobile app gets access token for profile API. (Ch.7)</p>
+        </dd>
+
+        <dt id="oidc"><strong>OIDC (OpenID Connect)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Identity layer on top of OAuth2.</p>
+          <p><em>Formal:</em> Standardized ID token (JWT) that asserts who the user is.</p>
+          <p><em>Pitfall:</em> Confusing ID tokens with access tokens.</p>
+          <p><em>Example:</em> Verify user identity at gateway. (Ch.7)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= Q ================= -->
+    <section class="section">
+      <h2 id="Q">Q</h2>
+      <dl class="glossary">
+        <dt id="quorum"><strong>Quorum</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Majority agreement before accepting reads/writes.</p>
+          <p><em>Formal:</em> Choose R, W with R+W &gt; N to guarantee intersecting replicas.</p>
+          <p><em>Pitfall:</em> Latency spikes when quorum is high under failure.</p>
+          <p><em>Example:</em> N=5, W=3, R=2 for analytics store. (Ch.5)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= R ================= -->
+    <section class="section">
+      <h2 id="R">R</h2>
+      <dl class="glossary">
+        <dt id="rate-limiting"><strong>Rate Limiting (Token Bucket)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Control how fast clients can call you.</p>
+          <p><em>Formal:</em> Bucket with capacity C and refill rate r; requests consume tokens.</p>
+          <p><em>Pitfall:</em> Global limits without per-tenant fairness.</p>
+          <p><em>Example:</em> 100 req/s burst, 20 req/s sustained per API key. (Ch.5)</p>
+        </dd>
+
+        <dt id="red-use"><strong>RED / USE</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Monitoring checklists: user path vs. resource health.</p>
+          <p><em>Formal:</em> RED = Rate, Errors, Duration; USE = Utilization, Saturation, Errors.</p>
+          <p><em>Pitfall:</em> Alerting on low-value causes rather than symptoms.</p>
+          <p><em>Example:</em> p95 latency + queue depth dashboards. (Ch.8)</p>
+        </dd>
+
+        <dt id="replication"><strong>Replication (Leader/Follower, Multi-Leader)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Keep copies of data for durability and scale.</p>
+          <p><em>Formal:</em> Single-leader, multi-leader, or leaderless quorum protocols.</p>
+          <p><em>Pitfall:</em> Conflict resolution and lag ignored.</p>
+          <p><em>Example:</em> Read replicas for product catalog. (Ch.4–5)</p>
+        </dd>
+
+        <dt id="retry-backoff"><strong>Retry with Exponential Backoff</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Try again later with growing delays.</p>
+          <p><em>Formal:</em> delay = base × factor^n ± jitter; cap attempts and total budget.</p>
+          <p><em>Pitfall:</em> Infinite retries causing storms.</p>
+          <p><em>Example:</em> 3 attempts, 50→100→200ms with 20% jitter. (Ch.3)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= S ================= -->
+    <section class="section">
+      <h2 id="S">S</h2>
+      <dl class="glossary">
+        <dt id="saga"><strong>Saga</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Break a big transaction into steps with compensations.</p>
+          <p><em>Formal:</em> Orchestrated/choreographed sequence with failure compensation.</p>
+          <p><em>Pitfall:</em> Missing compensations on partial failure.</p>
+          <p><em>Example:</em> Reserve inventory → charge card → on fail, release inventory. (Ch.6)</p>
+        </dd>
+
+        <dt id="sharding"><strong>Sharding (Partitioning)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Split a big dataset across machines.</p>
+          <p><em>Formal:</em> Range/hash/geo partitions with rebalancing and routing.</p>
+          <p><em>Pitfall:</em> Premature sharding; cross-shard joins.</p>
+          <p><em>Example:</em> Hash by user ID for messages. (Ch.4)</p>
+        </dd>
+
+        <dt id="sla-slo-sli"><strong>SLA / SLO / SLI</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Promise, target, and measurement of service quality.</p>
+          <p><em>Formal:</em> SLAs contractual; SLOs internal targets; SLIs metrics.</p>
+          <p><em>Pitfall:</em> Vanity metrics; unclear user journeys.</p>
+          <p><em>Example:</em> SLO 99.9% availability; SLI based on success rate &lt;200ms. (Ch.5, Ch.8)</p>
+        </dd>
+
+        <dt id="swr"><strong>Stale-While-Revalidate (SWR)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Serve stale cache while refreshing in background.</p>
+          <p><em>Formal:</em> HTTP directive allowing temporary stale responses on revalidation.</p>
+          <p><em>Pitfall:</em> Unbounded staleness without caps.</p>
+          <p><em>Example:</em> 60s SWR for celebrity profile to survive spikes. (Ch.5)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= T ================= -->
+    <section class="section">
+      <h2 id="T">T</h2>
+      <dl class="glossary">
+        <dt id="timeout"><strong>Timeout</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Give up waiting after a set time.</p>
+          <p><em>Formal:</em> Upper bound on synchronous wait; must align with user latency budget.</p>
+          <p><em>Pitfall:</em> No timeouts → hung threads, cascading failures.</p>
+          <p><em>Example:</em> 200ms per hop with overall 600ms budget. (Ch.3)</p>
+        </dd>
+
+        <dt id="tls"><strong>TLS</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Encrypts data in transit.</p>
+          <p><em>Formal:</em> TLS 1.2/1.3 with strong ciphers; mTLS for service-to-service auth.</p>
+          <p><em>Pitfall:</em> Mixed-mode plaintext inside perimeter; weak cert rotation.</p>
+          <p><em>Example:</em> mTLS between gateway and services. (Ch.7)</p>
+        </dd>
+
+        <dt id="token-bucket"><strong>Token Bucket</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Rate limit that allows bursts.</p>
+          <p><em>Formal:</em> Bucket capacity B refilled at rate r; request consumes one token.</p>
+          <p><em>Pitfall:</em> Shared bucket causes noisy neighbor.</p>
+          <p><em>Example:</em> Per-tenant buckets at gateway. (Ch.5)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= X–Z (misc) ================= -->
+    <section class="section">
+      <h2 id="XYZ">V–Z</h2>
+      <dl class="glossary">
+        <dt id="versioning"><strong>Versioning (APIs/Events)</strong></dt>
+        <dd>
+          <p><em>Plain:</em> Change interfaces without breaking clients.</p>
+          <p><em>Formal:</em> Backward-compatible schemas; additive fields; deprecation windows.</p>
+          <p><em>Pitfall:</em> Breaking changes without migration plan.</p>
+          <p><em>Example:</em> Add field with default; keep old consumers running. (Ch.6)</p>
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ================= NEXT/PREV ================= -->
+    <nav class="next-prev" aria-label="Chapter navigation">
+      <a href="chapters/appendix.html" rel="prev">← Previous: Appendix — Pitfalls, Checklists &amp; Progression</a>
+    </nav>
+
+    <!-- ================= HIDDEN CHECKLIST COMMENT ================= -->
+    <!--
+    - [x] theme.css+app.js loaded
+    - [x] <base> present & correct (../)
+    - [x] Canonical nav verbatim; active link set
+    - [x] Pager has only prev (glossary is last)
+    - [x] Alphabetical sections with Plain → Formal → Pitfall → Example
+    - [x] Terms cover chapters 1–10 themes for auto-linking
+    - [x] Head/meta ok; no TODOs
+    -->
+  </main>
+</body>
+</html>

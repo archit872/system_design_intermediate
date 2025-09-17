@@ -1,0 +1,442 @@
+<!-- /chapters/ch01.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chapter 1 — Introduction: From Fundamentals to Practical Competence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chapter 1 sets the tone for the Intermediate System Design course: bridging fundamentals to practical competence with trade-off thinking, evaluation criteria, and a learning strategy.">
+  <meta property="og:title" content="Chapter 1 — Introduction: From Fundamentals to Practical Competence">
+  <meta property="og:description" content="Bridge fundamentals to practical competence with trade-off thinking, evaluation criteria, and a learning strategy for real-world system design.">
+  <base href="../">
+  <link rel="stylesheet" href="styles/theme.css">
+  <script defer src="scripts/app.js"></script>
+</head>
+<body>
+  <!-- ================= NAV (Canonical; verbatim from index.html) ================= -->
+  <nav class="app-nav">
+    <div class="bar">
+      <div class="brand"><a href="index.html">System Design</a></div>
+      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
+      <div class="spacer"></div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="chapters/ch01.html" aria-current="page">Chapters</a>
+        <a href="chapters/appendix.html">Appendix</a>
+        <a href="chapters/glossary.html">Glossary</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="page-hero container">
+    <div class="badge">Chapter 1</div>
+    <h1>Introduction: From Fundamentals to Practical Competence</h1>
+    <p>
+      You’ve mastered the basics. This chapter reframes system design for the practitioner:
+      how to think in trade-offs, evaluate real-world constraints, and communicate decisions
+      crisply. By the end, you’ll have a rubric for intermediate competence and a study
+      strategy for the rest of the book.
+    </p>
+  </header>
+
+  <main class="container">
+    <!-- ============== PREREQS & OBJECTIVES ============== -->
+    <section class="section">
+      <div class="grid two-col">
+        <div class="card">
+          <h2>Prerequisites</h2>
+          <ul>
+            <li>Beginner-level design familiarity (components, request flow, basic data stores).</li>
+            <li>Comfort with core terms like <abbr title="The time for a single operation to complete">latency</abbr>,
+                <abbr title="Amount of work completed per unit time">throughput</abbr>, and
+                <abbr title="Rules about visibility and ordering of data">consistency</abbr>.</li>
+            <li>Ability to sketch simple architectures and reason about <abbr title="An intermediate memory layer that stores hot data">caching</abbr>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Learning Objectives</h2>
+          <ul>
+            <li>Bridge fundamentals to practical competence using a repeatable evaluation rubric.</li>
+            <li>Adopt a trade-off mindset across cost, reliability, and delivery speed.</li>
+            <li>Identify gaps between neat diagrams and messy production reality.</li>
+            <li>Plan how to use this book: pace, practice, and mastery checks.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 1: RECAP ============== -->
+    <section class="section">
+      <h2>1) Recap of Beginner End Goals</h2>
+      <h3>Core Vocabulary</h3>
+      <p>
+        At the beginner level you learned the language of system design: client, server,
+        <abbr title="A stateless interface to application logic transported over HTTP">API</abbr>,
+        database, cache, <abbr title="Replicating data across nodes for durability and availability">replication</abbr>,
+        <abbr title="Splitting data by key across nodes for scale">partitioning</abbr>, and
+        <abbr title="Balancers distribute traffic across instances">load balancer</abbr>.
+        That vocabulary remains essential, but Intermediate goes further: you’ll weigh the
+        <strong>trade-offs</strong> among these parts rather than merely naming them.
+      </p>
+
+      <h3>Basic Workflows</h3>
+      <p>
+        You traced request lifecycles end-to-end, from <abbr title="Domain Name System resolves domain names to IPs">DNS</abbr>
+        to app server to datastore, and back through a CDN. You explored snapshotting and
+        backups. Now you’ll connect those workflows to production realities like deploy
+        frequency, <abbr title="Service Level Objective, a target level of reliability">SLOs</abbr>, and
+        <abbr title="Operational burden that does not add enduring value">toil</abbr>.
+      </p>
+
+      <h3>Simple Case Studies</h3>
+      <p>
+        Beginner examples (URL shortener, news feed) emphasized correct decomposition. This
+        level emphasizes <em>fit-for-purpose</em>: is a <abbr title="A write-through cache ensures writes propagate to the backing store during writes">write-through cache</abbr>
+        appropriate, or will <abbr title="Writes go to the database first; cache is updated on read miss">cache-aside</abbr> simplify failure modes?
+        Should you aim for <abbr title="All clients see the same value immediately after a write">strong consistency</abbr> or accept
+        <abbr title="Clients may temporarily see stale values">eventual consistency</abbr> to meet latency goals?
+      </p>
+    </section>
+
+    <!-- ============== SECTION 2: TRANSITION ============== -->
+    <section class="section">
+      <h2>2) Transition to Intermediate Competence</h2>
+      <h3>From Concepts to Applied Practice</h3>
+      <p>
+        Practical systems live amid constraints: deadlines, budgets, legacy code, and
+        uneven traffic. Intermediate designers turn constraints into design inputs. You’ll
+        start each problem by clarifying <strong>workloads</strong> (read/write mix, burstiness),
+        <strong>data shape</strong> (size, access patterns), and <strong>failure domains</strong>
+        (zones, regions). This is where <abbr title="Controlling producer speed when consumers lag">backpressure</abbr>
+        and <abbr title="Operations that can be safely retried without unintended effects">idempotency</abbr> become everyday tools, not trivia.
+      </p>
+
+      <h3>Evaluating Trade-offs</h3>
+      <div class="callout info">
+        <h3>Trade-off Framework</h3>
+        <p>
+          For each option, articulate:
+          <strong>Objective</strong> (what metric improves),
+          <strong>Mechanism</strong> (how it works),
+          <strong>Risks</strong> (failure modes),
+          <strong>Cost</strong> (run + change),
+          <strong>Scope</strong> (blast radius).
+          If two options tie, prefer the one with <em>lower operational complexity</em>.
+        </p>
+      </div>
+
+      <h3>Analogy</h3>
+      <p>
+        Think of a system as a city’s transit network. Roads (APIs) connect neighborhoods
+        (services), traffic lights (rate limiters) keep intersections safe, and detours
+        (fallbacks) maintain flow during incidents. You can widen roads (scale vertically)
+        or build more roads (scale horizontally). But each new road adds maintenance.
+        Likewise, every added component improves something while increasing cognitive load.
+      </p>
+    </section>
+
+    <!-- ============== SECTION 3: SUCCESS CRITERIA ============== -->
+    <section class="section">
+      <h2>3) Success Criteria for Intermediate Level</h2>
+      <h3>Practical Design Reviews</h3>
+      <p>
+        Intermediate competence shows up in reviews. You define
+        <abbr title="Explicit, measurable targets for performance and reliability">SLIs/SLOs</abbr>,
+        propose <abbr title="Techniques like leader–follower, multi-primaries, or quorum reads/writes">replication strategies</abbr>,
+        and justify <abbr title="Policies controlling who can access what">authorization</abbr> plans. You specify
+        <abbr title="Contract for how clients authenticate and receive tokens">authN/authZ</abbr> flows,
+        outline <abbr title="Safe rollout methods such as blue/green and canary">deployment strategies</abbr>, and call out
+        <abbr title="Service Level Agreement, external reliability promise">SLAs</abbr> when relevant.
+      </p>
+
+      <h3>Handling Complexity</h3>
+      <p>
+        Complexity is inevitable; unmanaged complexity is a choice. You’ll use
+        <strong>module boundaries</strong>, <strong>well-scoped APIs</strong>, and
+        <strong>observability</strong> to constrain it. When you choose microservices, you’ll
+        also budget for <abbr title="Distributed tracing ties requests across process boundaries">tracing</abbr>,
+        <abbr title="Centralized log aggregation with contextual fields">structured logging</abbr>, and
+        <abbr title="Automatic health checks and restarts to keep services alive">self-healing</abbr>.
+      </p>
+
+      <h3>Communication</h3>
+      <p>
+        Intermediate designers communicate uncertainty explicitly. “We’ll accept
+        <abbr title="The system may return stale data for a bounded time">staleness</abbr> to reduce tail latency by 40%,
+        mitigated via a <abbr title="Technique to avoid cache stampedes by serving slightly stale data">stale-while-revalidate</abbr> cache and
+        <abbr title="Preventing many clients from refreshing the same key simultaneously">request coalescing</abbr>.”
+        That sentence demonstrates objective, mechanism, risk, and mitigation.
+      </p>
+    </section>
+
+    <!-- ============== SECTION 4: EXPECTATIONS & STRATEGY ============== -->
+    <section class="section">
+      <h2>4) Setting Expectations & Learning Strategy</h2>
+      <p>
+        Plan for 10–12 weeks, one chapter per week plus project time. Skim the chapter,
+        complete practice tasks, then tackle the mastery questions. For the capstone,
+        pick a domain you care about to keep motivation high. Document assumptions,
+        <strong>workload estimates</strong>, and <strong>risks</strong> as you go.
+      </p>
+      <p>
+        Keep a design journal. After each chapter, write one paragraph on what you
+        would change in last week’s design. Over time, your journal becomes a portfolio
+        of <em>trade-off decisions</em> you can cite in interviews or reviews.
+      </p>
+    </section>
+
+    <!-- ============== FIGURE ============== -->
+    <figure>
+      <svg viewBox="0 0 860 220" role="img" aria-label="From Fundamentals to Practical Competence diagram">
+        <rect x="0" y="0" width="860" height="220" fill="#0f141b" rx="12" />
+        <g font-family="ui-sans-serif,system-ui,Roboto,Inter,Arial" font-size="13" fill="#e6edf3">
+          <rect x="20" y="40" width="240" height="140" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="32" y="66">Fundamentals</text>
+          <text x="32" y="88" fill="#9fb0c3">Vocab, simple flows</text>
+          <text x="32" y="108" fill="#9fb0c3">Single-region, single DB</text>
+
+          <rect x="320" y="40" width="240" height="140" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="332" y="66">Trade-off Thinking</text>
+          <text x="332" y="88" fill="#9fb0c3">Cost vs. latency vs. risk</text>
+          <text x="332" y="108" fill="#9fb0c3">Ops &amp; observability</text>
+
+          <rect x="620" y="40" width="220" height="140" rx="10" fill="#111726" stroke="#1b2330"/>
+          <text x="632" y="66">Practical Competence</text>
+          <text x="632" y="88" fill="#9fb0c3">Designs meet SLOs</text>
+          <text x="632" y="108" fill="#9fb0c3">Clear risk mitigations</text>
+
+          <line x1="260" y1="110" x2="320" y2="110" stroke="#4cc2ff" stroke-width="3"/>
+          <polygon points="318,110 308,105 308,115" fill="#4cc2ff"/>
+          <line x1="560" y1="110" x2="620" y2="110" stroke="#7a87ff" stroke-width="3"/>
+          <polygon points="618,110 608,105 608,115" fill="#7a87ff"/>
+        </g>
+      </svg>
+      <figcaption>Progression from fundamentals → trade-off thinking → practical competence.</figcaption>
+    </figure>
+
+    <!-- ============== EXAMPLES ============== -->
+    <section class="section">
+      <h2>Examples</h2>
+      <h3>Example 1: Read-Heavy Feature Flag Service</h3>
+      <p>
+        Objective: millisecond reads worldwide, modest write rate. Option A uses a single
+        region with global <abbr title="Content Delivery Network for cached edge delivery">CDN</abbr> and
+        <abbr title="Edge Key-Value store or worker">edge KV</abbr> for reads, Option B uses multi-region databases with
+        <abbr title="Replicating data across regions">geo-replication</abbr>. A meets latency goals with lower cost but requires
+        careful <abbr title="Periodic refresh logic to ensure edge caches are up to date">refresh</abbr> logic and
+        <abbr title="Technique ensuring if multiple requests miss cache, only one goes to the origin">request coalescing</abbr>. B reduces staleness but increases write
+        complexity and <abbr title="Conflicting writes resolved via clocks or app logic">conflict resolution</abbr>.
+      </p>
+
+      <h3>Example 2: Payments Idempotency</h3>
+      <p>
+        Retrying a payment charge risks double-billing unless requests are <strong>idempotent</strong>.
+        Introduce a unique <code>Idempotency-Key</code> per logical operation. The server stores
+        the first result keyed by that token and returns it on duplicates, ensuring safe
+        retries under timeouts. This simple pattern is a hallmark of intermediate designs.
+      </p>
+      <pre class="code" data-lang="HTTP">
+POST /charge
+Idempotency-Key: 2f3e-93ea-...
+Body: {"user":"u1","amount":1200,"currency":"INR"}
+      </pre>
+    </section>
+
+    <!-- ============== COMPARE & CONTRAST ============== -->
+    <section class="section">
+      <h2>Compare &amp; Contrast: Sync vs. Async Workflows</h2>
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>Synchronous (Request/Response)</th><th>Asynchronous (Queues/Events)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Latency</td><td>Low perceived latency for simple work</td><td>Good for long tasks; user not blocked</td></tr>
+          <tr><td>Failure Modes</td><td>Upstream failures propagate immediately</td><td>Requires <abbr title="Handling duplicate deliveries safely">idempotency</abbr> + DLQs</td></tr>
+          <tr><td>Complexity</td><td>Simpler call graph</td><td>Higher operational complexity</td></tr>
+          <tr><td>Throughput</td><td>Limited by concurrency</td><td>Buffer spikes; smooth bursty traffic</td></tr>
+          <tr><td>Observability</td><td>Easy to trace single path</td><td>Requires end-to-end <abbr title="Unique correlation IDs for tracing flow">correlation IDs</abbr></td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        <strong>Trade-off:</strong> Use async to decouple and absorb bursts, but budget for <abbr title="Dead Letter Queue for poison messages">DLQs</abbr>,
+        reprocessing tools, and exactly-once semantics <em>where needed</em>.
+      </div>
+    </section>
+
+    <!-- ============== CASE STUDY ============== -->
+    <section class="section">
+      <h2>Case Study: Scaling a Notification Service (≈200 words)</h2>
+      <p>
+        A product team owns a notification service that delivers transactional emails and
+        push messages. Initially, a single app server writes to a relational DB and sends
+        via an SMTP provider. It works—until a product launch causes 50× spikes. The team
+        faces timeouts, retries, and duplicate sends. An intermediate-level response starts
+        with workload characterization: bursts up to 1M notifications/hour, regional mix,
+        retries from upstream services. The team introduces a message broker to decouple
+        producers from senders, adds <strong>idempotency keys</strong>, and employs
+        <strong>rate limiting</strong> per channel to protect providers. They introduce
+        <strong>DLQs</strong> for malformed payloads and build a <strong>replay tool</strong> guarded by
+        <strong>auditing</strong>. Storage moves to a write-optimized log for event history and a
+        query-optimized store for user preferences. Observability adds RED metrics, tracing
+        with correlation IDs, and an on-call runbook. The outcome: predictable latency at
+        p95 under burst, reduced duplicates, and a recovery process during incidents.
+        <em>Trade-off</em>: higher operational complexity and costs, offset by business criticality.
+      </p>
+    </section>
+
+    <!-- ============== RESOURCES ============== -->
+    <section class="section">
+      <h2>Recommended Resources &amp; Why They Matter</h2>
+      <div class="resource-list">
+        <div class="item">
+          <div>
+            <strong>Designing Data-Intensive Applications (Ch.1–2)</strong>
+            <div class="meta">Grounds core vocabulary and mental models; aligns with our evaluation rubric.</div>
+          </div>
+        </div>
+        <div class="item">
+          <div>
+            <strong>Grokking the System Design Interview (selected cases)</strong>
+            <div class="meta">Concise scenarios to practice decomposition and trade-offs quickly.</div>
+          </div>
+        </div>
+        <div class="item">
+          <div>
+            <strong>Google SRE Book (Intro + SLIs/SLOs)</strong>
+            <div class="meta">Connects designs to reliability targets you can measure and defend.</div>
+          </div>
+        </div>
+        <div class="item">
+          <div>
+            <strong>High Scalability blog (curated articles)</strong>
+            <div class="meta">Real outage and scaling stories that expose messy, practical constraints.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== PRACTICE TASKS ============== -->
+    <section class="section practice">
+      <h2>Practice</h2>
+
+      <div class="task">
+        <h3>Reflection: “What trade-offs did I miss in my last design?”</h3>
+        <p class="meta"><span>⏱️ 20–30 min</span> · <span>Success: at least 3 missed trade-offs and 1 mitigation each</span></p>
+        <p>Review a recent design. For each decision, write one benefit, one cost, and a mitigation you would add now.</p>
+      </div>
+
+      <div class="task">
+        <h3>Architecture Walkthrough: Daily System</h3>
+        <p class="meta"><span>⏱️ 40–50 min</span> · <span>Success: diagram with components, data stores, and failure points</span></p>
+        <p>Choose a system you use daily (e.g., food delivery). Sketch client, gateway, services, storage, and external providers.
+           Label <abbr title="Service Level Objective">SLOs</abbr> and identify one single point of failure and its mitigation.</p>
+      </div>
+
+      <div class="task">
+        <h3>Trade-off Table</h3>
+        <p class="meta"><span>⏱️ 30–40 min</span> · <span>Success: a table with 3 options × 5 criteria</span></p>
+        <p>Create a table comparing three caching strategies (cache-aside, write-through, write-back) across latency, consistency,
+           failure modes, complexity, and cost. Recommend one for a read-heavy dashboard.</p>
+      </div>
+    </section>
+
+    <!-- ============== MASTERY CHECK ============== -->
+    <section class="section mastery">
+      <h2>Mastery Check</h2>
+      <div class="quiz-controls">
+        <button class="btn" data-quiz-toggle="open">Open all answers</button>
+        <button class="btn" data-quiz-toggle="close">Close all</button>
+      </div>
+
+      <details>
+        <summary>1) Name 3 gaps between beginner designs and production-ready designs.</summary>
+        <div>
+          <ul>
+            <li>Missing <strong>reliability</strong> mechanisms (retries with backoff, <abbr title="Prevent cascading failures by opening the circuit on repeated errors">circuit breakers</abbr>).</li>
+            <li>No explicit <strong>SLIs/SLOs</strong> or capacity plan (limits unknown, no error budgets).</li>
+            <li>Insufficient <strong>observability</strong> (metrics, traces, structured logs) to diagnose incidents.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>2) When would you accept eventual consistency?</summary>
+        <div>
+          <p>When user impact of staleness is low and the win in latency/availability is high—for example, profile counts, feed likes,
+             or analytics dashboards. Provide user-visible hints (e.g., “about 1 min ago”) and reconciliation jobs.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>3) Give a concrete use of idempotency keys outside payments.</summary>
+        <div>
+          <p>Account creation, message sends, or inventory reservations. The first successful result is cached by key; retries return
+             the same outcome, preventing duplicates under timeouts.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>4) What makes an option “operationally expensive” even if cheap to build?</summary>
+        <div>
+          <p>High <strong>run cost</strong> of care/feeding: pages, manual workflows, frequent tuning, complex upgrades, or hidden
+             coupling that breaks during deploys. Prefer options with smaller <em>blast radius</em> and clearer rollback paths.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>5) How do you express uncertainty responsibly in a design review?</summary>
+        <div>
+          <p>State the assumption, impact, and a plan to validate: “Assuming p95 &lt; 120ms; if traces show p99 &gt; 500ms during spikes,
+             we’ll increase read cache TTL and enable request coalescing; re-review after week 1.”</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>6) Which metric trio (RED) would you choose for an API gateway and why?</summary>
+        <div>
+          <p><strong>Rate</strong> (RPS), <strong>Errors</strong> (4xx/5xx), and <strong>Duration</strong> (latency percentiles).
+             They capture load, correctness, and speed—the essentials for user experience and capacity planning.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============== RECAP & NEXT STEPS ============== -->
+    <section class="section">
+      <h2>Recap</h2>
+      <p>
+        Intermediate system design is not about memorizing patterns; it’s about <em>reasoned choice</em>.
+        You learned a trade-off framework, saw examples where idempotency and async workflows matter,
+        and practiced articulating costs and risks. Keep your design journal active.
+      </p>
+      <h3>Next Steps</h3>
+      <p>
+        Proceed to Chapter 2 to deepen core building blocks: clients, servers, APIs, and middleware.
+        Bring the trade-off lens you developed here—you’ll use it immediately when choosing between
+        REST and gRPC, stateless and stateful services, and queues versus streams.
+      </p>
+    </section>
+
+    <!-- ============== NEXT/PREV ============== -->
+    <nav class="next-prev" aria-label="Chapter navigation">
+      <span></span>
+      <a href="chapters/ch02.html" rel="next">Next: Designing Core Building Blocks of Systems</a>
+    </nav>
+
+    <!-- ============== HIDDEN CHECKLIST COMMENT ============== -->
+    <!--
+    Checklist
+    - [x] theme.css+app.js loaded
+    - [x] <base> present & correct (../)
+    - [x] Canonical nav verbatim; active link set via aria-current
+    - [x] Pager prev/next valid (first chapter: no prev; next → ch02)
+    - [x] Sections meet Depth minima (≥1,200 words; examples; compare/contrast; analogy)
+    - [x] Resources 3–6 with rationale
+    - [x] Practice 3–5 with time + success criteria
+    - [x] Mastery 5–7 with answers in <details>
+    - [x] ≥8 glossarized terms; ≥1 figure
+    - [x] Head/meta ok; no TODOs
+    -->
+  </main>
+</body>
+</html>

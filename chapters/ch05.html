@@ -1,0 +1,395 @@
+<!-- /chapters/ch05.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chapter 5 — Scaling & Reliability Strategies</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Scale systems horizontally, apply caching layers, plan replication and failover, and design for reliability with idempotency, quorums, and SLAs.">
+  <meta property="og:title" content="Chapter 5 — Scaling & Reliability Strategies">
+  <meta property="og:description" content="Techniques for horizontal scaling, multi-layer caching, replication/failover, and reliability mechanisms like idempotency and quorum decisions.">
+  <base href="../">
+  <link rel="stylesheet" href="styles/theme.css">
+  <script defer src="scripts/app.js"></script>
+</head>
+<body>
+  <!-- ================= NAV (Canonical; verbatim) ================= -->
+  <nav class="app-nav">
+    <div class="bar">
+      <div class="brand"><a href="index.html">System Design</a></div>
+      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
+      <div class="spacer"></div>
+      <div class="links">
+        <a href="index.html">Home</a>
+        <a href="chapters/ch01.html">Chapters</a>
+        <a href="chapters/appendix.html">Appendix</a>
+        <a href="chapters/glossary.html">Glossary</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="page-hero container">
+    <div class="badge">Chapter 5</div>
+    <h1>Scaling &amp; Reliability Strategies</h1>
+    <p>
+      Systems evolve from “works on my laptop” to “serves millions—reliably.” This chapter
+      equips you with a practical toolkit: <strong>horizontal scaling</strong>, multi-layer
+      <strong>caching</strong>, <strong>replication &amp; failover</strong>, and reliability
+      mechanisms like <strong>idempotency</strong>, <strong>quorums</strong>, and <strong>SLAs/SLOs</strong>.
+      You’ll learn to plan growth, tame tail latencies, and keep promises during failures.
+    </p>
+  </header>
+
+  <main class="container">
+    <!-- ============== PREREQS & OBJECTIVES ============== -->
+    <section class="section">
+      <div class="grid two-col">
+        <div class="card">
+          <h2>Prerequisites</h2>
+          <ul>
+            <li>Comfort with request lifecycles and basic storage patterns (Ch.3–4).</li>
+            <li>Familiarity with caching concepts and replication terminology.</li>
+            <li>Ability to estimate workloads (RPS, data size, fan-out).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Learning Objectives</h2>
+          <ul>
+            <li>Contrast horizontal vs. vertical scaling with cost &amp; operability in mind.</li>
+            <li>Apply client/CDN/app/DB caching with cache-miss protection.</li>
+            <li>Design replication/failover topologies across zones/regions.</li>
+            <li>Use idempotency, quorums, and SLAs to engineer reliability.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 1: HORIZONTAL VS. VERTICAL ============== -->
+    <section class="section">
+      <h2>1) Horizontal vs. Vertical Scaling</h2>
+      <p>
+        <strong>Vertical scaling</strong> (bigger machines) is simple but hits hardware ceilings and
+        raises blast radius. <strong>Horizontal scaling</strong> (more instances) improves resilience and
+        cost elasticity, but demands <abbr title="Stateless processes where state is externalized">statelessness</abbr>,
+        <abbr title="Distributing requests across instances">load balancing</abbr>, and <abbr title="Coordinating configuration and rollout across many nodes">orchestration</abbr>.
+      </p>
+      <div class="callout info">
+        <h3>Scaling Heuristic</h3>
+        <p>Scale vertically to buy time; invest horizontally for durability. Make vertical steps small and reversible; design for horizontal from day one.</p>
+      </div>
+      <h3>Example: Search API</h3>
+      <p>
+        A search service saturates CPU at 70% during peak. Vertical: move to a larger node—quick win but cost spikes 2×.
+        Horizontal: add 3 read replicas behind a balancer; shard the index by tenant. Result: better p99 with graceful degradation.
+      </p>
+      <figure>
+        <svg role="img" aria-label="Horizontal vs vertical scaling" viewBox="0 0 880 240">
+          <rect x="0" y="0" width="880" height="240" rx="12" fill="#0f141b"/>
+          <g fill="#e6edf3" font-family="ui-sans-serif,system-ui,Roboto,Inter,Arial" font-size="12">
+            <rect x="40" y="60" width="130" height="120" rx="10" fill="#111726" stroke="#1b2330"/>
+            <text x="58" y="125">Vertical ↑</text>
+            <rect x="260" y="60" width="130" height="50" rx="10" fill="#111726" stroke="#1b2330"/>
+            <rect x="260" y="130" width="130" height="50" rx="10" fill="#111726" stroke="#1b2330"/>
+            <text x="282" y="125">Horizontal →</text>
+            <line x1="190" y1="120" x2="250" y2="120" stroke="#4cc2ff" stroke-width="3"/>
+            <polygon points="248,120 238,115 238,125" fill="#4cc2ff"/>
+          </g>
+        </svg>
+        <figcaption>Vertical increases a single node’s capacity; horizontal multiplies nodes to share load.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============== SECTION 2: CACHING STRATEGIES ============== -->
+    <section class="section">
+      <h2>2) Caching Strategies (Client, CDN, Application, DB)</h2>
+      <p>
+        Caches reduce latency and load. Use them at multiple layers with crystal-clear <strong>invalidation</strong>.
+        Common patterns include <strong>cache-aside</strong> (fetch on miss), <strong>write-through</strong> (write to cache &amp; DB),
+        and <strong>write-back</strong> (write to cache; async flush to DB).
+      </p>
+      <div class="grid two-col">
+        <div>
+          <h3>Client &amp; CDN</h3>
+          <p>
+            Leverage HTTP caching (<code>Cache-Control</code>, <code>ETag</code>). Use <strong>CDN</strong> for static and cacheable dynamic content.
+            Apply <strong>stale-while-revalidate</strong> to serve responses while refreshing in background, and <strong>request coalescing</strong>
+            to avoid stampedes.
+          </p>
+        </div>
+        <div>
+          <h3>Application &amp; DB</h3>
+          <p>
+            In-memory caches (per-instance) are fastest but not shared; distributed caches (Redis/Memcached) share heat.
+            For DB caching, index hot queries and consider materialized views for read-heavy analytics.
+          </p>
+        </div>
+      </div>
+      <h3>Compare &amp; Contrast: Cache-Aside vs. Write-Through vs. Write-Back</h3>
+      <table>
+        <thead><tr><th>Pattern</th><th>Pros</th><th>Cons</th><th>Best For</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Cache-Aside</td>
+            <td>Simple; avoids stale writes</td>
+            <td>Cold-start misses; stampede risk</td>
+            <td>General read-heavy workloads</td>
+          </tr>
+          <tr>
+            <td>Write-Through</td>
+            <td>Read hits immediately fresh</td>
+            <td>Write latency increases</td>
+            <td>Moderate write rates; freshness critical</td>
+          </tr>
+          <tr>
+            <td>Write-Back</td>
+            <td>Fast writes; batch to DB</td>
+            <td>Durability risk; complex recovery</td>
+            <td>High write bursts with tolerance for delay</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        <strong>Trade-off:</strong> More caching boosts performance but complicates correctness.
+        Document TTLs, invalidation triggers, and fallbacks for cache outages.
+      </div>
+
+      <h3>Example: API Hot Key Protection</h3>
+      <p>
+        A celebrity profile drives a “hot key.” Deploy <strong>soft TTL</strong> + <strong>coalescing</strong> and serve
+        <em>stale-while-revalidate</em> for 60s to cap origin load. Add <strong>hedged reads</strong> from replicas for p99.
+      </p>
+    </section>
+
+    <!-- ============== SECTION 3: REPLICATION & FAILOVER ============== -->
+    <section class="section">
+      <h2>3) Replication &amp; Failover</h2>
+      <p>
+        Replication increases <strong>durability</strong> and <strong>read scale</strong>; failover preserves availability during outages.
+        Choose a topology per <strong>failure domain</strong> (host, zone, region).
+      </p>
+      <h3>Topologies</h3>
+      <ul>
+        <li><strong>Leader–Follower:</strong> Simple writes, read replicas; promote on failure.</li>
+        <li><strong>Multi-Leader:</strong> Writes in multiple regions; needs conflict resolution.</li>
+        <li><strong>Leaderless / Quorum:</strong> Clients write to N nodes; reads/writes require quorum.</li>
+      </ul>
+      <h3>Failover Playbook</h3>
+      <ol>
+        <li>Detect: health checks &amp; SLO-based alerts.</li>
+        <li>Isolate: drain traffic; trip <strong>circuit breakers</strong>.</li>
+        <li>Promote: automate failover with <abbr title="Recovery Point Objective">RPO</abbr>/<abbr title="Recovery Time Objective">RTO</abbr> budgets.</li>
+        <li>Reintegrate: catch-up replicas; verify data parity; untrip breakers.</li>
+      </ol>
+      <figure>
+        <img src="../assets/ch05-replication-topologies.svg" alt="Leader-follower, multi-leader, and quorum replication topologies">
+        <figcaption>Replication options vary in complexity, latency, and conflict risk.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============== SECTION 4: RELIABILITY MECHANISMS ============== -->
+    <section class="section">
+      <h2>4) Reliability Mechanisms: Idempotency, Quorums, SLAs</h2>
+      <h3>Idempotency</h3>
+      <p>
+        Retries are inevitable. Make writes idempotent by <strong>deduplicating</strong> with an <code>Idempotency-Key</code>,
+        <strong>upserts</strong>, or state-machine guards. For non-idempotent flows (e.g., money moves), coordinate with a
+        <strong>transactional outbox</strong> and exactly-once consumer semantics—or reconciliations.
+      </p>
+
+      <h3>Quorum Decisions</h3>
+      <p>
+        With replication factor N, choose read quorum R and write quorum W such that <strong>R + W &gt; N</strong> to guarantee
+        intersection. Tune R/W for latency vs. consistency. For write-heavy systems, use low W; for read-heavy dashboards,
+        use low R with read-repair.
+      </p>
+
+      <h3>SLIs, SLOs, SLAs</h3>
+      <p>
+        Define <strong>SLIs</strong> (latency, availability, error rate), set <strong>SLOs</strong> (targets), and—if external—publish <strong>SLAs</strong> (promises).
+        Use <strong>error budgets</strong> to balance reliability and feature velocity: when budget burns fast, slow changes and invest in hardening.
+      </p>
+
+      <h3>Analogy: Airline Operations</h3>
+      <p>
+        Airlines (systems) plan capacity (scaling), keep spares (replicas), reroute during weather (failover), and track on-time performance (SLOs).
+        Overbooking (optimistic planning) works until a storm (outage) demands quick reassignments (traffic steering) and passenger care (fallback UX).
+      </p>
+    </section>
+
+    <!-- ============== PATTERNS & EXAMPLES ============== -->
+    <section class="section">
+      <h2>Patterns in Practice</h2>
+
+      <h3>Example 1: Token Bucket Rate Limiting</h3>
+      <p>
+        Protect backends with a <strong>token bucket</strong> per user or key. Bursts are allowed within capacity; sustained
+        excess is throttled. Emit metrics to observe fairness. Keep enforcement at the edge/gateway to reduce waste.
+      </p>
+
+      <h3>Example 2: Read/Write Split with Fallback</h3>
+      <p>
+        For mixed workloads, route reads to replicas, writes to primary. On replica lag, fallback critical reads to primary
+        and mark “freshness” in the response. Monitor <strong>replication lag</strong> and expose a <code>X-Data-Staleness</code> header.
+      </p>
+
+      <pre class="code" data-lang="Pseudo">
+if (isRead && replicaLag &lt;= 500ms) routeTo(replica)
+else routeTo(primary)
+addHeader("X-Data-Staleness", replicaLag)
+      </pre>
+    </section>
+
+    <!-- ============== COMPARE & CONTRAST ============== -->
+    <section class="section">
+      <h2>Compare &amp; Contrast: Active–Active vs. Active–Passive</h2>
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>Active–Active (Multi-Region)</th><th>Active–Passive (Warm Standby)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Availability</td><td>Highest; traffic served in multiple regions</td><td>Good; failover on primary loss</td></tr>
+          <tr><td>Consistency</td><td>Hard (conflicts, latency)</td><td>Easier (single write master)</td></tr>
+          <tr><td>Cost</td><td>Highest (duplicate capacity)</td><td>Lower (idle capacity)</td></tr>
+          <tr><td>Operations</td><td>Complex routing &amp; reconciliation</td><td>Simpler runbook; tested failover needed</td></tr>
+          <tr><td>Best For</td><td>Global low-latency, tolerant of eventual consistency</td><td>Strong consistency, regional apps</td></tr>
+        </tbody>
+      </table>
+      <div class="callout success">
+        <strong>Guideline:</strong> Start Active–Passive; earn Active–Active with experience and a clear cross-region data strategy.
+      </div>
+    </section>
+
+    <!-- ============== CASE STUDY ============== -->
+    <section class="section">
+      <h2>Case Study: Scaling a Live-Streaming Platform (≈220 words)</h2>
+      <p>
+        A live-streaming startup targets cricket matches with sudden peaks: from 50k to 2M concurrent viewers within minutes.
+        Early design: a monolith with a single-region origin and a CDN. Symptoms: origin CPU thrash, cache-miss storms at
+        inning breaks, and p99 spikes. The team’s intermediate-level redesign started with <strong>workload modeling</strong>:
+        2M concurrent viewers, 3–6 Mbps per stream, and global distribution leaning to APAC. They moved to <strong>origin
+        sharding</strong>—multiple stateless packagers behind an L4 balancer—and pushed <strong>just-in-time packaging</strong> to reduce
+        origin storage. A multi-CDN strategy with <strong>orchestrated failover</strong> handled regional outages. To prevent
+        stampedes, they enabled CDN <strong>stale-while-revalidate</strong> and <strong>request coalescing</strong>. For control plane APIs
+        (auth/playlists), they added <strong>token bucket</strong> limits and <strong>hedged reads</strong> from regionally local replicas.
+        Data and state moved to a quorum store (N=5, R=2, W=3) to balance read latency with acceptable write costs. Observability
+        adopted the RED method at each hop, with synthetic probes from Mumbai, Singapore, and Frankfurt. Result: stable p95 under
+        target during peak, tolerable staleness on playlist edges, and automatic CDN failover during a provider incident. Trade-off:
+        higher infra spend and operational complexity, offset by retention and ad revenue gains. The key was engineering for bursts,
+        not averages, and embracing layered caching and quorum decisions.
+      </p>
+    </section>
+
+    <!-- ============== RESOURCES ============== -->
+    <section class="section">
+      <h2>Recommended Resources &amp; Why</h2>
+      <div class="resource-list">
+        <div class="item">
+          <div><strong>Cloudflare CDN Docs</strong></div>
+          <div class="meta">Edge caching patterns, cache key tuning, and stale-while-revalidate strategies.</div>
+        </div>
+        <div class="item">
+          <div><strong>Google SRE Book / Workbook</strong></div>
+          <div class="meta">SLIs/SLOs, error budgets, and incident response patterns that turn theory into operations.</div>
+        </div>
+        <div class="item">
+          <div><strong>“Release It!”</strong></div>
+          <div class="meta">Bulkheads, circuit breakers, and patterns to survive production instability.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== PRACTICE TASKS ============== -->
+    <section class="section practice">
+      <h2>Practice</h2>
+
+      <div class="task">
+        <h3>Add Caching to an API</h3>
+        <p class="meta"><span>⏱️ 45–60 min</span> · <span>Success: defined TTLs, validation (ETag/Last-Modified), coalescing for hot keys</span></p>
+        <p>Pick a read-heavy endpoint. Propose cache layers (client, CDN, app). Define invalidation triggers and failure behavior when cache is down.</p>
+      </div>
+
+      <div class="task">
+        <h3>Create a Failover Strategy</h3>
+        <p class="meta"><span>⏱️ 40–60 min</span> · <span>Success: RPO/RTO targets, promotion steps, smoke tests, rollback plan</span></p>
+        <p>Write a 1-page runbook for DB leader failure across zones. Include automation hooks and observability checkpoints.</p>
+      </div>
+
+      <div class="task">
+        <h3>Quorum Tuning</h3>
+        <p class="meta"><span>⏱️ 25–35 min</span> · <span>Success: N/R/W selection justified by latency/consistency goals</span></p>
+        <p>For a metrics store (write-heavy), choose N/R/W and defend your choice. Describe read-repair and anti-entropy plans.</p>
+      </div>
+    </section>
+
+    <!-- ============== MASTERY CHECK ============== -->
+    <section class="section mastery">
+      <h2>Mastery Check</h2>
+      <div class="quiz-controls">
+        <button class="btn" data-quiz-toggle="open">Open all answers</button>
+        <button class="btn" data-quiz-toggle="close">Close all</button>
+      </div>
+
+      <details>
+        <summary>1) When is vertical scaling the right choice?</summary>
+        <div><p>Short-term relief or licensing constraints where horizontal scaling is infeasible. Use it to buy time while designing horizontal paths.</p></div>
+      </details>
+
+      <details>
+        <summary>2) How do you prevent cache stampedes?</summary>
+        <div><p>Use request coalescing, soft TTLs with stale-while-revalidate, jittered expirations, and backpressure on misses.</p></div>
+      </details>
+
+      <details>
+        <summary>3) Active–active risks and mitigations?</summary>
+        <div><p>Conflicts and split brain. Mitigate via conflict-free data types, per-region ownership, or routing affinity; strong tests and reconciliation jobs.</p></div>
+      </details>
+
+      <details>
+        <summary>4) Example of idempotency outside payments?</summary>
+        <div><p>Email sends, user signup, inventory reservations—dedupe with idempotency keys or unique constraints and return prior result on retries.</p></div>
+      </details>
+
+      <details>
+        <summary>5) Pick N/R/W for a read-heavy analytics dashboard and justify.</summary>
+        <div><p>Example: N=5, R=2, W=3 for fast reads with acceptable write latency; read-repair fixes inconsistencies in the background.</p></div>
+      </details>
+
+      <details>
+        <summary>6) What is an error budget and how does it guide decisions?</summary>
+        <div><p>Allowed unreliability given an SLO. If burned fast, slow changes and prioritize reliability work; if healthy, invest in features.</p></div>
+      </details>
+    </section>
+
+    <!-- ============== RECAP & NEXT STEPS ============== -->
+    <section class="section">
+      <h2>Recap &amp; Next Steps</h2>
+      <p>
+        You learned how to scale horizontally, deploy layered caching, replicate safely, and design for reliability with
+        idempotency, quorums, and SLOs. Next, Chapter 6 applies these tools to <strong>design patterns &amp; trade-offs</strong>
+        found in real systems—microservices vs. monoliths, event-driven designs, and CQRS.
+      </p>
+    </section>
+
+    <!-- ============== NEXT/PREV ============== -->
+    <nav class="next-prev" aria-label="Chapter navigation">
+      <a href="chapters/ch04.html" rel="prev">Previous: Data Management &amp; Storage Patterns</a>
+      <a href="chapters/ch06.html" rel="next">Next: Design Patterns &amp; Trade-offs in Real Systems</a>
+    </nav>
+
+    <!-- ============== HIDDEN CHECKLIST COMMENT ============== -->
+    <!--
+    - [x] theme.css+app.js loaded
+    - [x] <base> present & correct (../)
+    - [x] Canonical nav verbatim; active link set by app.js
+    - [x] Pager prev/next valid (ch04 ↔ ch06)
+    - [x] ≥1,200 words; ≥2 examples; 1 case study; compare/contrast; analogy
+    - [x] Resources 3–6 with rationale
+    - [x] Practice 3–5 with time + success criteria
+    - [x] Mastery 5–7 with answers
+    - [x] ≥8 terms glossarized; ≥1 figure
+    - [x] Head/meta ok; no TODOs
+    -->
+  </main>
+</body>
+</html>
