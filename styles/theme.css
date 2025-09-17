@@ -422,4 +422,57 @@ abbr[title]{
 }
 
 
+/* ==== Container & Layout Fixes (center alignment) ==== */
 
+/* Center content columns site-wide */
+.container {
+  max-width: var(--maxw);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+/* Center the nav’s inner bar the same way */
+.app-nav .bar {
+  max-width: var(--maxw);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Center the page hero’s text and badge */
+.page-hero {
+  text-align: center;
+  margin-top: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.page-hero .badge {
+  display: inline-block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Make figures in hero/sections center within the grid */
+figure,
+.page-hero img,
+.page-hero svg {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Optional: keep section grids nicely centered */
+.grid.two-col {
+  max-width: var(--maxw);
+  margin-left: auto;
+  margin-right: auto;
+  gap: 1.25rem;
+}
+
+/* Ensure tables don’t stretch oddly; center inside container */
+table {
+  margin-left: auto;
+  margin-right: auto;
+}
