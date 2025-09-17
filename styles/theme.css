@@ -179,7 +179,7 @@ hr{
    Hero
    ========================= */
 .page-hero{
-  margin: 24px auto 18px;
+  margin: 24px 0 18px;
   padding:24px;
   text-align:center;
   background: radial-gradient(1100px 600px at 10% -20%, rgba(76,194,255,0.12), transparent 60%),
@@ -198,7 +198,7 @@ hr{
   font-size:0.85rem;
   margin-bottom:10px;
 }
-.page-hero p{ max-width: 72ch; margin-inline:auto; }
+.page-hero p{ max-width: 72ch; }
 
 /* =========================
    Cards & Callouts
