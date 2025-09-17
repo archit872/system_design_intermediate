@@ -179,7 +179,7 @@ hr{
    Hero
    ========================= */
 .page-hero{
-  margin: 24px 0 18px;
+  margin: 24px auto 18px;
   padding:24px;
   text-align:center;
   background: radial-gradient(1100px 600px at 10% -20%, rgba(76,194,255,0.12), transparent 60%),
