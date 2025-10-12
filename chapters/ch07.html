@@ -1,12 +1,12 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 07 — Security and Compliance in Distributed Systems</title>
+  <title>Chapter 07 â€” Security and Compliance in Distributed Systems</title>
   <meta name="description" content="Practical security for distributed systems: identity & access (OAuth2/OIDC, JWT, service accounts), data protection (TLS, encryption at rest, key management), network defense (zero trust, meshes), and compliance (SOC2, GDPR, PCI DSS).">
-  <meta property="og:title" content="Chapter 07 — Security and Compliance in Distributed Systems">
+  <meta property="og:title" content="Chapter 07 â€” Security and Compliance in Distributed Systems">
   <meta property="og:description" content="Design secure-by-default APIs and services with modern IAM, encryption, network controls, and compliance practices, with worked examples and a secure API checkpoint.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design â€” Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -36,7 +36,7 @@
         <span class="badge">Security &amp; Compliance</span>
       </div>
       <h1>Security and Compliance in Distributed Systems</h1>
-      <p class="abstract">Security is not a feature you bolt on; it’s a set of constraints and habits that shape every design choice. In this chapter you’ll implement identity and access management that scales (OAuth2/OIDC, JWT, service/workload identities), protect data in motion and at rest with sane defaults (TLS 1.3, envelope encryption, secrets management), defend networks beyond the perimeter (zero trust, service meshes), and align engineering work with compliance programs (SOC&nbsp;2, GDPR, PCI DSS). The goal: <em>secure by default</em> and <em>compliant by construction</em>, without paralyzing delivery.</p>
+      <p class="abstract">Security is not a feature you bolt on; itâ€™s a set of constraints and habits that shape every design choice. In this chapter youâ€™ll implement identity and access management that scales (OAuth2/OIDC, JWT, service/workload identities), protect data in motion and at rest with sane defaults (TLS 1.3, envelope encryption, secrets management), defend networks beyond the perimeter (zero trust, service meshes), and align engineering work with compliance programs (SOC&nbsp;2, GDPR, PCI DSS). The goal: <em>secure by default</em> and <em>compliant by construction</em>, without paralyzing delivery.</p>
     </div>
   </header>
 
@@ -44,32 +44,32 @@
     <!-- 07.1 -->
     <section class="section" id="ch07-1">
       <h2>07.1 Identity and Access Management</h2>
-      <p id="ch07-1-why">Why it matters: Most breaches are not due to exotic zero-days—they’re authz mistakes, key leaks, and confused deputy problems. Correct identity and access foundations prevent whole classes of incidents.</p>
+      <p id="ch07-1-why">Why it matters: Most breaches are not due to exotic zero-daysâ€”theyâ€™re authz mistakes, key leaks, and confused deputy problems. Correct identity and access foundations prevent whole classes of incidents.</p>
 
       <h3 id="ch07-1-1">07.1.1 Authentication vs Authorization</h3>
       <p><strong>Plain:</strong> Authentication proves <em>who</em> you are; authorization decides <em>what</em> you may do. Many incidents happen when we conflate the two or skip the second.</p>
-      <p><strong>Formal:</strong> <em>Authentication</em> binds a principal (user/app/service) to credentials (password, certificate, token). <em>Authorization</em> evaluates a principal’s rights against policies (RBAC, ABAC, ReBAC) to permit or deny operations on resources. Always explicitly separate <em>authn</em> and <em>authz</em> components in your architecture.</p>
-      <p><strong>Pitfall:</strong> “Logged-in means admin.” Treating authn as sufficient for privileged actions leads to horizontal and vertical privilege escalation.</p>
-      <p><strong>Example:</strong> A “download report” endpoint should check not just that the user is logged in, but that they own the report or have a role permitting access in the target tenancy.</p>
+      <p><strong>Formal:</strong> <em>Authentication</em> binds a principal (user/app/service) to credentials (password, certificate, token). <em>Authorization</em> evaluates a principalâ€™s rights against policies (RBAC, ABAC, ReBAC) to permit or deny operations on resources. Always explicitly separate <em>authn</em> and <em>authz</em> components in your architecture.</p>
+      <p><strong>Pitfall:</strong> â€œLogged-in means admin.â€ Treating authn as sufficient for privileged actions leads to horizontal and vertical privilege escalation.</p>
+      <p><strong>Example:</strong> A â€œdownload reportâ€ endpoint should check not just that the user is logged in, but that they own the report or have a role permitting access in the target tenancy.</p>
 
       <h3 id="ch07-1-2">07.1.2 OAuth2/OIDC and JWTs</h3>
       <p><strong>Plain:</strong> OAuth2 delegates authorization. OIDC layers identity on top. JWTs are signed tokens your services can validate without calling the issuer.</p>
-      <p><strong>Formal:</strong> For user-facing web apps, use the <em>Authorization Code Flow with PKCE</em> (confidential or public clients). The client exchanges an authorization code for tokens at the authorization server. OIDC adds an <em>ID Token</em> (who the user is) and standard claims; the <em>Access Token</em> conveys authorization to APIs. JWTs are JWS-signed (e.g., RS256/ES256) and validated by verifying signature against the issuer’s JWKS, <code>iss</code>/<code>aud</code> claims, expiry (<code>exp</code>), and nonce for replay protection.</p>
-      <p><strong>Pitfall:</strong> Using the deprecated <em>implicit flow</em> in SPAs or accepting JWTs without verifying <code>aud</code> and <code>exp</code>. Another common error is stuffing sensitive PII in tokens (they’re bearer artifacts and often logged).</p>
+      <p><strong>Formal:</strong> For user-facing web apps, use the <em>Authorization Code Flow with PKCE</em> (confidential or public clients). The client exchanges an authorization code for tokens at the authorization server. OIDC adds an <em>ID Token</em> (who the user is) and standard claims; the <em>Access Token</em> conveys authorization to APIs. JWTs are JWS-signed (e.g., RS256/ES256) and validated by verifying signature against the issuerâ€™s JWKS, <code>iss</code>/<code>aud</code> claims, expiry (<code>exp</code>), and nonce for replay protection.</p>
+      <p><strong>Pitfall:</strong> Using the deprecated <em>implicit flow</em> in SPAs or accepting JWTs without verifying <code>aud</code> and <code>exp</code>. Another common error is stuffing sensitive PII in tokens (theyâ€™re bearer artifacts and often logged).</p>
 
       <figure>
-        <img src="https://cdn.auth0.com/docs/media/articles/flows/concepts/auth-code-grant.png" alt="OAuth 2.0 Authorization Code Flow with PKCE between a browser, client, authorization server, and API" loading="lazy" decoding="async" width="1200" height="600" referrerpolicy="no-referrer">
-        <figcaption>Authorization Code Flow with PKCE is the modern default for user-facing apps (Auth0 Docs, 2024/2025).</figcaption>
+        <img src="images/oauth-auth-code.svg" alt="Custom OAuth 2.0 authorization code with PKCE sequence across browser, client, authorization server, and API" loading="lazy" decoding="async" width="640" height="320">
+        <figcaption>Authorization Code Flow with PKCE is the modern default for user-facing apps (custom illustration inspired by Auth0 Docs, 2024/2025).</figcaption>
       </figure>
 
       <h3 id="ch07-1-3">07.1.3 Service-to-Service Identity</h3>
-      <p><strong>Plain:</strong> Humans log in; services don’t. Give workloads an identity that rotates automatically and is hard to phish.</p>
+      <p><strong>Plain:</strong> Humans log in; services donâ€™t. Give workloads an identity that rotates automatically and is hard to phish.</p>
       <p><strong>Formal:</strong> Use <em>workload identity</em> (cloud IAM roles, SPIFFE IDs, or mTLS with client certs) for service-to-service auth. Issue short-lived credentials from a trusted control plane; prefer <em>audience-bound</em> tokens (narrow <code>aud</code>) and <em>proof-of-possession</em> (mTLS or DPoP) over long-lived shared secrets.</p>
       <p><strong>Pitfall:</strong> Baking static API keys into containers or code. Keys leak through logs, crash dumps, and supply chains. Rotate automatically and track usage.</p>
 
       <h3 id="ch07-1-4">07.1.4 Access Control Models</h3>
       <p><strong>Plain:</strong> RBAC assigns roles (admin, viewer). ABAC evaluates attributes (department=finance). ReBAC checks relationships (user is member of team X owning resource Y).</p>
-      <p><strong>Formal:</strong> Choose the simplest model that meets domain needs. Many teams start with coarse RBAC, add ABAC for tenant/region scoping, and selectively add ReBAC (e.g., “shared with”) using graph-backed policy engines. Keep authorization centralized (PDP/PIP) with sidecar or library enforcement (PEP).</p>
+      <p><strong>Formal:</strong> Choose the simplest model that meets domain needs. Many teams start with coarse RBAC, add ABAC for tenant/region scoping, and selectively add ReBAC (e.g., â€œshared withâ€) using graph-backed policy engines. Keep authorization centralized (PDP/PIP) with sidecar or library enforcement (PEP).</p>
       <p><strong>Pitfall:</strong> Spreading authorization logic across services with inconsistent semantics. Centralize policy evaluation and version policies as code.</p>
 
       <p><em>Compare: Token and Session Choices</em></p>
@@ -86,8 +86,8 @@
       </table>
 
       <h3 id="ch07-1-5">07.1.5 Worked Examples</h3>
-      <p><strong>Example A — SPA + API:</strong> Use Authorization Code + PKCE. Store tokens in HTTP-only, SameSite=strict cookies or memory (never <code>localStorage</code>). Use a BFF (backend-for-frontend) to exchange and hold tokens server-side, issuing a short-lived session cookie to the browser to reduce token exposure.</p>
-      <p><strong>Example B — Microservice RPC:</strong> Services authenticate with mTLS and present a signed JWT with audience bound to the target service. The receiving service verifies mTLS client cert against a mesh CA and validates JWT claims before authorizing method-scoped permissions.</p>
+      <p><strong>Example A â€” SPA + API:</strong> Use Authorization Code + PKCE. Store tokens in HTTP-only, SameSite=strict cookies or memory (never <code>localStorage</code>). Use a BFF (backend-for-frontend) to exchange and hold tokens server-side, issuing a short-lived session cookie to the browser to reduce token exposure.</p>
+      <p><strong>Example B â€” Microservice RPC:</strong> Services authenticate with mTLS and present a signed JWT with audience bound to the target service. The receiving service verifies mTLS client cert against a mesh CA and validates JWT claims before authorizing method-scoped permissions.</p>
 
       <p class="summary">Takeaway: Use OIDC + OAuth2 with code+PKCE for users, workload identity + mTLS for services, and centralized policy for authorization. Prefer short-lived, audience-bound tokens and keep secrets out of code.</p>
     </section>
@@ -100,35 +100,35 @@
       <h3 id="ch07-2-1">07.2.1 TLS in Transit</h3>
       <p><strong>Plain:</strong> TLS 1.3 protects data in motion and removes legacy footguns. Use it everywhere, inside and outside your VPC.</p>
       <p><strong>Formal:</strong> Enforce TLS 1.2+ (ideally 1.3), PFS ciphers (ECDHE), and HSTS on public endpoints. Terminate at the edge or gateway, then re-encrypt to services (TLS-to-origin). For internal meshes, use mTLS with automatic cert rotation and SAN-based identity binding (SPIFFE IDs).</p>
-      <p><strong>Pitfall:</strong> “Internal traffic is trusted.” Many breaches exploit this assumption. Use mTLS for east–west traffic and pin authorized client identities at the service boundary.</p>
+      <p><strong>Pitfall:</strong> â€œInternal traffic is trusted.â€ Many breaches exploit this assumption. Use mTLS for eastâ€“west traffic and pin authorized client identities at the service boundary.</p>
 
       <figure>
-        <img src="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/images/elb-https-listener.png" alt="Application Load Balancer HTTPS listener with TLS termination and forwarding to targets" loading="lazy" decoding="async" width="791" height="416" referrerpolicy="no-referrer">
-        <figcaption>HTTPS listeners terminate TLS at the edge and can re-encrypt to targets (AWS ALB Docs, 2024/2025).</figcaption>
+        <img src="images/alb-https-listener.svg" alt="Custom diagram of an Application Load Balancer terminating TLS and forwarding to targets" loading="lazy" decoding="async" width="600" height="300">
+        <figcaption>HTTPS listeners terminate TLS at the edge and can re-encrypt to targets (custom illustration inspired by AWS ALB Docs, 2024/2025).</figcaption>
       </figure>
 
       <h3 id="ch07-2-2">07.2.2 Encryption at Rest</h3>
       <p><strong>Plain:</strong> If someone steals a disk snapshot or a backup, encryption at rest turns it into noise.</p>
       <p><strong>Formal:</strong> Implement <em>envelope encryption</em>: a data key encrypts the data; a master key (KMS/HSM) encrypts the data key. Master keys rotate on a schedule; data keys can rotate per object or per time window. Use managed KMS for key storage and auditing; limit who can <em>use</em> a key separately from who can <em>admin</em> a key (separation of duties).</p>
-      <p><strong>Pitfall:</strong> Believing “checkbox encryption” is enough. You still need access controls, audit logs, and deletion workflows; encryption doesn’t fix over-broad IAM or public buckets.</p>
+      <p><strong>Pitfall:</strong> Believing â€œcheckbox encryptionâ€ is enough. You still need access controls, audit logs, and deletion workflows; encryption doesnâ€™t fix over-broad IAM or public buckets.</p>
 
       <figure>
-        <img src="https://docs.aws.amazon.com/images/kms/latest/developerguide/images/kms-enveloping.png" alt="AWS KMS envelope encryption: data encryption keys protected by customer master keys" loading="lazy" decoding="async" width="768" height="390" referrerpolicy="no-referrer">
-        <figcaption>Envelope encryption: data keys are protected by KMS-managed master keys (AWS KMS Docs, 2024/2025).</figcaption>
+        <img src="images/aws-kms-enveloping.svg" alt="Custom envelope encryption diagram with a KMS key, data key, and ciphertext" loading="lazy" decoding="async" width="600" height="280">
+        <figcaption>Envelope encryption: data keys are protected by KMS-managed master keys (custom illustration inspired by AWS KMS Docs, 2024/2025).</figcaption>
       </figure>
 
       <h3 id="ch07-2-3">07.2.3 Secrets Management</h3>
-      <p><strong>Plain:</strong> Secrets are toxic waste—minimize, isolate, rotate.</p>
-      <p><strong>Formal:</strong> Store secrets in a dedicated system (cloud secrets manager or Vault). Distribute at runtime via short-lived leases or workload identity. Use dynamic credentials for databases (TTL minutes–hours). Rotate keys on schedule and on suspicion. Prevent exfiltration via least-privilege IAM and deny-by-default outbound egress where feasible.</p>
+      <p><strong>Plain:</strong> Secrets are toxic wasteâ€”minimize, isolate, rotate.</p>
+      <p><strong>Formal:</strong> Store secrets in a dedicated system (cloud secrets manager or Vault). Distribute at runtime via short-lived leases or workload identity. Use dynamic credentials for databases (TTL minutesâ€“hours). Rotate keys on schedule and on suspicion. Prevent exfiltration via least-privilege IAM and deny-by-default outbound egress where feasible.</p>
       <p><strong>Pitfall:</strong> Putting secrets in CI logs, container images, or environment files committed to VCS. Add secret scanners, pre-commit hooks, and organization-wide blocking of known patterns. Assume secrets will leak and plan rotations.</p>
 
-      <h3 id="ch07-2-4">07.2.4 Worked Example — Protecting a PII Table</h3>
+      <h3 id="ch07-2-4">07.2.4 Worked Example â€” Protecting a PII Table</h3>
       <p><strong>Scenario:</strong> A customer profile table includes names, emails, and addresses. Requirements: per-tenant access control, auditability, GDPR erasure support, and minimal blast radius on key exposure.</p>
       <ol>
         <li><strong>Model:</strong> Split PII into a separate <code>identity</code> table keyed by <code>subject_id</code>; reference it from product data via <code>subject_id</code> only.</li>
         <li><strong>Encrypt:</strong> Column-level encryption for sensitive fields with per-tenant data keys (DEKs) wrapped by KMS CMK. Store key IDs alongside rows.</li>
         <li><strong>Access:</strong> Gate read/write via a service that enforces tenant policy and emits audit logs; DB accounts have no direct app-user access.</li>
-        <li><strong>Erase:</strong> Erasure removes the <code>subject_id→PII</code> row and triggers downstream redaction in caches/search/warehouse via an outbox event.</li>
+        <li><strong>Erase:</strong> Erasure removes the <code>subject_idâ†’PII</code> row and triggers downstream redaction in caches/search/warehouse via an outbox event.</li>
       </ol>
 
       <p class="summary">Takeaway: TLS everywhere, envelope encryption for data, and a first-class secrets lifecycle. Design data layouts so erasure and minimum disclosure are natural, not heroic.</p>
@@ -140,19 +140,19 @@
       <p id="ch07-3-why">Why it matters: Perimeters blur in microservices and remote work. Assume hostile networks and authenticate every hop.</p>
 
       <h3 id="ch07-3-1">07.3.1 Perimeter vs Zero Trust</h3>
-      <p><strong>Plain:</strong> The old model said “inside=trusted, outside=untrusted.” Zero trust says “trust no network; verify identity and policy on each request.”</p>
+      <p><strong>Plain:</strong> The old model said â€œinside=trusted, outside=untrusted.â€ Zero trust says â€œtrust no network; verify identity and policy on each request.â€</p>
       <p><strong>Formal:</strong> Zero trust architecture (ZTA) authenticates users/devices, evaluates context (device posture, location, risk), and applies least-privilege access to applications without placing users on flat internal networks. Internally, services use mTLS identity and authorization decisions at the gateway or sidecar.</p>
-      <p><strong>Pitfall:</strong> “VPN = zero trust.” VPNs extend perimeter trust; ZTA reduces it by moving policy to identity-aware proxies and service edges.</p>
+      <p><strong>Pitfall:</strong> â€œVPN = zero trust.â€ VPNs extend perimeter trust; ZTA reduces it by moving policy to identity-aware proxies and service edges.</p>
 
       <figure>
-        <img src="https://csrc.nist.gov/csrc/media/Projects/zero-trust-architecture/images/ZTAlogical.png" alt="NIST Zero Trust Architecture logical components: policy engine, policy administrator, policy enforcement point, and various data planes" loading="lazy" decoding="async" width="740" height="471" referrerpolicy="no-referrer">
-        <figcaption>NIST’s ZTA: decisions by a policy engine; enforcement close to users/services (NIST SP 800-207, 2020).</figcaption>
+        <img src="images/zero-trust-architecture.svg" alt="Custom zero trust architecture diagram with policy engine, administrator, enforcement point, and resources" loading="lazy" decoding="async" width="620" height="320">
+        <figcaption>NIST's ZTA: decisions by a policy engine; enforcement close to users/services (custom illustration informed by NIST SP 800-207, 2020).</figcaption>
       </figure>
 
       <h3 id="ch07-3-2">07.3.2 API Gateways, WAFs, and Service Meshes</h3>
-      <p><strong>Plain:</strong> Gateways protect north–south traffic; meshes secure east–west.</p>
+      <p><strong>Plain:</strong> Gateways protect northâ€“south traffic; meshes secure eastâ€“west.</p>
       <p><strong>Formal:</strong> An API gateway provides TLS termination, routing, authn/z, rate limiting, and observability for public traffic. A WAF filters common attacks (SQLi, XSS) using managed rules. A service mesh (e.g., sidecars) injects mTLS, retries, and policy enforcement between services with minimal app code.</p>
-      <p><strong>Pitfall:</strong> Relying on the mesh to “make it secure” without restricting egress or hardening the gateway. Defense-in-depth still applies.</p>
+      <p><strong>Pitfall:</strong> Relying on the mesh to â€œmake it secureâ€ without restricting egress or hardening the gateway. Defense-in-depth still applies.</p>
 
       <p><em>Compare: Perimeter Tools</em></p>
       <table>
@@ -160,7 +160,7 @@
           <tr><th>Tool</th><th>Protects</th><th>Strengths</th><th>Limitations</th></tr>
         </thead>
         <tbody>
-          <tr><td>API Gateway</td><td>Public APIs</td><td>AuthN/Z, routing, rate limits</td><td>Less granular east–west policy</td></tr>
+          <tr><td>API Gateway</td><td>Public APIs</td><td>AuthN/Z, routing, rate limits</td><td>Less granular eastâ€“west policy</td></tr>
           <tr><td>WAF</td><td>HTTP layer</td><td>Blocks OWASP Top 10 patterns</td><td>Signatures lag novel attacks</td></tr>
           <tr><td>Service Mesh</td><td>Service-to-service</td><td>mTLS, policy, telemetry</td><td>Operational overhead, sidecar cost</td></tr>
           <tr><td>Egress Proxy</td><td>Outbound</td><td>Control destinations, auditing</td><td>Needs allowlists, breakglass</td></tr>
@@ -168,9 +168,9 @@
       </table>
 
       <h3 id="ch07-3-3">07.3.3 Ingress, Egress, and DDoS</h3>
-      <p><strong>Plain:</strong> Don’t just let anything in—and don’t let everything out.</p>
+      <p><strong>Plain:</strong> Donâ€™t just let anything inâ€”and donâ€™t let everything out.</p>
       <p><strong>Formal:</strong> For ingress, use anycast DDoS absorption and L7 filtering, then gateway authz before backend exposure. For egress, require outbound proxies with allowlists, DNS controls, and per-service identities to prevent data exfiltration. Rate-limit by IP and by principal to slow credential stuffing.</p>
-      <p><strong>Pitfall:</strong> Allowing instances to connect directly to the Internet “for convenience.” Route outbound traffic through controlled chokepoints with logs.</p>
+      <p><strong>Pitfall:</strong> Allowing instances to connect directly to the Internet â€œfor convenience.â€ Route outbound traffic through controlled chokepoints with logs.</p>
 
       <p class="summary">Takeaway: Move trust to identity and policy, not IP ranges. Gateways + WAF for the edge, meshes for internal traffic, and tight egress to prevent exfiltration.</p>
     </section>
@@ -180,24 +180,24 @@
       <h2>07.4 Compliance Considerations</h2>
       <p id="ch07-4-why">Why it matters: Regulations translate societal expectations into engineering constraints. Aligning design with frameworks early is cheaper than retrofitting under audit.</p>
 
-      <h3 id="ch07-4-1">07.4.1 SOC&nbsp;2, GDPR, and PCI DSS — What They Want from You</h3>
-      <p><strong>Plain:</strong> SOC&nbsp;2 checks your controls and whether you actually follow them. GDPR protects people’s data rights. PCI DSS protects card data.</p>
+      <h3 id="ch07-4-1">07.4.1 SOC&nbsp;2, GDPR, and PCI DSS â€” What They Want from You</h3>
+      <p><strong>Plain:</strong> SOC&nbsp;2 checks your controls and whether you actually follow them. GDPR protects peopleâ€™s data rights. PCI DSS protects card data.</p>
       <p><strong>Formal:</strong> <em>SOC&nbsp;2</em> Type II assesses controls over time (security, availability, confidentiality, processing integrity, privacy). <em>GDPR</em> requires a lawful basis, data minimization, subject rights (access, erasure), breach notification, and DPAs with processors. <em>PCI DSS&nbsp;4.0</em> demands segmenting the cardholder data environment (CDE), strict key management, strong auth, logging, and quarterly scans. Map your systems to <em>scopes</em>: what data, where it flows, who touches it.</p>
       <p><strong>Pitfall:</strong> Treating compliance as paperwork. Auditors will follow logs, tickets, and code to verify evidence. Automate evidence collection (alerts, change approvals, CI artifacts) to keep the burden low.</p>
 
       <h3 id="ch07-4-2">07.4.2 Data Residency and Transfers</h3>
       <p><strong>Plain:</strong> Some data must stay in certain regions or be transferred under specific legal instruments.</p>
-      <p><strong>Formal:</strong> Enforce residency by partitioning storage and compute per region and using region-sticky routing. For cross-border transfers, record appropriate safeguards (SCCs or recognized mechanisms) and minimize replicated PII. Avoid debugging with production PII—use tokenization or synthetic data.</p>
-      <p><strong>Pitfall:</strong> “Global analytics” that silently copy PII to a central region. Make pipelines column-aware and drop/aggregate PII before export.</p>
+      <p><strong>Formal:</strong> Enforce residency by partitioning storage and compute per region and using region-sticky routing. For cross-border transfers, record appropriate safeguards (SCCs or recognized mechanisms) and minimize replicated PII. Avoid debugging with production PIIâ€”use tokenization or synthetic data.</p>
+      <p><strong>Pitfall:</strong> â€œGlobal analyticsâ€ that silently copy PII to a central region. Make pipelines column-aware and drop/aggregate PII before export.</p>
 
       <h3 id="ch07-4-3">07.4.3 Threat Modeling for Compliance and Security</h3>
-      <p><strong>Plain:</strong> Threat models turn “what could go wrong” into prioritized controls.</p>
-      <p><strong>Formal:</strong> Use STRIDE for system threats (spoofing, tampering, repudiation, information disclosure, DoS, elevation) and LINDDUN for privacy (linkability, identifiability, non-repudiation, detectability, disclosure, content unawareness, non-compliance). Tie threats to mitigations (e.g., spoofing → mTLS, information disclosure → encryption + access reviews) and to compliance controls (e.g., PCI DSS key management).</p>
+      <p><strong>Plain:</strong> Threat models turn â€œwhat could go wrongâ€ into prioritized controls.</p>
+      <p><strong>Formal:</strong> Use STRIDE for system threats (spoofing, tampering, repudiation, information disclosure, DoS, elevation) and LINDDUN for privacy (linkability, identifiability, non-repudiation, detectability, disclosure, content unawareness, non-compliance). Tie threats to mitigations (e.g., spoofing â†’ mTLS, information disclosure â†’ encryption + access reviews) and to compliance controls (e.g., PCI DSS key management).</p>
       <p><strong>Pitfall:</strong> Producing a beautiful threat model document that never changes. Update it with every material system change.</p>
 
       <h3 id="ch07-4-4">07.4.4 Evidence and Audits</h3>
-      <p><strong>Plain:</strong> If a control isn’t logged, it didn’t happen.</p>
-      <p><strong>Formal:</strong> Keep immutable logs for: production changes (who approved, what changed), access requests/grants, security events (login failures, policy denies), and key/secret rotations. Store logs in write-once storage with retention aligned to regulation (e.g., PCI ≥1 year with 3 months immediately available).</p>
+      <p><strong>Plain:</strong> If a control isnâ€™t logged, it didnâ€™t happen.</p>
+      <p><strong>Formal:</strong> Keep immutable logs for: production changes (who approved, what changed), access requests/grants, security events (login failures, policy denies), and key/secret rotations. Store logs in write-once storage with retention aligned to regulation (e.g., PCI â‰¥1 year with 3 months immediately available).</p>
       <p><strong>Pitfall:</strong> Hand-built spreadsheets. Use policy-as-code and CI/CD metadata so evidence is generated during normal work, not as a separate project.</p>
 
       <p class="summary">Takeaway: Put data maps, residency rules, and evidence capture into your design. Build controls once, then let automation prove them every day.</p>
@@ -205,13 +205,13 @@
 
     <!-- 07.5 -->
     <section class="section" id="ch07-5">
-      <h2>07.5 Checkpoints — Secure API Design Task</h2>
+      <h2>07.5 Checkpoints â€” Secure API Design Task</h2>
       <p id="ch07-5-why">Why it matters: Secure defaults and explicit policies prevent footguns. This exercise turns the chapter into an implementable checklist.</p>
 
       <h3 id="ch07-5-1">07.5.1 Scenario &amp; Constraints</h3>
       <ul>
         <li>Build <code>orders</code> API for a marketplace. Public website + mobile app, internal microservices, third-party webhooks.</li>
-        <li>SLO: 99.95% success; P95 ≤ 250&nbsp;ms. Compliance: SOC&nbsp;2, GDPR; payments out of scope (handled by PCI-compliant PSP).</li>
+        <li>SLO: 99.95% success; P95 â‰¤ 250&nbsp;ms. Compliance: SOC&nbsp;2, GDPR; payments out of scope (handled by PCI-compliant PSP).</li>
         <li>Multi-AZ, single region v1; eventual multi-region reads later.</li>
       </ul>
 
@@ -220,17 +220,17 @@
         <li><strong>AuthN:</strong> OIDC Authorization Code + PKCE for users via an IdP. BFF holds tokens; browser gets HTTP-only, SameSite=strict session cookies.</li>
         <li><strong>AuthZ:</strong> Central policy engine evaluating RBAC + tenant ABAC (tenant_id match) with method-level scopes (<code>orders:read</code>, <code>orders:write</code>).</li>
         <li><strong>Service Identity:</strong> mTLS + workload JWTs (audience-bound) between services; sidecars enforce policy; egress proxy allowlists destinations.</li>
-        <li><strong>Transport:</strong> TLS 1.3 externally and internally; HSTS on public endpoints; redirect HTTP→HTTPS.</li>
+        <li><strong>Transport:</strong> TLS 1.3 externally and internally; HSTS on public endpoints; redirect HTTPâ†’HTTPS.</li>
         <li><strong>Data:</strong> Orders table excludes PII beyond minimal billing/shipping references; PII lives in an <code>identity</code> service with envelope encryption.</li>
         <li><strong>Secrets:</strong> Dynamic DB credentials from Secrets Manager (TTL 1h) and audit rotations; no secrets in env or images.</li>
         <li><strong>Gateway/WAF:</strong> Token validation at the edge, rate limits per IP and per principal, WAF OWASP Top&nbsp;10 managed rules, request/response size caps.</li>
         <li><strong>Logging:</strong> Structured logs with <code>principal</code>, <code>tenant</code>, <code>scope</code>, <code>decision</code>; PII redaction at source. Audit trails immutable and retained 1 year.</li>
-        <li><strong>Error Handling:</strong> Don’t leak details; use correlation IDs and map to internal errors.</li>
+        <li><strong>Error Handling:</strong> Donâ€™t leak details; use correlation IDs and map to internal errors.</li>
       </ol>
 
       <h3 id="ch07-5-3">07.5.3 Worked Examples</h3>
-      <p><strong>Example A — Idempotent Create:</strong> <code>POST /orders</code> requires <code>Idempotency-Key</code>. The gateway enforces size limits; the service validates scope <code>orders:write</code>, tenant, and rate limits. If a duplicate key arrives, return the original outcome. All decisions logged with deny reasons for audits.</p>
-      <p><strong>Example B — Third-Party Webhook:</strong> Accept at-least-once delivery, signed payloads (HMAC with rotated secrets), and replay windows (5 minutes). Rate-limit by sender, isolate via a queue, and validate that events affect only the owning tenant.</p>
+      <p><strong>Example A â€” Idempotent Create:</strong> <code>POST /orders</code> requires <code>Idempotency-Key</code>. The gateway enforces size limits; the service validates scope <code>orders:write</code>, tenant, and rate limits. If a duplicate key arrives, return the original outcome. All decisions logged with deny reasons for audits.</p>
+      <p><strong>Example B â€” Third-Party Webhook:</strong> Accept at-least-once delivery, signed payloads (HMAC with rotated secrets), and replay windows (5 minutes). Rate-limit by sender, isolate via a queue, and validate that events affect only the owning tenant.</p>
 
       <h3 id="ch07-5-4">07.5.4 Threat Model Snippet</h3>
       <pre data-lang="yaml"><code>threats:
@@ -250,19 +250,19 @@
       - "Row-level policies in DB as defense-in-depth"
       - "Egress proxy with allowlists"</code></pre>
 
-      <p class="summary">Deliverables: API policy matrix (endpoint×scope×tenant), sequence diagram for login and token validation, gateway/WAF config snippet, secrets inventory with rotation cadence, and an audit evidence plan (what logs prove what).</p>
+      <p class="summary">Deliverables: API policy matrix (endpointÃ—scopeÃ—tenant), sequence diagram for login and token validation, gateway/WAF config snippet, secrets inventory with rotation cadence, and an audit evidence plan (what logs prove what).</p>
     </section>
 
     <!-- Resources -->
     <section class="section" id="ch07-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>OWASP Top 10</strong> — Common web risks and mitigations; a baseline for WAF and code reviews. <span class="badge">Free</span></li>
-        <li><strong>Auth0 / Okta OIDC Guides</strong> — Modern OAuth2/OIDC flows (code + PKCE), JWT validation patterns. <span class="badge">Free</span></li>
-        <li><strong>NIST SP&nbsp;800-207 — Zero Trust Architecture</strong> — Authoritative ZTA model and components. <span class="badge">Free</span></li>
-        <li><strong>AWS KMS &amp; TLS Docs</strong> — Envelope encryption patterns, HTTPS termination, and mTLS options. <span class="badge">Free</span></li>
-        <li><strong>PCI DSS&nbsp;4.0</strong> — Data scoping, key management, and logging requirements for card data environments. <span class="badge">Free</span></li>
-        <li><strong>GDPR (EU)</strong> — Principles, lawful bases, subject rights, and international transfers; map to data flows early. <span class="badge">Free</span></li>
+        <li><strong>OWASP Top 10</strong> â€” Common web risks and mitigations; a baseline for WAF and code reviews. <span class="badge">Free</span></li>
+        <li><strong>Auth0 / Okta OIDC Guides</strong> â€” Modern OAuth2/OIDC flows (code + PKCE), JWT validation patterns. <span class="badge">Free</span></li>
+        <li><strong>NIST SP&nbsp;800-207 â€” Zero Trust Architecture</strong> â€” Authoritative ZTA model and components. <span class="badge">Free</span></li>
+        <li><strong>AWS KMS &amp; TLS Docs</strong> â€” Envelope encryption patterns, HTTPS termination, and mTLS options. <span class="badge">Free</span></li>
+        <li><strong>PCI DSS&nbsp;4.0</strong> â€” Data scoping, key management, and logging requirements for card data environments. <span class="badge">Free</span></li>
+        <li><strong>GDPR (EU)</strong> â€” Principles, lawful bases, subject rights, and international transfers; map to data flows early. <span class="badge">Free</span></li>
       </ul>
       <p class="muted">Rationales: These are standard-setting or vendor-official sources for evolving security practices, token flows, zero-trust patterns, and compliance obligations.</p>
     </section>
@@ -286,20 +286,20 @@
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch06.html"><span class="muted">Prev</span><span>← Chapter 06 — Caching, Performance, and Cost Optimization</span></a>
-      <a class="next" rel="next" href="chapters/ch08.html"><span class="muted">Next</span><span>Chapter 08 — Designing for Evolution and Extensibility →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch06.html"><span class="muted">Prev</span><span>â† Chapter 06 â€” Caching, Performance, and Cost Optimization</span></a>
+      <a class="next" rel="next" href="chapters/ch08.html"><span class="muted">Next</span><span>Chapter 08 â€” Designing for Evolution and Extensibility â†’</span></a>
     </nav>
 
     <!-- Image Link Audit -->
     <!-- <section class="section" id="ch07-image-audit">
       <h2>Image Link Audit</h2>
       <ul class="resource-list">
-        <li>https://cdn.auth0.com/docs/media/articles/flows/concepts/auth-code-grant.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://docs.aws.amazon.com/elasticloadbalancing/latest/application/images/elb-https-listener.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://docs.aws.amazon.com/images/kms/latest/developerguide/images/kms-enveloping.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://csrc.nist.gov/csrc/media/Projects/zero-trust-architecture/images/ZTAlogical.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>images/oauth-auth-code.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
+        <li>images/alb-https-listener.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
+        <li>images/aws-kms-enveloping.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
+        <li>images/zero-trust-architecture.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
       </ul>
-      <p class="muted">Only HTTPS, non-SVG images with 200 OK and image/* MIME types are included.</p>
+      <p class="muted">Only HTTPS assets or vetted local SVGs with reliable licensing are included.</p>
     </section> -->
 
     <!--
@@ -307,12 +307,14 @@
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
     - [x] Pager prev/next valid; ToC numbering matches
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
-    - [x] Images: HTTPS, non-SVG, validated 200 OK image/*; captions + attribution included
+    - [x] Order: Hero â†’ Numbered Sections â†’ Resources â†’ Recap
+    - [x] â‰¥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
+    - [x] Images: Local SVG or HTTPS assets validated; captions + attribution included
     - [x] Head/meta complete; no TODOs
     -->
   </main>
 </body>
 </html>
+
+
 

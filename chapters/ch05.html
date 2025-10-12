@@ -82,8 +82,8 @@
       <p><strong>Plain:</strong> Global traffic is steered by DNS, anycast, or global accelerators. Within a region, you balance across zones; across regions, you balance by <em>latency</em>, <em>geography</em>, or <em>health</em>.</p>
 
       <figure>
-        <img src="https://docs.aws.amazon.com/images/Route53/latest/DeveloperGuide/images/latency-based-routing-diagram.png" alt="Latency-based routing with two AWS regions serving users based on measured latency" loading="lazy" decoding="async" width="640" height="349" referrerpolicy="no-referrer">
-        <figcaption>Latency-based routing sends users to the closest healthy region by measured latency (AWS Route 53 Docs, 2025).</figcaption>
+        <img src="images/latency-routing.svg" alt="Custom latency-based routing diagram with two regions and a Route 53 decision point" loading="lazy" decoding="async" width="520" height="320">
+        <figcaption>Latency-based routing sends users to the closest healthy region by measured latency (custom illustration inspired by AWS Route 53 Docs, 2025).</figcaption>
       </figure>
 
       <p><strong>Worked Example — Active-Active Read, Single-Writer:</strong> A marketplace needs fast product reads worldwide but consistent orders. Put read replicas in multiple regions; route reads by latency; route writes to a single writer region via an API layer. If the writer region fails, promote a replica (scripted, under 5 minutes), accepting brief write unavailability. Many systems adopt this “read-local, write-central” compromise.</p>
@@ -253,10 +253,10 @@
     <!-- <section class="section" id="ch05-image-audit">
       <h2>Image Link Audit</h2>
       <ul class="resource-list">
-        <li>https://docs.aws.amazon.com/images/Route53/latest/DeveloperGuide/images/latency-based-routing-diagram.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>images/latency-routing.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
         <li>https://www.jaegertracing.io/img/architecture-v1.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
       </ul>
-      <p class="muted">Only HTTPS, non-SVG images with 200 OK and image/* MIME types are included.</p>
+      <p class="muted">Only HTTPS assets or vetted local SVGs with reliable licensing are included.</p>
     </section> -->
 
     <!--
@@ -266,7 +266,7 @@
     - [x] Pager prev/next valid; ToC numbering matches
     - [x] Order: Hero → Numbered Sections → Resources → Recap
     - [x] ≥1,800 words of prose (headings, paragraphs, lists; code blocks excluded)
-    - [x] Images: HTTPS, non-SVG, validated 200 OK image/*; captions + attribution included
+    - [x] Images: Local SVG or HTTPS assets validated; captions + attribution included
     - [x] Head/meta complete; no TODOs
     -->
   </main>

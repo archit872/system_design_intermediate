@@ -1,0 +1,44 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" role="img" aria-labelledby="title desc">
+  <title id="title">Application Load Balancer HTTPS listener</title>
+  <desc id="desc">Diagram showing TLS termination at an Application Load Balancer forwarding to targets in two subnets.</desc>
+  <style>
+    .box{fill:#111726;stroke:#4cc2ff;stroke-width:2}
+    .label{font:600 14px 'Segoe UI',sans-serif;fill:#e6edf3;text-anchor:middle}
+    .muted{font:12px 'Segoe UI',sans-serif;fill:#9fb0c3;text-anchor:middle}
+    .arrow{stroke:#22d3ee;stroke-width:2;marker-end:url(#arrowhead)}
+    .target{fill:#0b0f14;stroke:#f59e0b;stroke-width:2}
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#22d3ee"/>
+    </marker>
+  </defs>
+  <rect x="40" y="40" width="130" height="70" class="box" rx="12"/>
+  <text x="105" y="75" class="label">Clients</text>
+  <text x="105" y="95" class="muted">TLS 1.2</text>
+
+  <rect x="230" y="30" width="160" height="90" class="box" rx="16"/>
+  <text x="310" y="65" class="label">ALB Listener :443</text>
+  <text x="310" y="85" class="muted">TLS termination + rules</text>
+
+  <rect x="420" y="40" width="140" height="60" class="box" rx="12"/>
+  <text x="490" y="70" class="label">Target Group</text>
+  <text x="490" y="90" class="muted">HTTP :8080</text>
+
+  <path d="M170 75 H230" class="arrow"/>
+  <text x="200" y="65" class="muted">TLS handshake</text>
+  <path d="M390 70 H420" class="arrow"/>
+  <text x="405" y="60" class="muted">Forward</text>
+
+  <g>
+    <rect x="430" y="130" width="120" height="60" class="target" rx="10"/>
+    <text x="490" y="160" class="muted">Subnet A · EC2</text>
+  </g>
+  <g>
+    <rect x="430" y="210" width="120" height="60" class="target" rx="10"/>
+    <text x="490" y="240" class="muted">Subnet B · ECS</text>
+  </g>
+  <path d="M310 120 V210" class="arrow"/>
+  <path d="M310 120 V230" class="arrow"/>
+  <text x="310" y="120" class="muted">Health checks</text>
+</svg>

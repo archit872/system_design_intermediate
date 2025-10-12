@@ -1,0 +1,51 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320" role="img" aria-labelledby="title desc">
+  <title id="title">OAuth 2.0 authorization code with PKCE</title>
+  <desc id="desc">Sequence diagram showing browser, client app, authorization server, and API exchanging code and tokens.</desc>
+  <style>
+    .actor{fill:#111726;stroke:#4cc2ff;stroke-width:2}
+    .label{font:600 14px 'Segoe UI',sans-serif;fill:#e6edf3;text-anchor:middle}
+    .muted{font:12px 'Segoe UI',sans-serif;fill:#9fb0c3;text-anchor:middle}
+    .line{stroke:#4cc2ff;stroke-width:2;stroke-dasharray:4 6}
+    .msg{stroke:#22d3ee;stroke-width:2;marker-end:url(#arrowhead)}
+    .text{font:12px 'Segoe UI',sans-serif;fill:#9fb0c3}
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#22d3ee"/>
+    </marker>
+  </defs>
+  <g transform="translate(60,30)">
+    <rect width="110" height="40" class="actor" rx="10"/>
+    <text x="55" y="25" class="label">Browser</text>
+  </g>
+  <g transform="translate(210,30)">
+    <rect width="140" height="40" class="actor" rx="10"/>
+    <text x="70" y="25" class="label">Client App</text>
+  </g>
+  <g transform="translate(380,30)">
+    <rect width="140" height="40" class="actor" rx="10"/>
+    <text x="70" y="25" class="label">Auth Server</text>
+  </g>
+  <g transform="translate(530,30)">
+    <rect width="110" height="40" class="actor" rx="10"/>
+    <text x="55" y="25" class="label">API</text>
+  </g>
+
+  <line x1="115" y1="70" x2="115" y2="290" class="line"/>
+  <line x1="280" y1="70" x2="280" y2="290" class="line"/>
+  <line x1="450" y1="70" x2="450" y2="290" class="line"/>
+  <line x1="585" y1="70" x2="585" y2="290" class="line"/>
+
+  <path d="M115 110 H450" class="msg"/>
+  <text x="282" y="100" class="text">1. Auth request + code challenge</text>
+  <path d="M450 140 H115" class="msg"/>
+  <text x="282" y="130" class="text">2. Auth code redirected</text>
+  <path d="M280 180 H450" class="msg"/>
+  <text x="365" y="170" class="text">3. Token request + verifier</text>
+  <path d="M450 210 H280" class="msg"/>
+  <text x="365" y="200" class="text">4. Access + refresh token</text>
+  <path d="M280 250 H585" class="msg"/>
+  <text x="430" y="240" class="text">5. API call with bearer token</text>
+  <path d="M585 280 H280" class="msg"/>
+  <text x="430" y="270" class="text">6. Resource response</text>
+</svg>

@@ -1,0 +1,46 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 320" role="img" aria-labelledby="title desc">
+  <title id="title">Zero Trust architecture logical components</title>
+  <desc id="desc">Diagram showing policy engine, policy administrator, policy enforcement point, and data plane resources in a zero trust model.</desc>
+  <style>
+    .box{fill:#111726;stroke:#4cc2ff;stroke-width:2}
+    .label{font:600 14px 'Segoe UI',sans-serif;fill:#e6edf3;text-anchor:middle}
+    .muted{font:12px 'Segoe UI',sans-serif;fill:#9fb0c3;text-anchor:middle}
+    .arrow{stroke:#22d3ee;stroke-width:2;marker-end:url(#arrowhead)}
+    .resource{fill:#0b0f14;stroke:#f97316;stroke-width:2}
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#22d3ee"/>
+    </marker>
+  </defs>
+  <rect x="40" y="40" width="160" height="80" class="box" rx="12"/>
+  <text x="120" y="75" class="label">Policy Engine</text>
+  <text x="120" y="95" class="muted">Signals + context</text>
+
+  <rect x="240" y="40" width="160" height="80" class="box" rx="12"/>
+  <text x="320" y="75" class="label">Policy Admin</text>
+  <text x="320" y="95" class="muted">Generates decisions</text>
+
+  <rect x="440" y="40" width="140" height="80" class="box" rx="12"/>
+  <text x="510" y="75" class="label">Policy Enforcement</text>
+  <text x="510" y="95" class="muted">Gateway / proxy</text>
+
+  <path d="M200 80 H240" class="arrow"/>
+  <path d="M400 80 H440" class="arrow"/>
+  <text x="320" y="30" class="muted">Control plane</text>
+
+  <rect x="120" y="180" width="120" height="70" class="resource" rx="12"/>
+  <text x="180" y="210" class="muted">Workload A</text>
+  <rect x="280" y="180" width="120" height="70" class="resource" rx="12"/>
+  <text x="340" y="210" class="muted">Workload B</text>
+  <rect x="440" y="180" width="120" height="70" class="resource" rx="12"/>
+  <text x="500" y="210" class="muted">Data Store</text>
+
+  <circle cx="60" cy="215" r="30" class="resource"/>
+  <text x="60" y="220" class="muted">User</text>
+  <path d="M90 215 H120" class="arrow"/>
+  <path d="M510 120 V180" class="arrow"/>
+  <path d="M320 120 V180" class="arrow"/>
+  <path d="M180 120 V180" class="arrow"/>
+  <text x="320" y="270" class="muted">Policy enforcement brokers every request based on continuous verification</text>
+</svg>

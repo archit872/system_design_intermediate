@@ -1,0 +1,60 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 280" role="img" aria-labelledby="title desc">
+  <title id="title">Rolling deployment batches</title>
+  <desc id="desc">Diagram showing rolling deployment batches gradually replacing instances with health checks.</desc>
+  <style>
+    .batch-old{fill:#1d4ed8;stroke:#93c5fd;stroke-width:2}
+    .batch-new{fill:#15803d;stroke:#86efac;stroke-width:2}
+    .label{font:600 14px 'Segoe UI',sans-serif;fill:#e6edf3;text-anchor:middle}
+    .muted{font:12px 'Segoe UI',sans-serif;fill:#9fb0c3;text-anchor:middle}
+    .arrow{stroke:#22d3ee;stroke-width:2;marker-end:url(#arrowhead)}
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#22d3ee"/>
+    </marker>
+  </defs>
+  <text x="80" y="50" class="label">Batch 1</text>
+  <text x="240" y="50" class="label">Batch 2</text>
+  <text x="400" y="50" class="label">Batch 3</text>
+  <text x="560" y="50" class="label">Batch 4</text>
+
+  <g transform="translate(20,70)">
+    <rect width="120" height="60" class="batch-new" rx="12"/>
+    <text x="60" y="105" class="muted">New</text>
+  </g>
+  <g transform="translate(180,70)">
+    <rect width="120" height="60" class="batch-new" rx="12"/>
+    <text x="60" y="105" class="muted">New</text>
+  </g>
+  <g transform="translate(340,70)">
+    <rect width="120" height="60" class="batch-new" rx="12"/>
+    <text x="60" y="105" class="muted">New</text>
+  </g>
+  <g transform="translate(500,70)">
+    <rect width="120" height="60" class="batch-new" rx="12"/>
+    <text x="60" y="105" class="muted">New</text>
+  </g>
+
+  <g transform="translate(20,160)">
+    <rect width="120" height="60" class="batch-old" rx="12"/>
+    <text x="60" y="195" class="muted">Old</text>
+  </g>
+  <g transform="translate(180,160)">
+    <rect width="120" height="60" class="batch-old" rx="12"/>
+    <text x="60" y="195" class="muted">Old</text>
+  </g>
+  <g transform="translate(340,160)">
+    <rect width="120" height="60" class="batch-old" rx="12"/>
+    <text x="60" y="195" class="muted">Old</text>
+  </g>
+  <g transform="translate(500,160)">
+    <rect width="120" height="60" class="batch-old" rx="12"/>
+    <text x="60" y="195" class="muted">Old</text>
+  </g>
+
+  <path d="M80 140 V160" class="arrow"/>
+  <path d="M240 140 V160" class="arrow"/>
+  <path d="M400 140 V160" class="arrow"/>
+  <path d="M560 140 V160" class="arrow"/>
+  <text x="320" y="240" class="muted">Each batch rotates after health checks succeed, keeping capacity online</text>
+</svg>

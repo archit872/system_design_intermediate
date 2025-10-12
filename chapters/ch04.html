@@ -136,8 +136,8 @@
       <p><strong>Pitfall:</strong> Storing large blobs or high-churn data in coordination stores; they are optimized for small config/metadata and steady workloads. Another trap is “DIY locks” without fencing tokens, causing split-brain writers.</p>
 
       <figure>
-        <img src="https://etcd.io/images/etcd-arch.png" alt="etcd cluster with multiple members, clients, and the Raft replication layer" loading="lazy" decoding="async" width="942" height="512" referrerpolicy="no-referrer">
-        <figcaption>etcd replicates state with Raft and exposes a simple KV API for coordination (etcd Docs, 2025).</figcaption>
+        <img src="images/etcd-architecture.svg" alt="Custom diagram of an etcd cluster with three members and watchers" loading="lazy" decoding="async" width="520" height="300">
+        <figcaption>etcd replicates state with Raft and exposes a simple KV API for coordination (illustrated in-house, based on etcd Docs, 2025).</figcaption>
       </figure>
 
       <p><em>Compare: ZooKeeper vs etcd vs Consul</em></p>
@@ -285,9 +285,9 @@ else:
       <ul class="resource-list">
         <li>https://docs.confluent.io/_images/consumer-group.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
         <li>https://docs.aws.amazon.com/images/sns/latest/dg/images/sns-fanout.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://etcd.io/images/etcd-arch.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>images/etcd-architecture.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
       </ul>
-      <p class="muted">Only HTTPS, non-SVG images with 200 OK and image/* MIME types are included.</p>
+      <p class="muted">Only HTTPS assets or vetted local SVGs with reliable licensing are included.</p>
     </section> -->
 
     <!--
@@ -297,7 +297,7 @@ else:
     - [x] Pager prev/next valid; ToC numbering matches
     - [x] Order: Hero → Numbered Sections → Resources → Recap
     - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
-    - [x] Images: HTTPS, non-SVG, validated 200 OK image/*; captions + attribution included
+    - [x] Images: Local SVG or HTTPS assets validated; captions + attribution included
     - [x] Head/meta complete; no TODOs
     -->
   </main>

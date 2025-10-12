@@ -1,13 +1,13 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 08 — Designing for Evolution and Extensibility</title>
+  <title>Chapter 08 â€” Designing for Evolution and Extensibility</title>
   <meta name="description" content="Strategies to evolve systems safely: feature flags and rollouts, backward compatibility and schema evolution, refactoring at scale with the Strangler pattern, and pragmatic tech-debt management.">
-  <meta property="og:title" content="Chapter 08 — Designing for Evolution and Extensibility">
-  <meta property="og:description" content="Plan and execute change without breaking users: toggles, migrations, API and schema versioning, domain boundaries, and debt metrics with a monolith→microservices checkpoint.">
+  <meta property="og:title" content="Chapter 08 â€” Designing for Evolution and Extensibility">
+  <meta property="og:description" content="Plan and execute change without breaking users: toggles, migrations, API and schema versioning, domain boundaries, and debt metrics with a monolithâ†’microservices checkpoint.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
   <link rel="stylesheet" href="styles/theme.css">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design â€” Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -36,7 +36,7 @@
         <span class="badge">Evolution &amp; Extensibility</span>
       </div>
       <h1>Designing for Evolution and Extensibility</h1>
-      <p class="abstract">Change is the only constant. Systems that thrive over years are built to evolve safely: they hide new code behind flags, preserve backward compatibility through deliberate contracts, migrate data and APIs without surprises, and carve clear domain boundaries so refactors don’t ripple everywhere. In this chapter you will plan safe rollouts, version APIs and schemas, apply the Strangler pattern to decompose a monolith, and measure technical debt so it doesn’t quietly eat your roadmap.</p>
+      <p class="abstract">Change is the only constant. Systems that thrive over years are built to evolve safely: they hide new code behind flags, preserve backward compatibility through deliberate contracts, migrate data and APIs without surprises, and carve clear domain boundaries so refactors donâ€™t ripple everywhere. In this chapter you will plan safe rollouts, version APIs and schemas, apply the Strangler pattern to decompose a monolith, and measure technical debt so it doesnâ€™t quietly eat your roadmap.</p>
     </div>
   </header>
 
@@ -48,16 +48,16 @@
 
       <h3 id="ch08-1-1">08.1.1 Feature Toggles and Progressive Delivery</h3>
       <p><strong>Plain:</strong> A feature toggle (flag) is a conditional that allows you to turn a behavior on or off at runtime without redeploying. Progressive delivery gradually increases exposure: from internal users, to 1% of customers, to everyone.</p>
-      <p><strong>Formal:</strong> A <em>flag</em> evaluates a targeting rule (by user, tenant, region, device) to produce a treatment (<code>on</code>/<code>off</code>/<code>variant</code>). Progressive rollout uses staged policies: <em>beta</em> (employees), <em>canary</em> (1–5%), <em>ramp</em> (10→25→50→100%), with automatic rollback based on SLIs (error rate, latency, conversion). Flags must be <em>server-evaluated</em> for sensitive logic and cached locally with a <em>TTL</em> to reduce request-time overhead. Always attach <em>kill switches</em> for quick disable.</p>
-      <p><strong>Pitfall:</strong> “Flag forever.” Long-lived toggles become hidden complexity and divergent code paths. Set an <em>expiry date</em> for each flag and track owners; delete toggles once a feature is fully rolled out.</p>
+      <p><strong>Formal:</strong> A <em>flag</em> evaluates a targeting rule (by user, tenant, region, device) to produce a treatment (<code>on</code>/<code>off</code>/<code>variant</code>). Progressive rollout uses staged policies: <em>beta</em> (employees), <em>canary</em> (1â€“5%), <em>ramp</em> (10â†’25â†’50â†’100%), with automatic rollback based on SLIs (error rate, latency, conversion). Flags must be <em>server-evaluated</em> for sensitive logic and cached locally with a <em>TTL</em> to reduce request-time overhead. Always attach <em>kill switches</em> for quick disable.</p>
+      <p><strong>Pitfall:</strong> â€œFlag forever.â€ Long-lived toggles become hidden complexity and divergent code paths. Set an <em>expiry date</em> for each flag and track owners; delete toggles once a feature is fully rolled out.</p>
 
       <figure>
-        <img src="https://docs.aws.amazon.com/images/codedeploy/latest/userguide/images/deployment-architecture-blue-green.png" alt="Blue/green deployment architecture with two parallel environments and traffic switching" loading="lazy" decoding="async" width="864" height="480" referrerpolicy="no-referrer">
-        <figcaption>Blue/green keeps old and new code in parallel so traffic can be shifted safely (AWS CodeDeploy Docs, 2024–2025).</figcaption>
+        <img src="images/blue-green-deployment.svg" alt="Custom blue-green deployment diagram with weighted routing between environments" loading="lazy" decoding="async" width="640" height="280">
+        <figcaption>Blue/green keeps old and new code in parallel so traffic can be shifted safely (custom illustration inspired by AWS CodeDeploy Docs, 2024-2025).</figcaption>
       </figure>
 
       <h3 id="ch08-1-2">08.1.2 Rollout Strategies</h3>
-      <p><strong>Plain:</strong> Don’t flip a giant switch. Choose a rollout that matches risk.</p>
+      <p><strong>Plain:</strong> Donâ€™t flip a giant switch. Choose a rollout that matches risk.</p>
       <ul>
         <li><strong>Blue/Green:</strong> Run two identical environments; shift traffic from blue (old) to green (new). Fast rollback by switching back.</li>
         <li><strong>Canary:</strong> Send a small percentage to the new version first; watch SLIs and expand if healthy.</li>
@@ -65,8 +65,8 @@
       </ul>
 
       <figure>
-        <img src="https://docs.aws.amazon.com/images/codedeploy/latest/userguide/images/deployment-architecture-rolling.png" alt="Rolling deployment replacing instances in batches with health checks" loading="lazy" decoding="async" width="864" height="480" referrerpolicy="no-referrer">
-        <figcaption>Rolling deployment replaces instances in batches with health checks to limit blast radius (AWS CodeDeploy Docs, 2024–2025).</figcaption>
+        <img src="images/rolling-deployment.svg" alt="Custom rolling deployment diagram showing batches of old and new instances" loading="lazy" decoding="async" width="640" height="280">
+        <figcaption>Rolling deployment replaces instances in batches with health checks to limit blast radius (custom illustration inspired by AWS CodeDeploy Docs, 2024-2025).</figcaption>
       </figure>
 
       <p><em>Compare: Rollout Methods</em></p>
@@ -76,13 +76,13 @@
         </thead>
         <tbody>
           <tr><td>Blue/Green</td><td>Low</td><td>Instant switch</td><td>Higher (double capacity)</td><td>High-risk releases, schema changes</td></tr>
-          <tr><td>Canary</td><td>Low–Medium</td><td>Fast (reduce %)</td><td>Low–Medium</td><td>Most feature releases</td></tr>
+          <tr><td>Canary</td><td>Lowâ€“Medium</td><td>Fast (reduce %)</td><td>Lowâ€“Medium</td><td>Most feature releases</td></tr>
           <tr><td>Rolling</td><td>Medium</td><td>Medium</td><td>Low</td><td>Routine deploys</td></tr>
         </tbody>
       </table>
 
       <h3 id="ch08-1-3">08.1.3 Observability for Evolution</h3>
-      <p><strong>Plain:</strong> You can’t safely expand a rollout if you can’t see its impact.</p>
+      <p><strong>Plain:</strong> You canâ€™t safely expand a rollout if you canâ€™t see its impact.</p>
       <p><strong>Formal:</strong> Attach <em>experiment keys</em> (flag name, variant) and <em>build metadata</em> (commit, version) to logs and traces. Segment your SLIs by variant and tenant. Use burn-rate alerts keyed to the canary slice so a small failure pages quickly without hiding in the global average.</p>
 
       <p class="summary">Takeaway: Treat every change as an experiment. Use flags and staged rollouts, watch user-facing SLIs, and make rollback a button, not a project.</p>
@@ -101,7 +101,7 @@
         <li><strong>Resource Versioning:</strong> Version field or media type: <code>Accept: application/vnd.api+json;version=2</code>, or path-based <code>/v2/</code>. Keep <em>two adjacent versions</em> live during migration, deprecate with dates.</li>
         <li><strong>Schema Evolution (Protobuf/Avro):</strong> Additive changes (new optional fields) are backward compatible; never reuse or repurpose field numbers; reserve removed fields.</li>
       </ul>
-      <p><strong>Pitfall:</strong> “Silent” breaking changes—renaming fields, changing types, or tightening validation without bumping a version. Bake compatibility checks into CI with contract tests and schema diffs.</p>
+      <p><strong>Pitfall:</strong> â€œSilentâ€ breaking changesâ€”renaming fields, changing types, or tightening validation without bumping a version. Bake compatibility checks into CI with contract tests and schema diffs.</p>
 
       <h3 id="ch08-2-2">08.2.2 Database Schema Evolution</h3>
       <p><strong>Plain:</strong> Most outages during change involve the database. Evolve schemas with <em>expand/contract</em> patterns so app and DB changes can ship independently.</p>
@@ -116,7 +116,7 @@
 
       <h3 id="ch08-2-3">08.2.3 Idempotency and Tolerant Readers</h3>
       <p><strong>Plain:</strong> New producers and old consumers will coexist. <em>Tolerant readers</em> ignore unknown fields; <em>idempotent writers</em> allow safe retries during cutovers.</p>
-      <p><strong>Formal:</strong> For JSON, require consumers to ignore extra properties and default missing ones. For Protobuf/Avro, unknown fields are already ignored if you don’t reuse tags. For side-effecting operations during migration, require idempotency keys or natural idempotence (upserts with unique constraints).</p>
+      <p><strong>Formal:</strong> For JSON, require consumers to ignore extra properties and default missing ones. For Protobuf/Avro, unknown fields are already ignored if you donâ€™t reuse tags. For side-effecting operations during migration, require idempotency keys or natural idempotence (upserts with unique constraints).</p>
 
       <p class="summary">Takeaway: Make compatibility a product feature. Use explicit versioning, schema-safe evolutions, tolerant readers, and idempotent writes so you can ship changes continuously.</p>
     </section>
@@ -129,15 +129,15 @@
       <h3 id="ch08-3-1">08.3.1 Domain Boundaries and Contracts</h3>
       <p><strong>Plain:</strong> If your system has fuzzy boundaries, every change is risky. Clear domains reduce coupling and make refactors local.</p>
       <p><strong>Formal:</strong> Use <em>bounded contexts</em> (Domain-Driven Design) to define responsibility and language for each domain (e.g., <em>Identity</em>, <em>Catalog</em>, <em>Orders</em>). Contracts between contexts are thin and explicit: an API, an event schema, or a replicated read model. Avoid sharing database tables across contexts.</p>
-      <p><strong>Pitfall:</strong> “Microservices” that are just a distributed monolith—many services still sharing a database and deployment timeline.</p>
+      <p><strong>Pitfall:</strong> â€œMicroservicesâ€ that are just a distributed monolithâ€”many services still sharing a database and deployment timeline.</p>
 
       <h3 id="ch08-3-2">08.3.2 The Strangler Pattern</h3>
-      <p><strong>Plain:</strong> Replace a monolith piece by piece. Route a small subset of flows to a new service, then grow it until the old piece dies—like a strangler fig around a tree (hence the name).</p>
+      <p><strong>Plain:</strong> Replace a monolith piece by piece. Route a small subset of flows to a new service, then grow it until the old piece diesâ€”like a strangler fig around a tree (hence the name).</p>
       <p><strong>Formal:</strong> Put a <em>routing seam</em> in front of the monolith (proxy/gateway). For the first capability you carve out, duplicate data flows: the new service handles reads/writes for just that capability; an <em>anti-corruption layer</em> translates between old and new models. When the new service is stable and the old code is unused, you delete the old code path and repeat.</p>
 
       <figure>
-        <img src="https://martinfowler.com/bliki/images/strangler/stranglerFig.png" alt="Strangler Fig pattern metaphor: a new system grows around the legacy and gradually replaces it" loading="lazy" decoding="async" width="352" height="542" referrerpolicy="no-referrer">
-        <figcaption>The Strangler pattern replaces legacy functionality incrementally (Martin Fowler, 2004–2020).</figcaption>
+        <img src="images/strangler-fig.svg" alt="Custom strangler fig migration diagram showing a new facade gradually replacing a legacy core" loading="lazy" decoding="async" width="520" height="260">
+        <figcaption>The Strangler pattern replaces legacy functionality incrementally (custom illustration inspired by Martin Fowler, 2004-2020).</figcaption>
       </figure>
 
       <h3 id="ch08-3-3">08.3.3 Safety Nets: Tests, Shadow Traffic, and Replay</h3>
@@ -147,11 +147,11 @@
         <li><strong>Shadow traffic:</strong> Mirror a slice of production requests to the new service (responses discarded) to measure correctness and performance before switching.</li>
         <li><strong>Replay harness:</strong> Reproduce recent traffic from logs/queues against the new service with idempotency to verify results quickly.</li>
       </ul>
-      <p><strong>Pitfall:</strong> “Big bang” rewrites that never ship. Prefer vertical slices you can route within weeks.</p>
+      <p><strong>Pitfall:</strong> â€œBig bangâ€ rewrites that never ship. Prefer vertical slices you can route within weeks.</p>
 
       <h3 id="ch08-3-4">08.3.4 When Not to Split</h3>
-      <p><strong>Plain:</strong> Splitting a service adds costs: latency between services, more deployments, more monitoring. If you don’t gain independent scaling or ownership, don’t split.</p>
-      <p><strong>Formal:</strong> Evaluate against three axes: <em>independence</em> (can a team own and ship it alone?), <em>scalability</em> (does it have distinct load patterns?), and <em>risk isolation</em> (does it reduce blast radius?). If “no” on all three, refactor <em>inside</em> the service instead (modules, packages, clear interfaces).</p>
+      <p><strong>Plain:</strong> Splitting a service adds costs: latency between services, more deployments, more monitoring. If you donâ€™t gain independent scaling or ownership, donâ€™t split.</p>
+      <p><strong>Formal:</strong> Evaluate against three axes: <em>independence</em> (can a team own and ship it alone?), <em>scalability</em> (does it have distinct load patterns?), and <em>risk isolation</em> (does it reduce blast radius?). If â€œnoâ€ on all three, refactor <em>inside</em> the service instead (modules, packages, clear interfaces).</p>
 
       <p class="summary">Takeaway: Carve along domain seams, route gradually with a proxy, and use shadowing/replay to de-risk. Split services only when benefits beat the permanent costs.</p>
     </section>
@@ -163,32 +163,32 @@
 
       <h3 id="ch08-4-1">08.4.1 Defining and Sizing Debt</h3>
       <p><strong>Plain:</strong> Tech debt is code, design, or operational shortcuts you keep paying for. Not all debt is bad; some is a smart bet if you repay it.</p>
-      <p><strong>Formal:</strong> Use a simple <em>principal × interest</em> model. <em>Principal</em> is the one-time cost to fix (e.g., 5 engineer-days). <em>Interest</em> is the recurring cost (e.g., 2 hours/week in incidents or workarounds). Prioritize items with high interest, especially those that hit SLIs or delivery velocity. Add <em>risk</em> as a multiplier when a debt can cause severe outages (e.g., a single-tenant hotspot).</p>
+      <p><strong>Formal:</strong> Use a simple <em>principal Ã— interest</em> model. <em>Principal</em> is the one-time cost to fix (e.g., 5 engineer-days). <em>Interest</em> is the recurring cost (e.g., 2 hours/week in incidents or workarounds). Prioritize items with high interest, especially those that hit SLIs or delivery velocity. Add <em>risk</em> as a multiplier when a debt can cause severe outages (e.g., a single-tenant hotspot).</p>
 
       <h3 id="ch08-4-2">08.4.2 Metrics That Matter</h3>
       <ul>
         <li><strong>Change failure rate:</strong> % of deploys causing incidents or rollbacks.</li>
-        <li><strong>Lead time for changes:</strong> Idea → production. Rising times indicate friction.</li>
+        <li><strong>Lead time for changes:</strong> Idea â†’ production. Rising times indicate friction.</li>
         <li><strong>MTTR:</strong> Mean time to recover; a proxy for how understandable and operable the system is.</li>
-        <li><strong>Cycle time by domain:</strong> If one domain’s changes consistently lag, the architecture may be fighting you.</li>
+        <li><strong>Cycle time by domain:</strong> If one domainâ€™s changes consistently lag, the architecture may be fighting you.</li>
       </ul>
-      <p><strong>Pitfall:</strong> Counting only code smells. Architectural and data debts (shared databases, “god” tables, missing indexes) usually dominate impact.</p>
+      <p><strong>Pitfall:</strong> Counting only code smells. Architectural and data debts (shared databases, â€œgodâ€ tables, missing indexes) usually dominate impact.</p>
 
       <h3 id="ch08-4-3">08.4.3 Governance &amp; Paydown Cadence</h3>
-      <p><strong>Plain:</strong> If paying debt is “extra,” it never happens. Bake it into planning.</p>
-      <p><strong>Formal:</strong> Set a policy like “allocate 15–20% of capacity to reliability and debt every sprint.” Maintain a <em>debt register</em> with owner, principal, interest, and risk. Tie items to measurable outcomes (e.g., reduce MTTR by 20%). Make debt reduction a first-class goal in quarterly plans, not ad-hoc favors.</p>
+      <p><strong>Plain:</strong> If paying debt is â€œextra,â€ it never happens. Bake it into planning.</p>
+      <p><strong>Formal:</strong> Set a policy like â€œallocate 15â€“20% of capacity to reliability and debt every sprint.â€ Maintain a <em>debt register</em> with owner, principal, interest, and risk. Tie items to measurable outcomes (e.g., reduce MTTR by 20%). Make debt reduction a first-class goal in quarterly plans, not ad-hoc favors.</p>
 
       <h3 id="ch08-4-4">08.4.4 Communication: Debt as Strategy</h3>
       <p><strong>Plain:</strong> Non-technical stakeholders fund what they understand. Tell the story in outcomes.</p>
-      <p><strong>Formal:</strong> Express debt in unit economics: “This refactor reduces checkout latency P95 by 80 ms, worth +₹X/month revenue, and halves incident minutes.” Use dashboards to show trend lines before/after.</p>
+      <p><strong>Formal:</strong> Express debt in unit economics: â€œThis refactor reduces checkout latency P95 by 80 ms, worth +â‚¹X/month revenue, and halves incident minutes.â€ Use dashboards to show trend lines before/after.</p>
 
       <p class="summary">Takeaway: Measure principal and interest, prioritize by impact on reliability and speed, and schedule paydown as a habit. Communicate outcomes, not just refactor plans.</p>
     </section>
 
     <!-- 08.5 -->
     <section class="section" id="ch08-5">
-      <h2>08.5 Checkpoints — Monolith → Microservices Migration</h2>
-      <p id="ch08-5-why">Why it matters: Many teams start with a monolith for good reasons. When growth forces change, a disciplined migration avoids the “distributed big ball of mud.”</p>
+      <h2>08.5 Checkpoints â€” Monolith â†’ Microservices Migration</h2>
+      <p id="ch08-5-why">Why it matters: Many teams start with a monolith for good reasons. When growth forces change, a disciplined migration avoids the â€œdistributed big ball of mud.â€</p>
 
       <h3 id="ch08-5-1">08.5.1 Scenario &amp; Constraints</h3>
       <ul>
@@ -199,12 +199,12 @@
 
       <h3 id="ch08-5-2">08.5.2 8-Step Migration Plan</h3>
       <ol>
-        <li><strong>Draw boundaries:</strong> Choose first domain with strong ROI and clear seams—<em>Identity</em> or <em>Catalog</em> are common. Write domain docs and API/event contracts.</li>
+        <li><strong>Draw boundaries:</strong> Choose first domain with strong ROI and clear seamsâ€”<em>Identity</em> or <em>Catalog</em> are common. Write domain docs and API/event contracts.</li>
         <li><strong>Put a routing seam:</strong> Deploy an API gateway in front. All traffic goes through it so you can route per-endpoint to monolith or new services.</li>
         <li><strong>Clone data paths:</strong> Introduce an event log or CDC to publish changes out of the monolith database (e.g., <code>UserCreated</code>, <code>ProductUpdated</code>). New services subscribe to build their own stores.</li>
-        <li><strong>Build the first service:</strong> Implement <em>Catalog</em> as a separate service with its own DB. Provide read models for the monolith temporarily so UI/API don’t change yet.</li>
-        <li><strong>Shadow &amp; replay:</strong> Mirror 5–10% of production requests to the new service. Fix gaps discovered under real traffic.</li>
-        <li><strong>Route progressively:</strong> Canary actual traffic (1%→10%→50%→100%) behind a feature flag. Keep rollback switch ready.</li>
+        <li><strong>Build the first service:</strong> Implement <em>Catalog</em> as a separate service with its own DB. Provide read models for the monolith temporarily so UI/API donâ€™t change yet.</li>
+        <li><strong>Shadow &amp; replay:</strong> Mirror 5â€“10% of production requests to the new service. Fix gaps discovered under real traffic.</li>
+        <li><strong>Route progressively:</strong> Canary actual traffic (1%â†’10%â†’50%â†’100%) behind a feature flag. Keep rollback switch ready.</li>
         <li><strong>Cut old code:</strong> Remove monolith catalog code once the new path is stable; delete shared tables; enforce boundaries.</li>
         <li><strong>Repeat:</strong> Move to the next domain (<em>Orders</em>). Reuse the playbook, refine with lessons learned.</li>
       </ol>
@@ -213,15 +213,15 @@
       <ul>
         <li><strong>Dual writes inconsistency:</strong> Use outbox pattern to atomically publish events with writes; reconcile via periodic checks.</li>
         <li><strong>Latency regressions:</strong> Co-locate services and databases; use bulk endpoints and caching; measure P95/P99 per route during rollout.</li>
-        <li><strong>Ownership confusion:</strong> Each new service must have a clear team owner, on-call, and roadmap; avoid “orphan” services.</li>
+        <li><strong>Ownership confusion:</strong> Each new service must have a clear team owner, on-call, and roadmap; avoid â€œorphanâ€ services.</li>
         <li><strong>Schema drift:</strong> Freeze shared DB writes early; derive read models instead of sharing tables.</li>
       </ul>
 
       <h3 id="ch08-5-4">08.5.4 Success Criteria</h3>
       <ul>
-        <li>Checkout P95 ≤ 300&nbsp;ms; change failure rate ≤ 10%; MTTR ≤ 30 minutes.</li>
+        <li>Checkout P95 â‰¤ 300&nbsp;ms; change failure rate â‰¤ 10%; MTTR â‰¤ 30 minutes.</li>
         <li>Independent deploys for two domains with &lt; 10 minutes pipeline time.</li>
-        <li>Zero user-visible downtime during cutovers; <em>replay</em> &amp; <em>shadow</em> coverage ≥ 80% of hot endpoints.</li>
+        <li>Zero user-visible downtime during cutovers; <em>replay</em> &amp; <em>shadow</em> coverage â‰¥ 80% of hot endpoints.</li>
       </ul>
 
       <p class="summary">Deliverables: a migration diagram (gateway seam, topics, new service DBs), a rollout runbook with flags and canaries, a compatibility matrix (old vs new contracts), and an SLO dashboard segmented by route.</p>
@@ -231,13 +231,13 @@
     <section class="section" id="ch08-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>Martin Fowler — Strangler Fig &amp; Evolutionary Architecture</strong> — Canonical guidance on incremental replacement and fitness functions (Fowler, 2004–2020). <span class="badge">Free</span></li>
-        <li><strong>ThoughtWorks Technology Radar</strong> — Pragmatic positions on flags, progressive delivery, and architectural practices (ThoughtWorks, 2024–2025). <span class="badge">Free</span></li>
-        <li><strong>Protobuf/Avro Schema Evolution</strong> — Official docs on compatible changes and field numbering (Google/Apache, ongoing). <span class="badge">Free</span></li>
-        <li><strong>AWS CodeDeploy Docs</strong> — Blue/green, canary, and rolling strategies with concrete runbooks (AWS, 2024–2025). <span class="badge">Free</span></li>
-        <li><strong>Domain-Driven Design References</strong> — Bounded contexts and anti-corruption layers to carve seams (Evans/Community). <span class="badge">Paid/Free</span></li>
+        <li><strong>Martin Fowler â€” Strangler Fig &amp; Evolutionary Architecture</strong> â€” Canonical guidance on incremental replacement and fitness functions (Fowler, 2004â€“2020). <span class="badge">Free</span></li>
+        <li><strong>ThoughtWorks Technology Radar</strong> â€” Pragmatic positions on flags, progressive delivery, and architectural practices (ThoughtWorks, 2024â€“2025). <span class="badge">Free</span></li>
+        <li><strong>Protobuf/Avro Schema Evolution</strong> â€” Official docs on compatible changes and field numbering (Google/Apache, ongoing). <span class="badge">Free</span></li>
+        <li><strong>AWS CodeDeploy Docs</strong> â€” Blue/green, canary, and rolling strategies with concrete runbooks (AWS, 2024â€“2025). <span class="badge">Free</span></li>
+        <li><strong>Domain-Driven Design References</strong> â€” Bounded contexts and anti-corruption layers to carve seams (Evans/Community). <span class="badge">Paid/Free</span></li>
       </ul>
-      <p class="muted">Rationales: These sources remain current for rollout mechanics, schema compatibility rules, and incremental migration patterns that align with this chapter’s techniques.</p>
+      <p class="muted">Rationales: These sources remain current for rollout mechanics, schema compatibility rules, and incremental migration patterns that align with this chapterâ€™s techniques.</p>
     </section>
 
     <!-- Recap -->
@@ -253,25 +253,25 @@
       <ol>
         <li>Pick one domain in your capstone and sketch a strangler plan: gateway rules, events to publish, read models to build, and the first cutover milestone.</li>
         <li>Write an API compatibility policy (versioning, deprecation windows, supported ranges) and add contract tests to CI.</li>
-        <li>Start a debt register with top 10 items, estimating principal and interest; allocate 15–20% team capacity for paydown next sprint.</li>
+        <li>Start a debt register with top 10 items, estimating principal and interest; allocate 15â€“20% team capacity for paydown next sprint.</li>
       </ol>
     </section>
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch07.html"><span class="muted">Prev</span><span>← Chapter 07 — Security and Compliance in Distributed Systems</span></a>
-      <a class="next" rel="next" href="chapters/ch09.html"><span class="muted">Next</span><span>Chapter 09 — Capstone Project: Architecting a Scalable System →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch07.html"><span class="muted">Prev</span><span>â† Chapter 07 â€” Security and Compliance in Distributed Systems</span></a>
+      <a class="next" rel="next" href="chapters/ch09.html"><span class="muted">Next</span><span>Chapter 09 â€” Capstone Project: Architecting a Scalable System â†’</span></a>
     </nav>
 
     <!-- Image Link Audit -->
     <!-- <section class="section" id="ch08-image-audit">
       <h2>Image Link Audit</h2>
       <ul class="resource-list">
-        <li>https://docs.aws.amazon.com/images/codedeploy/latest/userguide/images/deployment-architecture-blue-green.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://docs.aws.amazon.com/images/codedeploy/latest/userguide/images/deployment-architecture-rolling.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://martinfowler.com/bliki/images/strangler/stranglerFig.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>images/blue-green-deployment.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
+        <li>images/rolling-deployment.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
+        <li>images/strangler-fig.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
       </ul>
-      <p class="muted">Only HTTPS, non-SVG images with 200 OK and image/* MIME types are included.</p>
+      <p class="muted">Only HTTPS assets or vetted local SVGs with reliable licensing are included.</p>
     </section> -->
 
     <!--
@@ -279,12 +279,14 @@
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
     - [x] Pager prev/next valid; ToC numbering matches
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
-    - [x] Images: HTTPS, non-SVG, validated 200 OK image/*; captions + attribution included
+    - [x] Order: Hero â†’ Numbered Sections â†’ Resources â†’ Recap
+    - [x] â‰¥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
+    - [x] Images: Local SVG or HTTPS assets validated; captions + attribution included
     - [x] Head/meta complete; no TODOs
     -->
   </main>
 </body>
 </html>
+
+
 

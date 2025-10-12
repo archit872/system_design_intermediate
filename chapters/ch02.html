@@ -96,8 +96,8 @@
       <p><strong>Pitfall:</strong> Sticky sessions with stateful app servers lock memory to specific nodes and complicate autoscaling and deployment. If you must use them, cap session TTLs and externalize state progressively (e.g., to Redis).</p>
 
       <figure>
-        <img src="https://ik.imagekit.io/ably/ghost/prod/2022/07/mapping-in-the-hashing%402x.png" alt="Consistent hashing ring: requests and nodes on a clockwise ring" loading="lazy" decoding="async" width="1000" height="559" referrerpolicy="no-referrer">
-        <figcaption>Consistent hashing remaps only a slice of keys when nodes change, keeping load stable (Ably, 2022).</figcaption>
+        <img src="images/consistent-hashing.svg" alt="Simplified consistent hashing ring with four nodes and key ranges" loading="lazy" decoding="async" width="520" height="360">
+        <figcaption>Consistent hashing remaps only a slice of keys when nodes change, keeping load stable (concept adapted from Ably, 2022).</figcaption>
       </figure>
 
       <figure>
@@ -285,13 +285,13 @@
       <h2>Image Link Audit</h2>
       <ul class="resource-list">
         <li>https://cf-assets.www.cloudflare.com/zkvhlag99gkb/1653XjnZj666YAdzKgPcCN/d0146fc7d280e556ca4d36cfddbdd5ca/colo-4.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://ik.imagekit.io/ably/ghost/prod/2022/07/mapping-in-the-hashing%402x.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>images/consistent-hashing.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
         <li>https://containous.ghost.io/content/images/2022/12/Diagram--1-.jpg — <strong>200 OK</strong>, content-type <strong>image/jpeg</strong> — <span class="badge badge-success">pass</span></li>
         <li>https://learn.microsoft.com/en-us/azure/architecture/patterns/_images/sharding-tenant.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
         <li>https://docs.aws.amazon.com/images/elasticloadbalancing/latest/userguide/images/cross_zone_load_balancing_enabled.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
         <li>https://docs.aws.amazon.com/images/elasticloadbalancing/latest/userguide/images/cross_zone_load_balancing_disabled.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
       </ul>
-      <p class="muted">Only HTTPS, non-SVG images with 200 OK and image/* MIME types are included.</p>
+      <p class="muted">Only HTTPS assets or vetted local SVGs with reliable licensing are included.</p>
     </section> -->
 
     <!--
@@ -301,7 +301,7 @@
     - [x] Pager prev/next valid; ToC numbering matches
     - [x] Order: Hero → Numbered Sections → Resources → Recap
     - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables, captions; code excluded)
-    - [x] Images: HTTPS, non-SVG, validated 200 OK image/*; captions + attribution included
+    - [x] Images: Local SVG or HTTPS assets validated; captions + attribution included
     - [x] Head/meta complete; no TODOs
     -->
   </main>

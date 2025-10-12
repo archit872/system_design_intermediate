@@ -1,0 +1,40 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" role="img" aria-labelledby="title desc">
+  <title id="title">Envelope encryption with AWS KMS</title>
+  <desc id="desc">Diagram showing a customer master key generating a data key, encrypting data, and storing the encrypted data key.</desc>
+  <style>
+    .box{fill:#111726;stroke:#4cc2ff;stroke-width:2}
+    .label{font:600 14px 'Segoe UI',sans-serif;fill:#e6edf3;text-anchor:middle}
+    .muted{font:12px 'Segoe UI',sans-serif;fill:#9fb0c3;text-anchor:middle}
+    .arrow{stroke:#22d3ee;stroke-width:2;marker-end:url(#arrowhead)}
+    .cipher{fill:#0b0f14;stroke:#f97316;stroke-width:2}
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#22d3ee"/>
+    </marker>
+  </defs>
+  <rect x="40" y="60" width="160" height="80" class="box" rx="12"/>
+  <text x="120" y="95" class="label">Customer master key</text>
+  <text x="120" y="115" class="muted">Stored in KMS</text>
+
+  <rect x="240" y="60" width="140" height="80" class="box" rx="12"/>
+  <text x="310" y="95" class="label">Data key</text>
+  <text x="310" y="115" class="muted">Plaintext + ciphertext</text>
+
+  <rect x="430" y="40" width="140" height="70" class="cipher" rx="12"/>
+  <text x="500" y="70" class="muted">Ciphertext blob</text>
+  <text x="500" y="90" class="muted">(encrypted data key)</text>
+
+  <rect x="430" y="150" width="140" height="80" class="box" rx="12"/>
+  <text x="500" y="185" class="label">Application data</text>
+  <text x="500" y="205" class="muted">Encrypted with data key</text>
+
+  <path d="M200 100 H240" class="arrow"/>
+  <text x="220" y="90" class="muted">Generate data key</text>
+  <path d="M380 100 H430" class="arrow"/>
+  <text x="405" y="90" class="muted">Encrypt data key</text>
+  <path d="M310 140 V190" class="arrow"/>
+  <text x="310" y="150" class="muted">Use plaintext key</text>
+  <path d="M430 190 H380" class="arrow" marker-end="url(#arrowhead)"/>
+  <text x="405" y="180" class="muted">Store ciphertext</text>
+</svg>

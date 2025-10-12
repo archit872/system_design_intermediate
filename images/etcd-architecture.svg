@@ -1,0 +1,48 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 300" role="img" aria-labelledby="title desc">
+  <title id="title">etcd cluster architecture</title>
+  <desc id="desc">Diagram showing three etcd members replicating via Raft with client connections and watchers.</desc>
+  <style>
+    .box{fill:#111726;stroke:#38bdf8;stroke-width:2}
+    .label{font:600 14px 'Segoe UI',sans-serif;fill:#e6edf3;text-anchor:middle}
+    .muted{font:12px 'Segoe UI',sans-serif;fill:#9fb0c3;text-anchor:middle}
+    .client{fill:#0b0f14;stroke:#4cc2ff;stroke-width:2}
+    .arrow{stroke:#4cc2ff;stroke-width:2;marker-end:url(#arrowhead)}
+    .raft{stroke:#facc15;stroke-dasharray:6 4;stroke-width:2;fill:none}
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4cc2ff"/>
+    </marker>
+  </defs>
+  <rect x="190" y="20" width="140" height="60" class="client" rx="10"/>
+  <text x="260" y="55" class="label">Clients</text>
+
+  <g transform="translate(60,120)">
+    <rect width="120" height="80" class="box" rx="12"/>
+    <text x="60" y="45" class="label">Member A</text>
+    <text x="60" y="68" class="muted">Leader</text>
+  </g>
+  <g transform="translate(200,120)">
+    <rect width="120" height="80" class="box" rx="12"/>
+    <text x="60" y="45" class="label">Member B</text>
+    <text x="60" y="68" class="muted">Follower</text>
+  </g>
+  <g transform="translate(340,120)">
+    <rect width="120" height="80" class="box" rx="12"/>
+    <text x="60" y="45" class="label">Member C</text>
+    <text x="60" y="68" class="muted">Follower</text>
+  </g>
+
+  <path d="M120 160 Q180 100 250 100" class="arrow"/>
+  <path d="M260 100 Q330 100 400 160" class="arrow"/>
+  <path d="M400 160 Q330 220 260 220" class="arrow"/>
+  <path d="M250 220 Q180 220 120 160" class="arrow"/>
+  <text x="260" y="260" class="muted">Raft log replication keeps members in sync</text>
+
+  <circle cx="110" cy="250" r="26" class="client"/>
+  <text x="110" y="255" class="muted">Watcher</text>
+  <circle cx="410" cy="250" r="26" class="client"/>
+  <text x="410" y="255" class="muted">Watcher</text>
+  <path d="M110 224 L120 200" class="arrow"/>
+  <path d="M410 224 L420 200" class="arrow"/>
+</svg>
