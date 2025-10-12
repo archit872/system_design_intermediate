@@ -1,395 +1,228 @@
-<!-- /chapters/ch05.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Chapter 5 — Scaling & Reliability Strategies</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Scale systems horizontally, apply caching layers, plan replication and failover, and design for reliability with idempotency, quorums, and SLAs.">
-  <meta property="og:title" content="Chapter 5 — Scaling & Reliability Strategies">
-  <meta property="og:description" content="Techniques for horizontal scaling, multi-layer caching, replication/failover, and reliability mechanisms like idempotency and quorum decisions.">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 05 — Reliability, SLOs & SRE Practices</title>
+  <meta name="description" content="Create meaningful SLIs/SLOs with error budgets, reduce toil via automation and runbooks, run incidents and blameless postmortems, and test reliability with chaos and safe rollouts.">
+  <meta property="og:title" content="Chapter 05 — Reliability, SLOs & SRE Practices">
+  <meta property="og:description" content="From goals to operations: user‑centric SLIs/SLOs, error budgets, incident management, runbooks, chaos experiments, load testing, canaries, and rollbacks.">
+  <meta property="og:type" content="article">
   <base href="../">
   <link rel="stylesheet" href="styles/theme.css">
-  <script defer src="scripts/app.js"></script>
+  <script src="scripts/app.js" defer></script>
 </head>
 <body>
-  <!-- ================= NAV (Canonical; verbatim) ================= -->
-  <nav class="app-nav">
-    <div class="bar">
-      <div class="brand"><a href="index.html">System Design</a></div>
-      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
-      <div class="spacer"></div>
-      <div class="links">
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="app-nav">
+    <div class="container inner">
+      <div class="brand">Intermediate System Design</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
+      <nav id="top-menu" class="menu" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="chapters/ch01.html">Chapters</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </div>
+      </nav>
     </div>
-  </nav>
-
-  <!-- ================= HERO ================= -->
-  <header class="page-hero container">
-    <div class="badge">Chapter 5</div>
-    <h1>Scaling &amp; Reliability Strategies</h1>
-    <p>
-      Systems evolve from “works on my laptop” to “serves millions—reliably.” This chapter
-      equips you with a practical toolkit: <strong>horizontal scaling</strong>, multi-layer
-      <strong>caching</strong>, <strong>replication &amp; failover</strong>, and reliability
-      mechanisms like <strong>idempotency</strong>, <strong>quorums</strong>, and <strong>SLAs/SLOs</strong>.
-      You’ll learn to plan growth, tame tail latencies, and keep promises during failures.
-    </p>
   </header>
 
-  <main class="container">
-    <!-- ============== PREREQS & OBJECTIVES ============== -->
-    <section class="section">
-      <div class="grid two-col">
-        <div class="card">
-          <h2>Prerequisites</h2>
-          <ul>
-            <li>Comfort with request lifecycles and basic storage patterns (Ch.3–4).</li>
-            <li>Familiarity with caching concepts and replication terminology.</li>
-            <li>Ability to estimate workloads (RPS, data size, fan-out).</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h2>Learning Objectives</h2>
-          <ul>
-            <li>Contrast horizontal vs. vertical scaling with cost &amp; operability in mind.</li>
-            <li>Apply client/CDN/app/DB caching with cache-miss protection.</li>
-            <li>Design replication/failover topologies across zones/regions.</li>
-            <li>Use idempotency, quorums, and SLAs to engineer reliability.</li>
-          </ul>
-        </div>
-      </div>
+  <main id="main" class="container fade-in">
+    <section class="page-hero" id="5-hero">
+      <div class="meta"><span class="badge badge-primary">Chapter 05</span></div>
+      <h1>Reliability, SLOs &amp; SRE Practices</h1>
+      <p class="abstract">Reliability is not an adjective; it is an engineered budget. In this chapter you will translate product goals into user‑visible SLIs, choose SLO targets, and manage an error budget that balances innovation with stability. You will learn to eliminate toil with runbooks and automation, run incidents with clarity and calm, write blameless postmortems that actually change systems, and validate reliability with chaos experiments, load tests, and safe rollout patterns.</p>
     </section>
 
-    <!-- ============== SECTION 1: HORIZONTAL VS. VERTICAL ============== -->
-    <section class="section">
-      <h2>1) Horizontal vs. Vertical Scaling</h2>
-      <p>
-        <strong>Vertical scaling</strong> (bigger machines) is simple but hits hardware ceilings and
-        raises blast radius. <strong>Horizontal scaling</strong> (more instances) improves resilience and
-        cost elasticity, but demands <abbr title="Stateless processes where state is externalized">statelessness</abbr>,
-        <abbr title="Distributing requests across instances">load balancing</abbr>, and <abbr title="Coordinating configuration and rollout across many nodes">orchestration</abbr>.
-      </p>
-      <div class="callout info">
-        <h3>Scaling Heuristic</h3>
-        <p>Scale vertically to buy time; invest horizontally for durability. Make vertical steps small and reversible; design for horizontal from day one.</p>
-      </div>
-      <h3>Example: Search API</h3>
-      <p>
-        A search service saturates CPU at 70% during peak. Vertical: move to a larger node—quick win but cost spikes 2×.
-        Horizontal: add 3 read replicas behind a balancer; shard the index by tenant. Result: better p99 with graceful degradation.
-      </p>
-      <figure>
-        <svg role="img" aria-label="Horizontal vs vertical scaling" viewBox="0 0 880 240">
-          <rect x="0" y="0" width="880" height="240" rx="12" fill="#0f141b"/>
-          <g fill="#e6edf3" font-family="ui-sans-serif,system-ui,Roboto,Inter,Arial" font-size="12">
-            <rect x="40" y="60" width="130" height="120" rx="10" fill="#111726" stroke="#1b2330"/>
-            <text x="58" y="125">Vertical ↑</text>
-            <rect x="260" y="60" width="130" height="50" rx="10" fill="#111726" stroke="#1b2330"/>
-            <rect x="260" y="130" width="130" height="50" rx="10" fill="#111726" stroke="#1b2330"/>
-            <text x="282" y="125">Horizontal →</text>
-            <line x1="190" y1="120" x2="250" y2="120" stroke="#4cc2ff" stroke-width="3"/>
-            <polygon points="248,120 238,115 238,125" fill="#4cc2ff"/>
-          </g>
-        </svg>
-        <figcaption>Vertical increases a single node’s capacity; horizontal multiplies nodes to share load.</figcaption>
-      </figure>
-    </section>
+    <section class="section" id="5-1-slo-sli-foundations">
+      <h2>5.1 SLO/SLI foundations</h2>
+      <p><strong>Why it matters.</strong> Teams often ship features quickly until an outage resets trust. SLIs and SLOs tie engineering to user value and provide a measurable throttle for change.</p>
 
-    <!-- ============== SECTION 2: CACHING STRATEGIES ============== -->
-    <section class="section">
-      <h2>2) Caching Strategies (Client, CDN, Application, DB)</h2>
-      <p>
-        Caches reduce latency and load. Use them at multiple layers with crystal-clear <strong>invalidation</strong>.
-        Common patterns include <strong>cache-aside</strong> (fetch on miss), <strong>write-through</strong> (write to cache &amp; DB),
-        and <strong>write-back</strong> (write to cache; async flush to DB).
-      </p>
-      <div class="grid two-col">
-        <div>
-          <h3>Client &amp; CDN</h3>
-          <p>
-            Leverage HTTP caching (<code>Cache-Control</code>, <code>ETag</code>). Use <strong>CDN</strong> for static and cacheable dynamic content.
-            Apply <strong>stale-while-revalidate</strong> to serve responses while refreshing in background, and <strong>request coalescing</strong>
-            to avoid stampedes.
-          </p>
-        </div>
-        <div>
-          <h3>Application &amp; DB</h3>
-          <p>
-            In-memory caches (per-instance) are fastest but not shared; distributed caches (Redis/Memcached) share heat.
-            For DB caching, index hot queries and consider materialized views for read-heavy analytics.
-          </p>
-        </div>
-      </div>
-      <h3>Compare &amp; Contrast: Cache-Aside vs. Write-Through vs. Write-Back</h3>
-      <table>
-        <thead><tr><th>Pattern</th><th>Pros</th><th>Cons</th><th>Best For</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>Cache-Aside</td>
-            <td>Simple; avoids stale writes</td>
-            <td>Cold-start misses; stampede risk</td>
-            <td>General read-heavy workloads</td>
-          </tr>
-          <tr>
-            <td>Write-Through</td>
-            <td>Read hits immediately fresh</td>
-            <td>Write latency increases</td>
-            <td>Moderate write rates; freshness critical</td>
-          </tr>
-          <tr>
-            <td>Write-Back</td>
-            <td>Fast writes; batch to DB</td>
-            <td>Durability risk; complex recovery</td>
-            <td>High write bursts with tolerance for delay</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="callout warn">
-        <strong>Trade-off:</strong> More caching boosts performance but complicates correctness.
-        Document TTLs, invalidation triggers, and fallbacks for cache outages.
-      </div>
-
-      <h3>Example: API Hot Key Protection</h3>
-      <p>
-        A celebrity profile drives a “hot key.” Deploy <strong>soft TTL</strong> + <strong>coalescing</strong> and serve
-        <em>stale-while-revalidate</em> for 60s to cap origin load. Add <strong>hedged reads</strong> from replicas for p99.
-      </p>
-    </section>
-
-    <!-- ============== SECTION 3: REPLICATION & FAILOVER ============== -->
-    <section class="section">
-      <h2>3) Replication &amp; Failover</h2>
-      <p>
-        Replication increases <strong>durability</strong> and <strong>read scale</strong>; failover preserves availability during outages.
-        Choose a topology per <strong>failure domain</strong> (host, zone, region).
-      </p>
-      <h3>Topologies</h3>
+      <h3 id="5-1-1-choosing-slis">5.1.1 Choosing SLIs that reflect user experience</h3>
+      <p><strong>Plain.</strong> An <em>SLI</em> is a number you measure. It should match what the user feels: latency to complete a task, success rate, data freshness, or correctness. <strong>Formal.</strong> An SLI is a ratio over a time window; e.g., “the proportion of requests to <code>POST /checkout</code> completed under 300 ms and HTTP 2xx in the last 28 days.” <strong>Pitfall.</strong> Host‑level metrics (CPU, queue depth) are diagnostics, not SLIs. They can be green while the user experience is red.</p>
       <ul>
-        <li><strong>Leader–Follower:</strong> Simple writes, read replicas; promote on failure.</li>
-        <li><strong>Multi-Leader:</strong> Writes in multiple regions; needs conflict resolution.</li>
-        <li><strong>Leaderless / Quorum:</strong> Clients write to N nodes; reads/writes require quorum.</li>
+        <li><strong>Availability SLI:</strong> 1 − (error responses / total requests) for <em>user‑initiated</em> actions, not background jobs.</li>
+        <li><strong>Latency SLI:</strong> P95 and P99 of <em>end‑to‑end</em> latency measured at the client and corroborated on the server with tracing.</li>
+        <li><strong>Freshness SLI:</strong> age of data powering a page (e.g., product price staleness) at P99, not average.</li>
+        <li><strong>Correctness SLI:</strong> proportion of results matching the ground truth or invariants (e.g., order totals consistent with line items).</li>
       </ul>
-      <h3>Failover Playbook</h3>
-      <ol>
-        <li>Detect: health checks &amp; SLO-based alerts.</li>
-        <li>Isolate: drain traffic; trip <strong>circuit breakers</strong>.</li>
-        <li>Promote: automate failover with <abbr title="Recovery Point Objective">RPO</abbr>/<abbr title="Recovery Time Objective">RTO</abbr> budgets.</li>
-        <li>Reintegrate: catch-up replicas; verify data parity; untrip breakers.</li>
-      </ol>
-      <figure>
-        <img src="../assets/ch05-replication-topologies.svg" alt="Leader-follower, multi-leader, and quorum replication topologies">
-        <figcaption>Replication options vary in complexity, latency, and conflict risk.</figcaption>
-      </figure>
-    </section>
+      <p><strong>Analogy.</strong> If a restaurant’s oven is hot (CPU) but orders take 40 minutes (latency), the experience is bad. Measure <em>food‑to‑table time</em> (end‑to‑end), not oven temperature.</p>
 
-    <!-- ============== SECTION 4: RELIABILITY MECHANISMS ============== -->
-    <section class="section">
-      <h2>4) Reliability Mechanisms: Idempotency, Quorums, SLAs</h2>
-      <h3>Idempotency</h3>
-      <p>
-        Retries are inevitable. Make writes idempotent by <strong>deduplicating</strong> with an <code>Idempotency-Key</code>,
-        <strong>upserts</strong>, or state-machine guards. For non-idempotent flows (e.g., money moves), coordinate with a
-        <strong>transactional outbox</strong> and exactly-once consumer semantics—or reconciliations.
-      </p>
-
-      <h3>Quorum Decisions</h3>
-      <p>
-        With replication factor N, choose read quorum R and write quorum W such that <strong>R + W &gt; N</strong> to guarantee
-        intersection. Tune R/W for latency vs. consistency. For write-heavy systems, use low W; for read-heavy dashboards,
-        use low R with read-repair.
-      </p>
-
-      <h3>SLIs, SLOs, SLAs</h3>
-      <p>
-        Define <strong>SLIs</strong> (latency, availability, error rate), set <strong>SLOs</strong> (targets), and—if external—publish <strong>SLAs</strong> (promises).
-        Use <strong>error budgets</strong> to balance reliability and feature velocity: when budget burns fast, slow changes and invest in hardening.
-      </p>
-
-      <h3>Analogy: Airline Operations</h3>
-      <p>
-        Airlines (systems) plan capacity (scaling), keep spares (replicas), reroute during weather (failover), and track on-time performance (SLOs).
-        Overbooking (optimistic planning) works until a storm (outage) demands quick reassignments (traffic steering) and passenger care (fallback UX).
-      </p>
-    </section>
-
-    <!-- ============== PATTERNS & EXAMPLES ============== -->
-    <section class="section">
-      <h2>Patterns in Practice</h2>
-
-      <h3>Example 1: Token Bucket Rate Limiting</h3>
-      <p>
-        Protect backends with a <strong>token bucket</strong> per user or key. Bursts are allowed within capacity; sustained
-        excess is throttled. Emit metrics to observe fairness. Keep enforcement at the edge/gateway to reduce waste.
-      </p>
-
-      <h3>Example 2: Read/Write Split with Fallback</h3>
-      <p>
-        For mixed workloads, route reads to replicas, writes to primary. On replica lag, fallback critical reads to primary
-        and mark “freshness” in the response. Monitor <strong>replication lag</strong> and expose a <code>X-Data-Staleness</code> header.
-      </p>
-
-      <pre class="code" data-lang="Pseudo">
-if (isRead && replicaLag &lt;= 500ms) routeTo(replica)
-else routeTo(primary)
-addHeader("X-Data-Staleness", replicaLag)
-      </pre>
-    </section>
-
-    <!-- ============== COMPARE & CONTRAST ============== -->
-    <section class="section">
-      <h2>Compare &amp; Contrast: Active–Active vs. Active–Passive</h2>
-      <table>
-        <thead>
-          <tr><th>Aspect</th><th>Active–Active (Multi-Region)</th><th>Active–Passive (Warm Standby)</th></tr>
-        </thead>
+      <p>Compare: <strong>Good vs weak SLIs</strong></p>
+      <table class="table">
+        <thead><tr><th>Goal</th><th>Weak SLI</th><th>Better SLI</th><th>Why better</th></tr></thead>
         <tbody>
-          <tr><td>Availability</td><td>Highest; traffic served in multiple regions</td><td>Good; failover on primary loss</td></tr>
-          <tr><td>Consistency</td><td>Hard (conflicts, latency)</td><td>Easier (single write master)</td></tr>
-          <tr><td>Cost</td><td>Highest (duplicate capacity)</td><td>Lower (idle capacity)</td></tr>
-          <tr><td>Operations</td><td>Complex routing &amp; reconciliation</td><td>Simpler runbook; tested failover needed</td></tr>
-          <tr><td>Best For</td><td>Global low-latency, tolerant of eventual consistency</td><td>Strong consistency, regional apps</td></tr>
+          <tr><td>Fast checkout</td><td>DB CPU &lt; 70%</td><td>P95 client‑perceived checkout latency</td><td>Captures network, app, and DB together</td></tr>
+          <tr><td>Fresh prices</td><td>Cache hit ratio</td><td>P99 price freshness age &lt; X sec</td><td>Directly reflects user‑visible staleness</td></tr>
+          <tr><td>Reliable chat</td><td>Broker latency</td><td>Send‑to‑receive latency at P95/P99</td><td>End‑to‑end delivery, not one hop</td></tr>
         </tbody>
       </table>
-      <div class="callout success">
-        <strong>Guideline:</strong> Start Active–Passive; earn Active–Active with experience and a clear cross-region data strategy.
-      </div>
+
+      <h3 id="5-1-2-slos-error-budgets">5.1.2 Defining SLOs and calculating error budgets</h3>
+      <p><strong>Plain.</strong> An <em>SLO</em> is a target for your SLI. The <em>error budget</em> is 1 − SLO: the amount of failure you’re willing to tolerate over a period. <strong>Formal.</strong> With a 99.9% availability SLO over 30 days, your error budget is ~43 minutes of non‑compliance. You decide when to spend it (e.g., canarying a risky feature) and when to stop (freeze deploys when burn rate exceeds a threshold).</p>
+      <p><strong>Worked example — Catalog.</strong> SLI: P95 edge render time for <code>/item</code>. SLO: ≤ 120 ms over 30 days. Error budget: the 5% of requests beyond 120 ms. <em>Policy:</em> if burn rate &gt; 2× over 6 hours, freeze non‑urgent changes and investigate. If burn &gt; 4×, rollback the last change and enable a reduced‑content variant to shed load.</p>
+      <p><strong>Worked example — Chat.</strong> SLI: P95 send‑to‑receive latency ≤ 150 ms; SLO: 95% compliance. When introducing presence fan‑out optimization, you choose to spend budget during peak hours while monitoring delivery failure rate and user‑reported lag. If budget is consumed, you disable the optimization and file a follow‑up design.</p>
+
+      <p>Compare: <strong>Error budget governance patterns</strong></p>
+      <table class="table">
+        <thead><tr><th>Pattern</th><th>When to use</th><th>Pros</th><th>Cons</th></tr></thead>
+        <tbody>
+          <tr><td>Freeze on burn</td><td>Volatile systems; rapid regressions</td><td>Fast brake; simple rule</td><td>May block low‑risk work</td></tr>
+          <tr><td>Change review</td><td>Steady burn; complex systems</td><td>Nuanced; allocates budget</td><td>Requires discipline/committee</td></tr>
+          <tr><td>Team quotas</td><td>Many teams changing one platform</td><td>Aligns incentives; fair sharing</td><td>Overhead to track/adjust</td></tr>
+        </tbody>
+      </table>
+      <p><em>Takeaway:</em> Error budgets are a <em>throttle</em>. They let you choose speed with eyes open rather than crash by surprise.</p>
     </section>
 
-    <!-- ============== CASE STUDY ============== -->
-    <section class="section">
-      <h2>Case Study: Scaling a Live-Streaming Platform (≈220 words)</h2>
-      <p>
-        A live-streaming startup targets cricket matches with sudden peaks: from 50k to 2M concurrent viewers within minutes.
-        Early design: a monolith with a single-region origin and a CDN. Symptoms: origin CPU thrash, cache-miss storms at
-        inning breaks, and p99 spikes. The team’s intermediate-level redesign started with <strong>workload modeling</strong>:
-        2M concurrent viewers, 3–6 Mbps per stream, and global distribution leaning to APAC. They moved to <strong>origin
-        sharding</strong>—multiple stateless packagers behind an L4 balancer—and pushed <strong>just-in-time packaging</strong> to reduce
-        origin storage. A multi-CDN strategy with <strong>orchestrated failover</strong> handled regional outages. To prevent
-        stampedes, they enabled CDN <strong>stale-while-revalidate</strong> and <strong>request coalescing</strong>. For control plane APIs
-        (auth/playlists), they added <strong>token bucket</strong> limits and <strong>hedged reads</strong> from regionally local replicas.
-        Data and state moved to a quorum store (N=5, R=2, W=3) to balance read latency with acceptable write costs. Observability
-        adopted the RED method at each hop, with synthetic probes from Mumbai, Singapore, and Frankfurt. Result: stable p95 under
-        target during peak, tolerable staleness on playlist edges, and automatic CDN failover during a provider incident. Trade-off:
-        higher infra spend and operational complexity, offset by retention and ad revenue gains. The key was engineering for bursts,
-        not averages, and embracing layered caching and quorum decisions.
-      </p>
+    <section class="section" id="5-2-toil-automation">
+      <h2>5.2 Eliminating toil & automation</h2>
+      <p><strong>Why it matters.</strong> Toil is repetitive, manual work that scales linearly with service size. It steals time from engineering and increases error risk. Reducing toil improves both reliability and developer morale.</p>
+
+      <h3 id="5-2-1-runbooks-playbooks">5.2.1 Runbooks, playbooks, and runbook automation</h3>
+      <p><strong>Plain.</strong> A <em>runbook</em> is a step‑by‑step guide to diagnose and mitigate a class of incidents. A <em>playbook</em> orchestrates multiple runbooks and communication steps for a scenario (e.g., partial region outage). <strong>Formal.</strong> Effective runbooks include prerequisites, decision trees, exact commands with example outputs, metrics to watch, and explicit rollback steps. <strong>Pitfall.</strong> Runbooks decay unless rehearsed; treat them like code with owners, reviews, and simulations.</p>
+      <ul>
+        <li><strong>Minimum runbook sections:</strong> Summary, Preconditions, Steps, Verification, Rollback, Owner, Last‑reviewed.</li>
+        <li><strong>Evidence rule:</strong> Include screenshots or links to dashboards; paste sample log queries. No vague steps like “check logs.”</li>
+        <li><strong>Automation:</strong> Promote frequent steps to scripts or ChatOps commands with guardrails and dry‑run modes.</li>
+      </ul>
+
+      <h3 id="5-2-2-reducing-manual-steps">5.2.2 Reduce manual steps with safe automation</h3>
+      <p><strong>Plain.</strong> Automate high‑frequency, low‑ambiguity tasks first: restart a service, flip a feature flag, drain a node, roll a canary back. <strong>Formal.</strong> Use <em>least privilege</em>, <em>approval gates</em> for destructive operations, and <em>idempotent</em> scripts that can be retried safely. <strong>Pitfall.</strong> “One‑button fixes” that hide context can make things worse under stress; design CLI or ChatOps commands to <em>explain what they’ll do</em> before they do it.</p>
+
+      <p>Compare: <strong>Automation candidates</strong></p>
+      <table class="table">
+        <thead><tr><th>Task</th><th>Frequency</th><th>Ambiguity</th><th>Automate?</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Clear stuck jobs</td><td>Weekly</td><td>Low</td><td>Yes</td><td>Include safety threshold; dry‑run</td></tr>
+          <tr><td>Scale read replicas</td><td>Monthly</td><td>Medium</td><td>Partial</td><td>Script creation + human approval</td></tr>
+          <tr><td>Fail over region</td><td>Rare</td><td>High</td><td>No (practice)</td><td>Runbook + game day; simulate</td></tr>
+        </tbody>
+      </table>
+      <p><em>Takeaway:</em> Automate <em>decisions</em> last. Automate <em>actions</em> first, with clear preconditions and rollbacks.</p>
     </section>
 
-    <!-- ============== RESOURCES ============== -->
-    <section class="section">
-      <h2>Recommended Resources &amp; Why</h2>
-      <div class="resource-list">
-        <div class="item">
-          <div><strong>Cloudflare CDN Docs</strong></div>
-          <div class="meta">Edge caching patterns, cache key tuning, and stale-while-revalidate strategies.</div>
-        </div>
-        <div class="item">
-          <div><strong>Google SRE Book / Workbook</strong></div>
-          <div class="meta">SLIs/SLOs, error budgets, and incident response patterns that turn theory into operations.</div>
-        </div>
-        <div class="item">
-          <div><strong>“Release It!”</strong></div>
-          <div class="meta">Bulkheads, circuit breakers, and patterns to survive production instability.</div>
-        </div>
-      </div>
+    <section class="section" id="5-3-incidents-postmortems">
+      <h2>5.3 Incident management & postmortems</h2>
+      <p><strong>Why it matters.</strong> Incidents are inevitable; chaos is optional. A shared model for severity, roles, and communication reduces mean time to mitigation and preserves trust with users and stakeholders.</p>
+
+      <h3 id="5-3-1-incident-lifecycle">5.3.1 Incident lifecycle and communication</h3>
+      <p><strong>Plain.</strong> An incident is user‑visible degradation or risk thereof. <strong>Formal.</strong> The lifecycle is: <em>detect → declare → triage → mitigate → resolve → learn</em>. <strong>Pitfall.</strong> Late declarations create confusion and untracked damage; declare early with severity and scope, then update as you learn.</p>
+      <ul>
+        <li><strong>Severity rubric (example):</strong> SEV‑1 (widespread outage), SEV‑2 (major feature degraded), SEV‑3 (minor feature degraded), SEV‑4 (near miss).</li>
+        <li><strong>Roles:</strong> <em>Incident Commander</em> (decision owner), <em>Operations</em> (mitigation), <em>Communications</em> (status updates), <em>Scribe</em> (timeline), <em>Subject Matter Experts</em> as needed.</li>
+        <li><strong>Channels:</strong> one command channel, one updates channel; all decisions flow through the commander; avoid side threads with conflicting instructions.</li>
+      </ul>
+
+      <p>Compare: <strong>Communication templates</strong></p>
+      <table class="table">
+        <thead><tr><th>Audience</th><th>Cadence</th><th>Template</th></tr></thead>
+        <tbody>
+          <tr><td>Internal engineers</td><td>Every 15–30 min</td><td>“SEV‑2: Checkout errors up 8%. Suspected deploy 42. Mitigation: rollback in progress. Next update 20:30 IST.”</td></tr>
+          <tr><td>Customer‑facing status page</td><td>30–60 min</td><td>“We are investigating elevated checkout errors for some users. We’ve rolled back a recent change and are monitoring. Next update at 20:30 IST.”</td></tr>
+          <tr><td>Executives/Support</td><td>Milestones</td><td>“Impact: 12% of checkouts failed for 22 minutes. Cause: config error. Action: hotfix deployed; safeguards added.”</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Worked example — Split‑brain cache.</strong> A failed network partition created two cache clusters serving divergent data. Symptoms: price mismatches; elevated checkout rejections. <em>Mitigation:</em> force read‑through for price endpoints; disable write‑back temporarily; drain and rejoin the cluster; add health checks and quorum writes. <em>Follow‑ups:</em> introduce <em>fencing tokens</em> to prevent stale writers and a rapid alert when read‑write divergence exceeds a threshold.</p>
+
+      <h3 id="5-3-2-blameless-postmortems">5.3.2 Blameless postmortems and corrective action</h3>
+      <p><strong>Plain.</strong> Blameless means we explain <em>how</em> the system made a mistake easy, not <em>who</em> made it. <strong>Formal.</strong> A postmortem records timeline, impact, detection gaps, contributing factors, what worked, and prioritized actions. <strong>Pitfall.</strong> Action lists without owners or dates do not change future outcomes.</p>
+      <ul>
+        <li><strong>Five whys with care:</strong> stop when you hit an organizational constraint (process, tooling) you can change; avoid drifting into philosophy.</li>
+        <li><strong>Actions must be testable:</strong> “add dashboard X,” “write runbook Y,” “build circuit breaker Z,” each with an owner and due date.</li>
+        <li><strong>Budget for learning:</strong> reserve capacity to complete postmortem actions; track completion rate like feature work.</li>
+      </ul>
+      <p><strong>Worked example — Incorrect feature flag default.</strong> A new feature shipped with default=on in production config. Impact: P95 latency up 60% for 40 minutes. <em>Actions:</em> (1) Add <em>safe default</em> policy (off unless proven). (2) Enforce a two‑person review for production flag changes. (3) Add a <em>global kill switch</em> path tested weekly.</p>
     </section>
 
-    <!-- ============== PRACTICE TASKS ============== -->
-    <section class="section practice">
-      <h2>Practice</h2>
+    <section class="section" id="5-4-testing-reliability">
+      <h2>5.4 Testing for reliability</h2>
+      <p><strong>Why it matters.</strong> Reliability emerges when systems face turbulence. Testing introduces turbulence in controlled ways so you can discover weak links in daylight rather than at 3 AM.</p>
 
-      <div class="task">
-        <h3>Add Caching to an API</h3>
-        <p class="meta"><span>⏱️ 45–60 min</span> · <span>Success: defined TTLs, validation (ETag/Last-Modified), coalescing for hot keys</span></p>
-        <p>Pick a read-heavy endpoint. Propose cache layers (client, CDN, app). Define invalidation triggers and failure behavior when cache is down.</p>
-      </div>
+      <h3 id="5-4-1-chaos-fault-injection">5.4.1 Chaos experiments and fault injection</h3>
+      <p><strong>Plain.</strong> Chaos engineering introduces controlled failure: killing processes, adding latency, exhausting resources, or breaking network links. <strong>Formal.</strong> An experiment states a <em>steady state hypothesis</em> (SLIs remain within bounds) and a <em>treatment</em> (fault) with scope and abort criteria. <strong>Pitfall.</strong> Running chaos without guardrails or observability creates self‑inflicted incidents.</p>
+      <ul>
+        <li><strong>Experiment template:</strong> Hypothesis → Fault → Scope (service/pod/region) → Abort conditions → Rollback plan → Owners → Results.</li>
+        <li><strong>Common faults:</strong> +200 ms latency on dependency, drop 5% packets, kill 1 pod every minute, throttle disk IO to 5 MB/s, expire TLS cert in staging.</li>
+        <li><strong>Safety:</strong> start in staging; then restricted production windows with traffic guards and error‑budget checks.</li>
+      </ul>
+      <p><strong>Worked example — Dependency latency spike.</strong> Hypothesis: “Checkout P95 &lt; 300 ms with +150 ms on the pricing service.” Treatment: inject latency in staging; then 5% prod traffic for 10 minutes behind a flag. <em>Result:</em> circuit breaker opened correctly; fallback price path served 2% of requests; SLO held. <em>Action:</em> lower breaker threshold and add a dashboard panel for fallback rate.</p>
 
-      <div class="task">
-        <h3>Create a Failover Strategy</h3>
-        <p class="meta"><span>⏱️ 40–60 min</span> · <span>Success: RPO/RTO targets, promotion steps, smoke tests, rollback plan</span></p>
-        <p>Write a 1-page runbook for DB leader failure across zones. Include automation hooks and observability checkpoints.</p>
-      </div>
+      <h3 id="5-4-2-load-canary-rollouts">5.4.2 Load testing and canary rollouts</h3>
+      <p><strong>Plain.</strong> Load tests reveal capacity limits and tail behaviors; canaries deploy changes to a small slice of traffic to reduce risk. <strong>Formal.</strong> A good load test defines arrival patterns (steady, spikes), data realism (cache warm/cold), and measurement (P95/P99 latency, error rates, resource saturation). <strong>Pitfall.</strong> Synthetic tests with toy data hide hot‑key and cache issues; always include “unfriendly” data and randomized TTLs.</p>
+      <ul>
+        <li><strong>Arrival models:</strong> open‑loop (constant RPS) vs closed‑loop (user think time). Use both: open‑loop for capacity, closed‑loop for UX realism.</li>
+        <li><strong>Canary policy:</strong> start at 1–5%, watch SLI deltas, expand logarithmically (1→5→10→25→50→100%). Abort on predefined thresholds (e.g., +20% P95, +0.5% absolute error rate).</li>
+        <li><strong>Rollbacks:</strong> implement as a first‑class operation; test weekly. Automate to reverse both code and config changes.</li>
+      </ul>
 
-      <div class="task">
-        <h3>Quorum Tuning</h3>
-        <p class="meta"><span>⏱️ 25–35 min</span> · <span>Success: N/R/W selection justified by latency/consistency goals</span></p>
-        <p>For a metrics store (write-heavy), choose N/R/W and defend your choice. Describe read-repair and anti-entropy plans.</p>
-      </div>
+      <p>Compare: <strong>Release strategies</strong></p>
+      <table class="table">
+        <thead><tr><th>Strategy</th><th>How it works</th><th>Pros</th><th>Cons</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td>Blue/Green</td><td>Two environments; switch traffic</td><td>Instant rollback; isolation</td><td>Infra cost; data sync complexity</td><td>Few, high‑stakes releases</td></tr>
+          <tr><td>Canary</td><td>Gradual % rollout</td><td>Small blast radius; real traffic</td><td>Longer deploy; needs metrics</td><td>Frequent releases; SLI‑driven</td></tr>
+          <tr><td>Feature flags</td><td>Behavior toggled at runtime</td><td>Per‑user control; experiments</td><td>Flag debt; config discipline</td><td>UI/UX changes; A/B tests</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Worked example — Canary gone wrong.</strong> A JSON schema change increased payload size, pushing responses over a CDN compression threshold. P95 rose 30% only for the canary cohort (mobile users with slow networks). <em>Fix:</em> add canary cohorts that mirror device/network diversity; track payload size as a first‑class metric; compress responses consistently across variants.</p>
     </section>
 
-    <!-- ============== MASTERY CHECK ============== -->
-    <section class="section mastery">
-      <h2>Mastery Check</h2>
-      <div class="quiz-controls">
-        <button class="btn" data-quiz-toggle="open">Open all answers</button>
-        <button class="btn" data-quiz-toggle="close">Close all</button>
-      </div>
-
-      <details>
-        <summary>1) When is vertical scaling the right choice?</summary>
-        <div><p>Short-term relief or licensing constraints where horizontal scaling is infeasible. Use it to buy time while designing horizontal paths.</p></div>
-      </details>
-
-      <details>
-        <summary>2) How do you prevent cache stampedes?</summary>
-        <div><p>Use request coalescing, soft TTLs with stale-while-revalidate, jittered expirations, and backpressure on misses.</p></div>
-      </details>
-
-      <details>
-        <summary>3) Active–active risks and mitigations?</summary>
-        <div><p>Conflicts and split brain. Mitigate via conflict-free data types, per-region ownership, or routing affinity; strong tests and reconciliation jobs.</p></div>
-      </details>
-
-      <details>
-        <summary>4) Example of idempotency outside payments?</summary>
-        <div><p>Email sends, user signup, inventory reservations—dedupe with idempotency keys or unique constraints and return prior result on retries.</p></div>
-      </details>
-
-      <details>
-        <summary>5) Pick N/R/W for a read-heavy analytics dashboard and justify.</summary>
-        <div><p>Example: N=5, R=2, W=3 for fast reads with acceptable write latency; read-repair fixes inconsistencies in the background.</p></div>
-      </details>
-
-      <details>
-        <summary>6) What is an error budget and how does it guide decisions?</summary>
-        <div><p>Allowed unreliability given an SLO. If burned fast, slow changes and prioritize reliability work; if healthy, invest in features.</p></div>
-      </details>
+    <section class="section" id="5-5-mini-exercises">
+      <h2>5.5 Mini‑exercises</h2>
+      <ol>
+        <li><strong>Define two SLIs and one SLO.</strong> For your core user journey, write precise SLI definitions and a 30‑day SLO. Include measurement location (client/server), percentile, and window. Add the alert you would create (threshold, duration).</li>
+        <li><strong>Draft a runbook.</strong> Pick a likely incident (dependency latency) and write a 10‑step runbook with commands, dashboards, and rollback. Share it for review and schedule a rehearsal.</li>
+        <li><strong>Design a chaos experiment.</strong> State the steady state, fault, scope, and abort conditions. Run it in staging and summarize results and changes you made.</li>
+        <li><strong>Plan a canary.</strong> Choose ramp steps and abort criteria; list the exact SLI deltas you’ll monitor and who approves promotion to 100%.</li>
+      </ol>
     </section>
 
-    <!-- ============== RECAP & NEXT STEPS ============== -->
-    <section class="section">
+    <section class="section" id="5-6-resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><strong>Google SRE Book &amp; Website</strong> — foundational guidance on SLIs/SLOs, error budgets, incidents, and postmortems. <em>Why:</em> proven practices for reliability at scale. <em>(Free)</em></li>
+        <li><strong>Site Reliability Workbook</strong> — hands‑on playbooks for SLOs, alerting, and on‑call. <em>Why:</em> concrete templates and examples. <em>(Paid/Free excerpts)</em></li>
+        <li><strong>AWS Well‑Architected — Reliability</strong> — questions and best practices for resilience. <em>Why:</em> decision lenses to avoid fragility. <em>(Free)</em></li>
+        <li><strong>OpenTelemetry Docs</strong> — metrics, logs, traces standards. <em>Why:</em> consistent observability across services. <em>(Free)</em></li>
+        <li><strong>Incident Response Guides (PagerDuty‑style)</strong> — role definitions and comms templates. <em>Why:</em> faster, calmer incidents. <em>(Free)</em></li>
+      </ul>
+    </section>
+
+    <section class="section" id="5-7-recap-next">
       <h2>Recap &amp; Next Steps</h2>
-      <p>
-        You learned how to scale horizontally, deploy layered caching, replicate safely, and design for reliability with
-        idempotency, quorums, and SLOs. Next, Chapter 6 applies these tools to <strong>design patterns &amp; trade-offs</strong>
-        found in real systems—microservices vs. monoliths, event-driven designs, and CQRS.
-      </p>
+      <ul>
+        <li>You can design user‑centric SLIs, set SLOs with clear windows and percentiles, and govern change using error budgets.</li>
+        <li>You can reduce toil with well‑maintained runbooks and safe automation, focusing on high‑frequency, low‑ambiguity tasks.</li>
+        <li>You can run incidents with defined roles and communication cadences, and write blameless postmortems with actionable follow‑ups.</li>
+        <li>You can validate resilience with chaos experiments, load testing, and safe rollout strategies (blue/green, canary, feature flags) and execute rollbacks confidently.</li>
+      </ul>
+      <p><strong>Next:</strong> Move on to <a href="chapters/ch06.html#6-hero">Chapter 6 — Consistency, Partitioning &amp; Concurrency</a>, where we examine the data‑consistency and concurrency controls that make distributed systems correct under partitions and contention.</p>
     </section>
 
-    <!-- ============== NEXT/PREV ============== -->
-    <nav class="next-prev" aria-label="Chapter navigation">
-      <a href="chapters/ch04.html" rel="prev">Previous: Data Management &amp; Storage Patterns</a>
-      <a href="chapters/ch06.html" rel="next">Next: Design Patterns &amp; Trade-offs in Real Systems</a>
+    <nav class="next-prev">
+      <a class="btn" rel="prev" href="chapters/ch04.html">← Previous</a>
+      <a class="btn btn-primary" rel="next" href="chapters/ch06.html">Next →</a>
     </nav>
 
-    <!-- ============== HIDDEN CHECKLIST COMMENT ============== -->
-    <!--
-    - [x] theme.css+app.js loaded
-    - [x] <base> present & correct (../)
-    - [x] Canonical nav verbatim; active link set by app.js
-    - [x] Pager prev/next valid (ch04 ↔ ch06)
-    - [x] ≥1,200 words; ≥2 examples; 1 case study; compare/contrast; analogy
-    - [x] Resources 3–6 with rationale
-    - [x] Practice 3–5 with time + success criteria
-    - [x] Mastery 5–7 with answers
-    - [x] ≥8 terms glossarized; ≥1 figure
-    - [x] Head/meta ok; no TODOs
-    -->
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
+      </div>
+    </footer>
   </main>
+
+  <!--
+  CHECKLIST (Chapter 05)
+  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+  - [x] Canonical nav (Home / Appendix / Glossary only)
+  - [x] Pager prev → ch04, next → ch06; ToC numbering matches
+  - [x] Order: Hero → Numbered Sections → Resources → Recap
+  - [x] ≥1,800 words of prose (body text)
+  - [x] Images: none (no audit required)
+  - [x] Head/meta complete; no TODOs
+  -->
 </body>
 </html>

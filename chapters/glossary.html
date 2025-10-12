@@ -1,421 +1,342 @@
-<!-- /chapters/glossary.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Glossary — System Design (Intermediate)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Alphabetical glossary of key system design terms with plain definitions, formal notes, pitfalls, and concrete examples.">
+  <meta name="description" content="Alphabetical glossary of system‑design terms used in the book, each with a plain definition, a formal definition, and a short example.">
   <meta property="og:title" content="Glossary — System Design (Intermediate)">
-  <meta property="og:description" content="Plain + formal definitions and examples for common system design concepts: CAP, CQRS, idempotency, circuit breakers, and more.">
+  <meta property="og:description" content="Quick reference for SLIs/SLOs, CAP, MVCC, CRDTs, Sagas, CQRS, circuit breakers, caching, Kubernetes, and more.">
+  <meta property="og:type" content="article">
   <base href="../">
   <link rel="stylesheet" href="styles/theme.css">
-  <script defer src="scripts/app.js"></script>
+  <script src="scripts/app.js" defer></script>
 </head>
 <body>
-  <!-- ================= NAV (Canonical; verbatim with active) ================= -->
-  <nav class="app-nav">
-    <div class="bar">
-      <div class="brand"><a href="index.html">System Design</a></div>
-      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
-      <div class="spacer"></div>
-      <div class="links">
-        <a href="index.html">Home</a>
-        <a href="chapters/ch01.html">Chapters</a>
-        <a href="chapters/appendix.html">Appendix</a>
-        <a href="chapters/glossary.html" aria-current="page">Glossary</a>
-      </div>
-    </div>
-  </nav>
+  <a class="skip-link" href="#main">Skip to main content</a>
 
-  <!-- ================= HERO ================= -->
-  <header class="page-hero container">
-    <div class="badge">Glossary</div>
-    <h1>Glossary of Terms</h1>
-    <p>
-      Definitions follow a consistent pattern: <strong>Plain</strong> → <strong>Formal</strong> → <strong>Pitfall</strong> → <strong>Example</strong>.
-      Where useful, terms link to related chapters for deeper study.
-    </p>
+  <header class="app-nav">
+    <div class="container inner">
+      <div class="brand">Intermediate System Design</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
+      <nav id="top-menu" class="menu" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="chapters/appendix.html">Appendix</a>
+        <a href="chapters/glossary.html">Glossary</a>
+      </nav>
+    </div>
   </header>
 
-  <main class="container">
-    <!-- ================= A ================= -->
-    <section class="section">
-      <h2 id="A">A</h2>
-      <dl class="glossary">
-        <dt id="abac"><strong>ABAC (Attribute-Based Access Control)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Permissions decided by attributes (user role, time, location), not just fixed roles.</p>
-          <p><em>Formal:</em> Policy evaluation over subject, object, action, and environment attributes.</p>
-          <p><em>Pitfall:</em> Policy sprawl; hard to audit without tooling.</p>
-          <p><em>Example:</em> “Analysts can view reports only 09:00–18:00 IST from corp IPs.” (See Ch.7)</p>
-        </dd>
-
-        <dt id="acid"><strong>ACID</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Strong transaction guarantees in relational DBs.</p>
-          <p><em>Formal:</em> Atomicity, Consistency, Isolation, Durability.</p>
-          <p><em>Pitfall:</em> High contention + strict isolation can tank throughput.</p>
-          <p><em>Example:</em> Money transfer debits and credits either both happen or none. (Ch.4)</p>
-        </dd>
-
-        <dt id="api-gateway"><strong>API Gateway</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Front door for all APIs—auth, rate limits, routing.</p>
-          <p><em>Formal:</em> L7 mediator adding cross-cutting policies and observability.</p>
-          <p><em>Pitfall:</em> Becoming a monolith of logic instead of policy.</p>
-          <p><em>Example:</em> JWT verification + quota per API key. (Ch.3, Ch.6)</p>
-        </dd>
-      </dl>
+  <main id="main" class="container fade-in">
+    <section class="page-hero" id="glossary-hero">
+      <div class="meta"><span class="badge badge-secondary">Glossary</span></div>
+      <h1>Glossary</h1>
+      <p class="abstract">A quick, alphabetized reference for the terms used throughout this course. Each entry includes a <em>Plain</em> definition, a <em>Formal</em> definition, and a short <em>Example</em>. Cross‑links let you jump to related ideas.</p>
+      <p class="muted small">Tip: Use your browser’s find (Ctrl/Cmd‑F). Terms with related concepts link to each other (e.g., <a href="#g-crdt">CRDT</a> ↔ <a href="#g-event-sourcing">Event sourcing</a>, <a href="#g-saga">Saga</a> ↔ <a href="#g-compensating-transaction">Compensating transaction</a>).</p>
     </section>
 
-    <!-- ================= C ================= -->
-    <section class="section">
-      <h2 id="C">C</h2>
-      <dl class="glossary">
-        <dt id="cap"><strong>CAP Theorem</strong></dt>
-        <dd>
-          <p><em>Plain:</em> In a partition, you must prefer Consistency or Availability.</p>
-          <p><em>Formal:</em> No distributed system can simultaneously guarantee C, A, and P.</p>
-          <p><em>Pitfall:</em> Treating CAP as a design recipe for normal operations.</p>
-          <p><em>Example:</em> Dynamo favors A; Spanner favors C with global time. (Ch.4–5)</p>
-        </dd>
-
-        <dt id="cdn"><strong>CDN (Content Delivery Network)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Caches content near users to cut latency.</p>
-          <p><em>Formal:</em> Edge PoPs serve cacheable objects with configurable TTL and validation.</p>
-          <p><em>Pitfall:</em> Forgetting cache keys/headers → stale or missed hits.</p>
-          <p><em>Example:</em> Cache-Control + ETag for product pages. (Ch.5)</p>
-        </dd>
-
-        <dt id="circuit-breaker"><strong>Circuit Breaker</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Fail fast after repeated errors to protect systems.</p>
-          <p><em>Formal:</em> Closed → Open → Half-open state machine guarding calls.</p>
-          <p><em>Pitfall:</em> Never resetting thresholds; flapping.</p>
-          <p><em>Example:</em> Open breaker for slow recommendations; serve baseline. (Ch.3, Ch.5)</p>
-        </dd>
-
-        <dt id="consistent-hashing"><strong>Consistent Hashing</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Spread keys across nodes so rebalancing moves few keys.</p>
-          <p><em>Formal:</em> Hash ring with virtual nodes to minimize key movement on membership change.</p>
-          <p><em>Pitfall:</em> Skew without enough virtual nodes.</p>
-          <p><em>Example:</em> Cache cluster with 200 vnodes per host. (Ch.5)</p>
-        </dd>
-
-        <dt id="cqrs"><strong>CQRS</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Separate write model from read models.</p>
-          <p><em>Formal:</em> Commands mutate authoritative state; queries read denormalized projections.</p>
-          <p><em>Pitfall:</em> Ceremony without need; rebuild complexity.</p>
-          <p><em>Example:</em> Orders write to SQL; analytics reads from pre-aggregated store. (Ch.6)</p>
-        </dd>
-
-        <dt id="crdt"><strong>CRDT</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Data types that merge without conflicts across replicas.</p>
-          <p><em>Formal:</em> Commutative/associative/idem. semilattices with monotone join.</p>
-          <p><em>Pitfall:</em> Hidden semantics; tombstone bloat.</p>
-          <p><em>Example:</em> Counter that merges offline edits on sync. (Ch.10)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= D ================= -->
-    <section class="section">
-      <h2 id="D">D</h2>
-      <dl class="glossary">
-        <dt id="dlq"><strong>DLQ (Dead Letter Queue)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Parking lot for messages that can’t be processed.</p>
-          <p><em>Formal:</em> Terminal retry destination with retention for manual/automated reprocessing.</p>
-          <p><em>Pitfall:</em> Letting DLQs fill without alerts.</p>
-          <p><em>Example:</em> Poison message with bad schema routed to DLQ. (Ch.3)</p>
-        </dd>
-
-        <dt id="denorm"><strong>Denormalization</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Duplicate data to speed reads.</p>
-          <p><em>Formal:</em> Intentional redundancy to optimize query patterns.</p>
-          <p><em>Pitfall:</em> Complex writes and drift without backfills.</p>
-          <p><em>Example:</em> Precomputed counts table for dashboards. (Ch.4)</p>
-        </dd>
-
-        <dt id="dist-tracing"><strong>Distributed Tracing</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Follow a request across services.</p>
-          <p><em>Formal:</em> Trace with spans, context propagation (e.g., W3C traceparent).</p>
-          <p><em>Pitfall:</em> Missing propagation at gateways.</p>
-          <p><em>Example:</em> Trace shows slow DB span → add index. (Ch.8)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= E ================= -->
-    <section class="section">
-      <h2 id="E">E</h2>
-      <dl class="glossary">
-        <dt id="event-sourcing"><strong>Event Sourcing</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Store events, derive current state by replay.</p>
-          <p><em>Formal:</em> Append-only event log + projections; snapshots bound replay time.</p>
-          <p><em>Pitfall:</em> Changing past events; slow rebuilds without snapshots.</p>
-          <p><em>Example:</em> Order lifecycle events rebuild order state. (Ch.6)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= H ================= -->
-    <section class="section">
-      <h2 id="H">H</h2>
-      <dl class="glossary">
-        <dt id="hedged"><strong>Hedged Requests</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Send a backup request after a threshold to cut tail latency.</p>
-          <p><em>Formal:</em> Time-based speculative execution with cancellation of losers.</p>
-          <p><em>Pitfall:</em> Doubling load; needs caps and adaptive thresholds.</p>
-          <p><em>Example:</em> Issue a second read after p95 latency elapses. (Ch.3, Ch.5)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= I ================= -->
-    <section class="section">
-      <h2 id="I">I</h2>
-      <dl class="glossary">
-        <dt id="idempotency"><strong>Idempotency</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Doing an action twice has the same effect as once.</p>
-          <p><em>Formal:</em> f(f(x)) = f(x) for requests with the same key/intent.</p>
-          <p><em>Pitfall:</em> Forgetting unique keys; duplicate side effects.</p>
-          <p><em>Example:</em> Create-payment with <code>Idempotency-Key</code> header. (Ch.3, Ch.5)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= J ================= -->
-    <section class="section">
-      <h2 id="J">J</h2>
-      <dl class="glossary">
-        <dt id="jitter"><strong>Jitter</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Randomness in backoff/expiry times.</p>
-          <p><em>Formal:</em> Randomized delay to decorrelate client behavior.</p>
-          <p><em>Pitfall:</em> Synchronised retries causing herds.</p>
-          <p><em>Example:</em> 50% jitter on 200ms backoff. (Ch.3, Ch.5)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= L ================= -->
-    <section class="section">
-      <h2 id="L">L</h2>
-      <dl class="glossary">
-        <dt id="lb"><strong>Load Balancer (L4/L7)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Shares traffic across instances.</p>
-          <p><em>Formal:</em> L4 (TCP/UDP) vs. L7 (HTTP-aware) routing with health checks.</p>
-          <p><em>Pitfall:</em> Sticky sessions hide statefulness; hurts scaling.</p>
-          <p><em>Example:</em> Envoy routing by path and header. (Ch.3)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= M ================= -->
-    <section class="section">
-      <h2 id="M">M</h2>
-      <dl class="glossary">
-        <dt id="microservices"><strong>Microservices</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Many small services with clear contracts.</p>
-          <p><em>Formal:</em> Independently deployable bounded contexts with network isolation.</p>
-          <p><em>Pitfall:</em> Ops overhead > benefits for small teams.</p>
-          <p><em>Example:</em> Payments split from monolith; gateway handles auth. (Ch.6)</p>
-        </dd>
-
-        <dt id="modular-monolith"><strong>Modular Monolith</strong></dt>
-        <dd>
-          <p><em>Plain:</em> One deploy with strict internal boundaries.</p>
-          <p><em>Formal:</em> Enforced module APIs and ownership within a single runtime.</p>
-          <p><em>Pitfall:</em> Sloppy boundaries → “big ball of mud.”</p>
-          <p><em>Example:</em> Catalog/Cart/Checkout modules in one app. (Ch.6)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= O ================= -->
-    <section class="section">
-      <h2 id="O">O</h2>
-      <dl class="glossary">
-        <dt id="oauth2"><strong>OAuth 2.0</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Let an app access your data without giving it your password.</p>
-          <p><em>Formal:</em> Authorization framework with grants (code, client credentials, etc.).</p>
-          <p><em>Pitfall:</em> Long-lived tokens and overly broad scopes.</p>
-          <p><em>Example:</em> Mobile app gets access token for profile API. (Ch.7)</p>
-        </dd>
-
-        <dt id="oidc"><strong>OIDC (OpenID Connect)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Identity layer on top of OAuth2.</p>
-          <p><em>Formal:</em> Standardized ID token (JWT) that asserts who the user is.</p>
-          <p><em>Pitfall:</em> Confusing ID tokens with access tokens.</p>
-          <p><em>Example:</em> Verify user identity at gateway. (Ch.7)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= Q ================= -->
-    <section class="section">
-      <h2 id="Q">Q</h2>
-      <dl class="glossary">
-        <dt id="quorum"><strong>Quorum</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Majority agreement before accepting reads/writes.</p>
-          <p><em>Formal:</em> Choose R, W with R+W &gt; N to guarantee intersecting replicas.</p>
-          <p><em>Pitfall:</em> Latency spikes when quorum is high under failure.</p>
-          <p><em>Example:</em> N=5, W=3, R=2 for analytics store. (Ch.5)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= R ================= -->
-    <section class="section">
-      <h2 id="R">R</h2>
-      <dl class="glossary">
-        <dt id="rate-limiting"><strong>Rate Limiting (Token Bucket)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Control how fast clients can call you.</p>
-          <p><em>Formal:</em> Bucket with capacity C and refill rate r; requests consume tokens.</p>
-          <p><em>Pitfall:</em> Global limits without per-tenant fairness.</p>
-          <p><em>Example:</em> 100 req/s burst, 20 req/s sustained per API key. (Ch.5)</p>
-        </dd>
-
-        <dt id="red-use"><strong>RED / USE</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Monitoring checklists: user path vs. resource health.</p>
-          <p><em>Formal:</em> RED = Rate, Errors, Duration; USE = Utilization, Saturation, Errors.</p>
-          <p><em>Pitfall:</em> Alerting on low-value causes rather than symptoms.</p>
-          <p><em>Example:</em> p95 latency + queue depth dashboards. (Ch.8)</p>
-        </dd>
-
-        <dt id="replication"><strong>Replication (Leader/Follower, Multi-Leader)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Keep copies of data for durability and scale.</p>
-          <p><em>Formal:</em> Single-leader, multi-leader, or leaderless quorum protocols.</p>
-          <p><em>Pitfall:</em> Conflict resolution and lag ignored.</p>
-          <p><em>Example:</em> Read replicas for product catalog. (Ch.4–5)</p>
-        </dd>
-
-        <dt id="retry-backoff"><strong>Retry with Exponential Backoff</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Try again later with growing delays.</p>
-          <p><em>Formal:</em> delay = base × factor^n ± jitter; cap attempts and total budget.</p>
-          <p><em>Pitfall:</em> Infinite retries causing storms.</p>
-          <p><em>Example:</em> 3 attempts, 50→100→200ms with 20% jitter. (Ch.3)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= S ================= -->
-    <section class="section">
-      <h2 id="S">S</h2>
-      <dl class="glossary">
-        <dt id="saga"><strong>Saga</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Break a big transaction into steps with compensations.</p>
-          <p><em>Formal:</em> Orchestrated/choreographed sequence with failure compensation.</p>
-          <p><em>Pitfall:</em> Missing compensations on partial failure.</p>
-          <p><em>Example:</em> Reserve inventory → charge card → on fail, release inventory. (Ch.6)</p>
-        </dd>
-
-        <dt id="sharding"><strong>Sharding (Partitioning)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Split a big dataset across machines.</p>
-          <p><em>Formal:</em> Range/hash/geo partitions with rebalancing and routing.</p>
-          <p><em>Pitfall:</em> Premature sharding; cross-shard joins.</p>
-          <p><em>Example:</em> Hash by user ID for messages. (Ch.4)</p>
-        </dd>
-
-        <dt id="sla-slo-sli"><strong>SLA / SLO / SLI</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Promise, target, and measurement of service quality.</p>
-          <p><em>Formal:</em> SLAs contractual; SLOs internal targets; SLIs metrics.</p>
-          <p><em>Pitfall:</em> Vanity metrics; unclear user journeys.</p>
-          <p><em>Example:</em> SLO 99.9% availability; SLI based on success rate &lt;200ms. (Ch.5, Ch.8)</p>
-        </dd>
-
-        <dt id="swr"><strong>Stale-While-Revalidate (SWR)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Serve stale cache while refreshing in background.</p>
-          <p><em>Formal:</em> HTTP directive allowing temporary stale responses on revalidation.</p>
-          <p><em>Pitfall:</em> Unbounded staleness without caps.</p>
-          <p><em>Example:</em> 60s SWR for celebrity profile to survive spikes. (Ch.5)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= T ================= -->
-    <section class="section">
-      <h2 id="T">T</h2>
-      <dl class="glossary">
-        <dt id="timeout"><strong>Timeout</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Give up waiting after a set time.</p>
-          <p><em>Formal:</em> Upper bound on synchronous wait; must align with user latency budget.</p>
-          <p><em>Pitfall:</em> No timeouts → hung threads, cascading failures.</p>
-          <p><em>Example:</em> 200ms per hop with overall 600ms budget. (Ch.3)</p>
-        </dd>
-
-        <dt id="tls"><strong>TLS</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Encrypts data in transit.</p>
-          <p><em>Formal:</em> TLS 1.2/1.3 with strong ciphers; mTLS for service-to-service auth.</p>
-          <p><em>Pitfall:</em> Mixed-mode plaintext inside perimeter; weak cert rotation.</p>
-          <p><em>Example:</em> mTLS between gateway and services. (Ch.7)</p>
-        </dd>
-
-        <dt id="token-bucket"><strong>Token Bucket</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Rate limit that allows bursts.</p>
-          <p><em>Formal:</em> Bucket capacity B refilled at rate r; request consumes one token.</p>
-          <p><em>Pitfall:</em> Shared bucket causes noisy neighbor.</p>
-          <p><em>Example:</em> Per-tenant buckets at gateway. (Ch.5)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= X–Z (misc) ================= -->
-    <section class="section">
-      <h2 id="XYZ">V–Z</h2>
-      <dl class="glossary">
-        <dt id="versioning"><strong>Versioning (APIs/Events)</strong></dt>
-        <dd>
-          <p><em>Plain:</em> Change interfaces without breaking clients.</p>
-          <p><em>Formal:</em> Backward-compatible schemas; additive fields; deprecation windows.</p>
-          <p><em>Pitfall:</em> Breaking changes without migration plan.</p>
-          <p><em>Example:</em> Add field with default; keep old consumers running. (Ch.6)</p>
-        </dd>
-      </dl>
-    </section>
-
-    <!-- ================= NEXT/PREV ================= -->
-    <nav class="next-prev" aria-label="Chapter navigation">
-      <a href="chapters/appendix.html" rel="prev">← Previous: Appendix — Pitfalls, Checklists &amp; Progression</a>
+    <nav class="alpha-nav">
+      <a href="#A">A</a><a href="#B">B</a><a href="#C">C</a><a href="#D">D</a><a href="#E">E</a><a href="#F">F</a><a href="#G">G</a><a href="#H">H</a><a href="#I">I</a><a href="#J">J</a><a href="#K">K</a><a href="#L">L</a><a href="#M">M</a><a href="#N">N</a><a href="#O">O</a><a href="#P">P</a><a href="#Q">Q</a><a href="#R">R</a><a href="#S">S</a><a href="#T">T</a><a href="#U">U</a><a href="#V">V</a><a href="#W">W</a><a href="#X">X</a><a href="#Y">Y</a><a href="#Z">Z</a>
     </nav>
 
-    <!-- ================= HIDDEN CHECKLIST COMMENT ================= -->
-    <!--
-    - [x] theme.css+app.js loaded
-    - [x] <base> present & correct (../)
-    - [x] Canonical nav verbatim; active link set
-    - [x] Pager has only prev (glossary is last)
-    - [x] Alphabetical sections with Plain → Formal → Pitfall → Example
-    - [x] Terms cover chapters 1–10 themes for auto-linking
-    - [x] Head/meta ok; no TODOs
-    -->
+    <section id="A" class="section">
+      <h2>A</h2>
+      <dl class="glossary">
+        <dt id="g-active-active">Active‑active</dt>
+        <dd><p><strong>Plain.</strong> Run the app in multiple regions at once, serving users from the nearest healthy one.</p><p><strong>Formal.</strong> A multi‑region topology with concurrent primaries; reads are local; writes are coordinated via partitioning or global consensus; requires conflict handling or strict coordination.</p><p><strong>Example.</strong> A global read API serves from the closest region while writes go to the partition owner; if a region fails, others continue without failover.</p></dd>
+
+        <dt id="g-active-passive">Active‑passive</dt>
+        <dd><p><strong>Plain.</strong> One region is primary; another is on standby for failover.</p><p><strong>Formal.</strong> Primary receives traffic; secondary replicates (usually async). Recovery point objective (RPO) &gt; 0; recovery time objective (RTO) depends on failover automation.</p><p><strong>Example.</strong> A database replicates to another region; you flip DNS only during incidents.</p></dd>
+
+        <dt id="g-api-gateway">API gateway</dt>
+        <dd><p><strong>Plain.</strong> The front door for APIs: routing, auth, rate limits.</p><p><strong>Formal.</strong> A reverse‑proxy layer that centralizes cross‑cutting concerns (authN/Z, throttling, request shaping) and routes to backend services.</p><p><strong>Example.</strong> Requests to <code>/v1/orders</code> are validated and routed to <em>Orders</em>; spikes are limited by a <a href="#g-throttling">token bucket</a>.</p></dd>
+
+        <dt id="g-autoscaling">Autoscaling</dt>
+        <dd><p><strong>Plain.</strong> Add/remove capacity automatically based on load.</p><p><strong>Formal.</strong> Policy‑driven changes to replica count or instance size in response to metrics (CPU, QPS, queue depth), bounded by min/max limits.</p><p><strong>Example.</strong> <a href="#g-hpa">HPA</a> increases pods when queue depth exceeds 500 for 5 minutes.</p></dd>
+      </dl>
+    </section>
+
+    <section id="B" class="section">
+      <h2>B</h2>
+      <dl class="glossary">
+        <dt id="g-backpressure">Backpressure</dt>
+        <dd><p><strong>Plain.</strong> Slowing senders so the system doesn’t overload.</p><p><strong>Formal.</strong> Flow‑control signals (queue limits, windowing, 429s) that bound concurrency or rate to match downstream capacity.</p><p><strong>Example.</strong> Gateway returns 429 with <code>Retry‑After</code> when the order queue is full.</p></dd>
+
+        <dt id="g-bounded-staleness">Bounded staleness</dt>
+        <dd><p><strong>Plain.</strong> Data may be old, but only by a little.</p><p><strong>Formal.</strong> A consistency model guaranteeing reads within a time/version bound of the latest write.</p><p><strong>Example.</strong> Catalog pages guarantee prices are no older than 60 seconds; checkout revalidates.</p></dd>
+
+        <dt id="g-bulkhead">Bulkhead</dt>
+        <dd><p><strong>Plain.</strong> Isolate resources so one noisy neighbor can’t sink the ship.</p><p><strong>Formal.</strong> Per‑route/tenant pools or queues to limit blast radius of contention and failures.</p><p><strong>Example.</strong> Separate connection pools for <code>/search</code> and <code>/checkout</code> avoid starvation.</p></dd>
+      </dl>
+    </section>
+
+    <section id="C" class="section">
+      <h2>C</h2>
+      <dl class="glossary">
+        <dt id="g-cap">CAP theorem</dt>
+        <dd><p><strong>Plain.</strong> During a network split you can’t have both perfect consistency and perfect availability.</p><p><strong>Formal.</strong> In the presence of partitions, systems choose between linearizable operations (C) and total availability (A); outside partitions, both may be achievable.</p><p><strong>Example.</strong> A checkout stays <em>CP</em> (reject writes on minority); a timeline feed remains <em>AP</em> and reconciles later.</p></dd>
+
+        <dt id="g-cdc">Change data capture (CDC)</dt>
+        <dd><p><strong>Plain.</strong> Stream DB changes to other systems.</p><p><strong>Formal.</strong> Log‑based or trigger‑based extraction of inserts/updates/deletes to publish events or update read models.</p><p><strong>Example.</strong> Order updates flow via CDC to a <a href="#g-materialized-view">materialized view</a> powering the account page.</p></dd>
+
+        <dt id="g-canary">Canary release</dt>
+        <dd><p><strong>Plain.</strong> Roll out to a small slice, watch metrics, then expand.</p><p><strong>Formal.</strong> Progressive exposure strategy gated by SLI deltas with automatic rollback on breach.</p><p><strong>Example.</strong> Start at 1% mobile users; promote if <em>P95</em> latency delta ≤ +10% and error delta ≤ +0.3%.</p></dd>
+
+        <dt id="g-cache-aside">Cache‑aside</dt>
+        <dd><p><strong>Plain.</strong> Read from cache; on miss, read DB and fill cache.</p><p><strong>Formal.</strong> Application‑managed cache population with TTLs/invalidation; write path may bypass cache or update it.</p><p><strong>Example.</strong> Product detail reads cache first; misses coalesce to avoid <a href="#g-stampede">stampedes</a>.</p></dd>
+
+        <dt id="g-cache-stampede">Cache stampede</dt>
+        <dd><p><strong>Plain.</strong> Many clients hammer the origin when a hot key expires.</p><p><strong>Formal.</strong> Thundering herd on TTL boundaries; mitigated by request coalescing, jittered TTLs, and background refresh.</p><p><strong>Example.</strong> Add a single‑flight lock so only one request refreshes a hot page.</p></dd>
+
+        <dt id="g-circuit-breaker">Circuit breaker</dt>
+        <dd><p><strong>Plain.</strong> Fail fast when a dependency is sick.</p><p><strong>Formal.</strong> A state machine (closed/open/half‑open) that blocks calls after error/latency thresholds and probes for recovery.</p><p><strong>Example.</strong> Open after 2% errors for 3 windows; half‑open with 1 probe/s; close after 5 successes.</p></dd>
+
+        <dt id="g-crdt">CRDT</dt>
+        <dd><p><strong>Plain.</strong> A data type that converges across replicas without coordination.</p><p><strong>Formal.</strong> Merge is associative, commutative, idempotent; replicas processing the same updates in any order reach the same state.</p><p><strong>Example.</strong> Likes counter as a G‑Counter; removes cannot decrease value.</p></dd>
+
+        <dt id="g-cqrs">CQRS</dt>
+        <dd><p><strong>Plain.</strong> Separate write and read models/paths.</p><p><strong>Formal.</strong> Commands enforce invariants on a write model; queries read projections optimized for access patterns; eventual consistency tolerated on reads.</p><p><strong>Example.</strong> Orders write to OLTP; a denormalized <a href="#g-read-model">read model</a> serves account pages.</p></dd>
+      </dl>
+    </section>
+
+    <section id="D" class="section">
+      <h2>D</h2>
+      <dl class="glossary">
+        <dt id="g-dead-letter-queue">Dead‑letter queue (DLQ)</dt>
+        <dd><p><strong>Plain.</strong> A holding queue for messages your consumers couldn’t process.</p><p><strong>Formal.</strong> Messages exceeding retry/age limits are moved to a DLQ for inspection and replay with fixes.</p><p><strong>Example.</strong> Poison messages land in DLQ with error metadata; a job replays them after a bugfix.</p></dd>
+
+        <dt id="g-denormalization">Denormalization</dt>
+        <dd><p><strong>Plain.</strong> Copy data into a shape that’s faster to read.</p><p><strong>Formal.</strong> Store redundant fields or precomputed aggregates to reduce joins at query time; increases write amplification and staleness risk.</p><p><strong>Example.</strong> Store seller name on product rows to avoid joins; update via CDC.</p></dd>
+      </dl>
+    </section>
+
+    <section id="E" class="section">
+      <h2>E</h2>
+      <dl class="glossary">
+        <dt id="g-error-budget">Error budget</dt>
+        <dd><p><strong>Plain.</strong> How much failure you’re willing to tolerate in a period.</p><p><strong>Formal.</strong> 1 − SLO (e.g., 0.1% of requests may fail per 30 days) used to pace risk and releases.</p><p><strong>Example.</strong> If burn rate spikes, pause canary promotions and focus on stability.</p></dd>
+
+        <dt id="g-event-sourcing">Event sourcing</dt>
+        <dd><p><strong>Plain.</strong> Store changes as an immutable log of events.</p><p><strong>Formal.</strong> The event stream is the system of record; read models are deterministic projections; events are versioned and append‑only.</p><p><strong>Example.</strong> Ledger stores <code>credit</code>/<code>debit</code> events and rebuilds balances.</p></dd>
+
+        <dt id="g-etag">ETag / If‑Match</dt>
+        <dd><p><strong>Plain.</strong> A version tag that lets clients avoid lost updates.</p><p><strong>Formal.</strong> Conditional requests (If‑Match/If‑None‑Match) that perform updates only if the server’s version matches the client’s.</p><p><strong>Example.</strong> <code>PUT /profile</code> with <code>If‑Match: "v7"</code> rejects if another writer changed it.</p></dd>
+
+        <dt id="g-eventual-consistency">Eventual consistency</dt>
+        <dd><p><strong>Plain.</strong> Replicas may disagree temporarily but converge over time.</p><p><strong>Formal.</strong> No real‑time ordering guarantee; clients may see stale data; convergence guaranteed if updates stop.</p><p><strong>Example.</strong> Profile edits appear instantly to the editor (<a href="#g-read-my-writes">read‑my‑writes</a>) but others see them after replicas catch up.</p></dd>
+      </dl>
+    </section>
+
+    <section id="F" class="section">
+      <h2>F</h2>
+      <dl class="glossary">
+        <dt id="g-fencing-token">Fencing token</dt>
+        <dd><p><strong>Plain.</strong> A monotonically increasing number that proves you’re the current lease holder.</p><p><strong>Formal.</strong> Tokens issued by a coordinator; downstream stores reject writes with tokens lower than the last accepted, preventing split‑brain writes.</p><p><strong>Example.</strong> A batch job includes token 42 in writes; if another takes over with token 43, old writes are ignored.</p></dd>
+
+        <dt id="g-feature-flag">Feature flag</dt>
+        <dd><p><strong>Plain.</strong> Toggle code paths at runtime for certain users.</p><p><strong>Formal.</strong> A dynamic configuration controlling behavior by cohort; decouples deploy from release.</p><p><strong>Example.</strong> Enable new checkout for 5% of traffic; roll back by flipping the flag.</p></dd>
+      </dl>
+    </section>
+
+    <section id="G" class="section">
+      <h2>G</h2>
+      <dl class="glossary">
+        <dt id="g-grpc">gRPC</dt>
+        <dd><p><strong>Plain.</strong> A high‑performance RPC protocol using HTTP/2 and Protobuf.</p><p><strong>Formal.</strong> Contract‑first IDL with code‑generated clients/servers, bi‑directional streaming, and strict types.</p><p><strong>Example.</strong> Low‑latency internal service calls with streaming updates.</p></dd>
+      </dl>
+    </section>
+
+    <section id="H" class="section">
+      <h2>H</h2>
+      <dl class="glossary">
+        <dt id="g-hpa">HPA (Horizontal Pod Autoscaler)</dt>
+        <dd><p><strong>Plain.</strong> Kubernetes controller that scales pods based on metrics.</p><p><strong>Formal.</strong> Adjusts replica counts from <code>minReplicas..maxReplicas</code> using CPU/memory or custom metrics (QPS, queue depth).</p><p><strong>Example.</strong> Scale <em>Search</em> pods from 3→12 when CPU &gt; 70% for 5m.</p></dd>
+      </dl>
+    </section>
+
+    <section id="I" class="section">
+      <h2>I</h2>
+      <dl class="glossary">
+        <dt id="g-idempotency">Idempotency</dt>
+        <dd><p><strong>Plain.</strong> Doing the same request twice has the same effect as doing it once.</p><p><strong>Formal.</strong> A property of operations where repeated application yields no additional state change beyond the first.</p><p><strong>Example.</strong> <code>POST /orders</code> with <code>Idempotency‑Key: abc123</code> creates at most one order.</p></dd>
+
+        <dt id="g-ingress">Ingress</dt>
+        <dd><p><strong>Plain.</strong> Kubernetes HTTP(S) routing into the cluster.</p><p><strong>Formal.</strong> An API object mapping host/path rules to Services, often backed by NGINX or a cloud load balancer.</p><p><strong>Example.</strong> <code>shop.example.com/checkout</code> → <em>CheckoutService</em>.</p></dd>
+      </dl>
+    </section>
+
+    <section id="J" class="section">
+      <h2>J</h2>
+      <dl class="glossary">
+        <dt id="g-jitter">Jitter</dt>
+        <dd><p><strong>Plain.</strong> Add randomness to avoid synchronized spikes.</p><p><strong>Formal.</strong> Randomized backoff/TTLs to de‑phase retries or expirations and reduce herd effects.</p><p><strong>Example.</strong> Cache TTL = 300–360s instead of exactly 300s.</p></dd>
+      </dl>
+    </section>
+
+    <section id="K" class="section">
+      <h2>K</h2>
+      <dl class="glossary">
+        <dt id="g-kubernetes">Kubernetes</dt>
+        <dd><p><strong>Plain.</strong> A platform for running containers reliably at scale.</p><p><strong>Formal.</strong> A control plane (API server, scheduler, controllers, etcd) that reconciles desired state (manifests) with actual cluster state via kubelets on nodes.</p><p><strong>Example.</strong> A Deployment keeps 5 replicas of <em>Orders</em> alive and routes traffic via a Service.</p></dd>
+      </dl>
+    </section>
+
+    <section id="L" class="section">
+      <h2>L</h2>
+      <dl class="glossary">
+        <dt id="g-lamport">Lamport clock</dt>
+        <dd><p><strong>Plain.</strong> A way to order events without perfect time.</p><p><strong>Formal.</strong> A logical counter that increases on local events and message receipts, establishing a <em>happens‑before</em> partial order.</p><p><strong>Example.</strong> Use to break ties when merging edits without relying on wall‑clock.</p></dd>
+
+        <dt id="g-lww">LWW (Last‑Write‑Wins)</dt>
+        <dd><p><strong>Plain.</strong> The newest write wins on conflict.</p><p><strong>Formal.</strong> Conflict resolution by selecting the value with the maximum timestamp/vector clock.</p><p><strong>Example.</strong> Profile picture URL uses LWW during offline merges.</p></dd>
+      </dl>
+    </section>
+
+    <section id="M" class="section">
+      <h2>M</h2>
+      <dl class="glossary">
+        <dt id="g-materialized-view">Materialized view</dt>
+        <dd><p><strong>Plain.</strong> A precomputed table for fast reads.</p><p><strong>Formal.</strong> A persisted projection of base data, updated by triggers, jobs, or CDC; must handle rebuilds and staleness.</p><p><strong>Example.</strong> <em>order_view</em> summarizes orders per customer; rebuild after schema change.</p></dd>
+
+        <dt id="g-mvcc">MVCC (Multi‑Version Concurrency Control)</dt>
+        <dd><p><strong>Plain.</strong> Readers don’t block writers because the DB keeps snapshots.</p><p><strong>Formal.</strong> Transactions read from a consistent snapshot; writes create new versions; isolation levels control anomalies.</p><p><strong>Example.</strong> Long reads don’t stall short updates in Postgres.</p></dd>
+      </dl>
+    </section>
+
+    <section id="N" class="section">
+      <h2>N</h2>
+      <dl class="glossary">
+        <dt id="g-ntp">NTP / chrony</dt>
+        <dd><p><strong>Plain.</strong> Keep machine clocks in sync.</p><p><strong>Formal.</strong> Network time protocols that discipline local clocks to reference servers, reducing skew that breaks time‑based logic.</p><p><strong>Example.</strong> Prevents <a href="#g-lww">LWW</a> errors from skewed clocks.</p></dd>
+      </dl>
+    </section>
+
+    <section id="O" class="section">
+      <h2>O</h2>
+      <dl class="glossary">
+        <dt id="g-opentelemetry">OpenTelemetry</dt>
+        <dd><p><strong>Plain.</strong> A standard way to emit metrics, logs, and traces.</p><p><strong>Formal.</strong> Vendor‑neutral SDKs, protocols, and semantic conventions for telemetry with context propagation.</p><p><strong>Example.</strong> Add a trace id to every request and link spikes on dashboards to sample traces (exemplars).</p></dd>
+      </dl>
+    </section>
+
+    <section id="P" class="section">
+      <h2>P</h2>
+      <dl class="glossary">
+        <dt id="g-partitioning">Partitioning / sharding</dt>
+        <dd><p><strong>Plain.</strong> Split data/work across nodes so it scales.</p><p><strong>Formal.</strong> Horizontal division by key/range/hash to distribute load and storage; requires rebalancing and hot‑key mitigation.</p><p><strong>Example.</strong> Orders sharded by <code>customer_id</code> with salted hot seller keys.</p></dd>
+
+        <dt id="g-postmortem">Postmortem (blameless)</dt>
+        <dd><p><strong>Plain.</strong> A learning document after an incident, not a blame session.</p><p><strong>Formal.</strong> A structured analysis of causes, detection, response, and actions with owners and due dates.</p><p><strong>Example.</strong> Cert expiration incident leads to auto‑renewal and dashboards.</p></dd>
+      </dl>
+    </section>
+
+    <section id="Q" class="section">
+      <h2>Q</h2>
+      <dl class="glossary">
+        <dt id="g-quorum">Quorum (R + W &gt; N)</dt>
+        <dd><p><strong>Plain.</strong> Enough replicas must agree to read/write safely.</p><p><strong>Formal.</strong> In N‑replica systems, choose read quorum R and write quorum W such that R + W &gt; N to ensure overlap between reads and latest writes.</p><p><strong>Example.</strong> With N=3, R=2 and W=2 ensures reads see a participant of the latest write.</p></dd>
+      </dl>
+    </section>
+
+    <section id="R" class="section">
+      <h2>R</h2>
+      <dl class="glossary">
+        <dt id="g-read-my-writes">Read‑my‑writes</dt>
+        <dd><p><strong>Plain.</strong> After I write, my next reads show my change.</p><p><strong>Formal.</strong> A session consistency guarantee binding a user’s subsequent reads to replicas that have applied their last write.</p><p><strong>Example.</strong> Route the editor to the leader for 30 seconds after an update.</p></dd>
+
+        <dt id="g-read-model">Read model</dt>
+        <dd><p><strong>Plain.</strong> A storage shape designed for queries, not writes.</p><p><strong>Formal.</strong> A projection optimized for read patterns, fed by CDC or events, often eventually consistent.</p><p><strong>Example.</strong> An <em>order_view</em> table per customer for fast dashboards.</p></dd>
+
+        <dt id="g-rpo-rto">RPO / RTO</dt>
+        <dd><p><strong>Plain.</strong> How much data you can afford to lose (RPO) and how fast you must recover (RTO).</p><p><strong>Formal.</strong> Targets guiding backup/replication and failover design.</p><p><strong>Example.</strong> RPO 1 minute; RTO 15 minutes for checkout.</p></dd>
+      </dl>
+    </section>
+
+    <section id="S" class="section">
+      <h2>S</h2>
+      <dl class="glossary">
+        <dt id="g-saga">Saga</dt>
+        <dd><p><strong>Plain.</strong> A long transaction split into steps with undo actions.</p><p><strong>Formal.</strong> A sequence of operations with compensations to restore invariants on failure; can be orchestrated or choreographed.</p><p><strong>Example.</strong> Reserve stock → charge card → create shipment; on failure, refund and release.</p></dd>
+
+        <dt id="g-schema-evolution">Schema evolution</dt>
+        <dd><p><strong>Plain.</strong> Changing data or event schemas without breaking clients.</p><p><strong>Formal.</strong> Versioning rules (additive first), aliases, and deprecation windows; tested with consumer‑driven contracts.</p><p><strong>Example.</strong> Add <code>promo_code</code> field; keep old readers working for 90 days.</p></dd>
+
+        <dt id="g-secrets-manager">Secrets manager</dt>
+        <dd><p><strong>Plain.</strong> A vault for credentials with access controls and rotation.</p><p><strong>Formal.</strong> KMS‑backed storage with audit and fine‑grained IAM; integrates with apps at runtime.</p><p><strong>Example.</strong> Fetch DB creds via workload identity instead of storing in env files.</p></dd>
+
+        <dt id="g-service-mesh">Service mesh</dt>
+        <dd><p><strong>Plain.</strong> Sidecars handle networking concerns so apps can focus on business logic.</p><p><strong>Formal.</strong> Data plane proxies + control plane for mTLS, retries, routing, and telemetry without app changes.</p><p><strong>Example.</strong> Enforce mTLS and per‑route circuit breakers across services.</p></dd>
+
+        <dt id="g-sli">SLI</dt>
+        <dd><p><strong>Plain.</strong> A measurement of user‑visible behavior.</p><p><strong>Formal.</strong> A ratio or metric representing service performance (e.g., success/total, P95 latency).</p><p><strong>Example.</strong> “95% of checkouts under 300 ms (client‑measured).”</p></dd>
+
+        <dt id="g-slo">SLO</dt>
+        <dd><p><strong>Plain.</strong> The reliability target you promise to users.</p><p><strong>Formal.</strong> A threshold for an SLI over a time window (e.g., ≥ 99.9% success over 30 days).</p><p><strong>Example.</strong> Pause deploys if error budget burn exceeds 14× over 5 minutes.</p></dd>
+
+        <dt id="g-stampede">Stampede (thundering herd)</dt>
+        <dd><p><strong>Plain.</strong> Many clients do the same expensive thing at once.</p><p><strong>Formal.</strong> Synchronization of retries/refreshes causing overload; mitigated by jitter, coalescing, and backoff.</p><p><strong>Example.</strong> All caches expire at once; coalescing limits origin hits.</p></dd>
+
+        <dt id="g-strong-consistency">Strong consistency</dt>
+        <dd><p><strong>Plain.</strong> After a write is confirmed, every read sees it.</p><p><strong>Formal.</strong> Often linearizability: operations appear to occur atomically in real time.</p><p><strong>Example.</strong> Money movement uses a single leader and quorum writes.</p></dd>
+      </dl>
+    </section>
+
+    <section id="T" class="section">
+      <h2>T</h2>
+      <dl class="glossary">
+        <dt id="g-tail-sampling">Tail‑based sampling</dt>
+        <dd><p><strong>Plain.</strong> Keep the most interesting (slow/error) traces.</p><p><strong>Formal.</strong> Decision to retain made after observing span attributes, not at ingress.</p><p><strong>Example.</strong> Retain traces over 2× P95 or with 5xx status.</p></dd>
+
+        <dt id="g-throttling">Throttling</dt>
+        <dd><p><strong>Plain.</strong> Limit how fast clients can send work.</p><p><strong>Formal.</strong> Token/leaky bucket algorithms that bound rate or concurrency; often return 429 with <code>Retry‑After</code>.</p><p><strong>Example.</strong> Protect <code>/login</code> from brute‑force with per‑IP token buckets.</p></dd>
+      </dl>
+    </section>
+
+    <section id="U" class="section">
+      <h2>U</h2>
+      <dl class="glossary">
+        <dt id="g-unit-economics">Unit economics</dt>
+        <dd><p><strong>Plain.</strong> How much one user/request costs you.</p><p><strong>Formal.</strong> Cost per unit of value (per request/message/user) guiding pricing and architecture choices.</p><p><strong>Example.</strong> Trace and log budgets tied to cost per 1,000 requests.</p></dd>
+      </dl>
+    </section>
+
+    <section id="V" class="section">
+      <h2>V</h2>
+      <dl class="glossary">
+        <dt id="g-vector-clock">Vector clock</dt>
+        <dd><p><strong>Plain.</strong> Track causality across multiple writers.</p><p><strong>Formal.</strong> A per‑replica counter vector; element‑wise maxima compute concurrency and detect conflicts.</p><p><strong>Example.</strong> Reconciliation chooses winner by vector dominance; equal vectors mean concurrent updates.</p></dd>
+      </dl>
+    </section>
+
+    <section id="W" class="section">
+      <h2>W</h2>
+      <dl class="glossary">
+        <dt id="g-watermark">Watermark</dt>
+        <dd><p><strong>Plain.</strong> A streaming system’s best guess of how far it has progressed in event time.</p><p><strong>Formal.</strong> A monotonically advancing marker that says “all events older than time T are likely processed,” enabling window triggers and late‑data handling.</p><p><strong>Example.</strong> Fire window results at watermark = window_end − allowed_lateness.</p></dd>
+
+        <dt id="g-workload-identity">Workload identity</dt>
+        <dd><p><strong>Plain.</strong> Let apps prove who they are without static secrets.</p><p><strong>Formal.</strong> Short‑lived credentials issued to runtime identities (pods/instances) via OIDC or metadata services.</p><p><strong>Example.</strong> Pod exchanges its identity for a DB token; nothing is stored in code.</p></dd>
+      </dl>
+    </section>
+
+    <nav class="next-prev">
+      <a class="btn" rel="prev" href="chapters/appendix.html">← Previous</a>
+    </nav>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
+      </div>
+    </footer>
   </main>
+
+  <!--
+  CHECKLIST (Glossary)
+  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+  - [x] Canonical nav (Home / Appendix / Glossary only)
+  - [x] Pager: glossary only has prev (Appendix)
+  - [x] Alphabetical; each term has Plain + Formal + Example; cross‑links included
+  - [x] Head/meta complete; no TODOs
+  -->
 </body>
 </html>

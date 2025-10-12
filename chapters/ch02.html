@@ -1,287 +1,214 @@
-<!-- /chapters/ch02.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Chapter 2 — Designing Core Building Blocks of Systems</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Chapter 2 explores the building blocks of system design: clients, servers, APIs, and middleware, applying modular thinking and trade-off evaluation.">
-  <meta property="og:title" content="Chapter 2 — Designing Core Building Blocks of Systems">
-  <meta property="og:description" content="Deep dive into clients, servers, APIs, and middleware. Learn modular design principles, trade-offs, and practical applications in system design.">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 02 — System Building Blocks — Scalable Components</title>
+  <meta name="description" content="Compute units, networking and routing, caching and messaging, and background work. Map requirements to components with clear trade-offs and usage patterns.">
+  <meta property="og:title" content="Chapter 02 — System Building Blocks — Scalable Components">
+  <meta property="og:description" content="Choose between VMs, containers, and serverless; understand load balancers, proxies, and API gateways; master caching, queues, and background processing.">
+  <meta property="og:type" content="article">
   <base href="../">
   <link rel="stylesheet" href="styles/theme.css">
-  <script defer src="scripts/app.js"></script>
+  <script src="scripts/app.js" defer></script>
 </head>
 <body>
-  <!-- ================= NAV ================= -->
-  <nav class="app-nav">
-    <div class="bar">
-      <div class="brand"><a href="index.html">System Design</a></div>
-      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
-      <div class="spacer"></div>
-      <div class="links">
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="app-nav">
+    <div class="container inner">
+      <div class="brand">Intermediate System Design</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
+      <nav id="top-menu" class="menu" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="chapters/ch01.html">Chapters</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </div>
+      </nav>
     </div>
-  </nav>
-
-  <!-- ================= HERO ================= -->
-  <header class="page-hero container">
-    <div class="badge">Chapter 2</div>
-    <h1>Designing Core Building Blocks of Systems</h1>
-    <p>
-      Every large-scale system rests on a few essential pillars: clients, servers, APIs, 
-      and middleware. This chapter develops your ability to design each block with modular 
-      clarity, reason about their trade-offs, and compose them into reliable architectures.
-    </p>
   </header>
 
-  <main class="container">
-    <!-- ============== PREREQS & OBJECTIVES ============== -->
-    <section class="section">
-      <div class="grid two-col">
-        <div class="card">
-          <h2>Prerequisites</h2>
-          <ul>
-            <li>Comfort with request-response workflows (client → server → database).</li>
-            <li>Familiarity with beginner-level API concepts.</li>
-            <li>Understanding of synchronous vs. asynchronous patterns at a basic level.</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h2>Learning Objectives</h2>
-          <ul>
-            <li>Differentiate thin vs. thick clients and their design trade-offs.</li>
-            <li>Compare stateless vs. stateful servers in deployment and reliability.</li>
-            <li>Design robust APIs with clear contracts and versioning strategies.</li>
-            <li>Understand middleware roles: queues, streams, and event buses.</li>
-          </ul>
-        </div>
-      </div>
+  <main id="main" class="container fade-in">
+    <section class="page-hero" id="2-hero">
+      <div class="meta"><span class="badge badge-primary">Chapter 02</span></div>
+      <h1>System Building Blocks — Scalable Components</h1>
+      <p class="abstract">Beginner courses teach the names: load balancer, cache, queue, database. This chapter goes deeper: you’ll learn when and how to apply each building block, how they interact, and what new risks they introduce. We will connect requirements to concrete choices with defensible trade‑offs, preparing you to assemble an architecture that scales without accidental complexity.</p>
     </section>
 
-    <!-- ============== SECTION 1: CLIENTS & FRONTENDS ============== -->
-    <section class="section">
-      <h2>1) Clients & Frontends in System Design</h2>
-      <p>
-        A <strong>client</strong> is any application that consumes system functionality. Clients 
-        may be web browsers, mobile apps, IoT devices, or third-party integrations. Their 
-        design influences server load, responsiveness, and user experience.
-      </p>
-      <h3>Thin vs. Thick Clients</h3>
-      <p>
-        <strong>Thin clients</strong> delegate computation to servers. Example: a web browser 
-        rendering HTML from the server. Thin clients reduce device burden but increase server 
-        costs and latency. <strong>Thick clients</strong> handle logic locally—mobile apps 
-        caching data, validating inputs, or rendering offline. This reduces round-trips but 
-        increases update complexity and client memory use.
-      </p>
-      <div class="callout success">
-        <strong>Trade-off:</strong> Thin clients simplify updates (deploy once to servers), 
-        while thick clients improve offline reliability but require multi-platform maintenance.
-      </div>
-      <h3>Example</h3>
-      <p>
-        Consider a ride-hailing app. A thin client would request all fare calculations from 
-        the server. A thick client calculates fare locally using a cached pricing model, then 
-        verifies with the server. The second approach reduces latency during booking but 
-        requires frequent model updates.
-      </p>
-    </section>
+    <section class="section" id="2-1-compute">
+      <h2>2.1 Compute & deployment units</h2>
+      <p><strong>Why it matters.</strong> Your compute choice determines elasticity, isolation, cold‑start behavior, and operational overhead. Choosing poorly can lock in cost or latency for months.</p>
 
-    <!-- ============== SECTION 2: SERVERS & APP LAYERS ============== -->
-    <section class="section">
-      <h2>2) Servers & Application Layers</h2>
-      <h3>Stateless vs. Stateful Servers</h3>
-      <p>
-        A <strong>stateless server</strong> does not persist user session information locally; 
-        all state is externalized to caches or databases. This makes horizontal scaling easier 
-        — just add servers behind a load balancer. In contrast, <strong>stateful servers</strong> 
-        hold session state in memory (e.g., WebSocket chat servers). They simplify certain 
-        interactions but complicate scaling and failover.
-      </p>
-      <p>
-        Middleware like <abbr title="Session storage replicated across servers">distributed 
-        session stores</abbr> (e.g., Redis) often bridge the gap by enabling state sharing.
-      </p>
-      <h3>Service-Oriented Thinking</h3>
-      <p>
-        Servers are best organized into services, each with clear <abbr title="Interface 
-        that specifies how software components interact">contracts</abbr>. Monolithic servers 
-        combine many concerns but reduce deployment complexity. Microservices isolate concerns 
-        but increase inter-service communication overhead.
-      </p>
-    </section>
+      <h3 id="2-1-1-processes-containers-serverless">2.1.1 Processes vs containers vs serverless</h3>
+      <p><strong>Plain.</strong> A <em>process</em> runs your code on a machine; a <em>container</em> packages the process with its dependencies and isolates it; <em>serverless functions</em> run your code on‑demand in a managed runtime. <strong>Formal.</strong> Processes share the host OS; containers are OS‑level virtualization using cgroups/namespaces; functions are time‑bounded, event‑triggered units with platform‑managed scaling. <strong>Pitfall.</strong> Treating functions like microservices (long‑lived state, chatty IO) leads to high tail latency and cost. <strong>Example.</strong> A thumbnailer is an excellent fit for serverless; a low‑latency trading gateway isn’t.</p>
 
-    <!-- ============== SECTION 3: API DESIGN PRINCIPLES ============== -->
-    <section class="section">
-      <h2>3) API Design Principles</h2>
-      <h3>REST vs. gRPC</h3>
-      <p>
-        <strong>REST</strong> APIs use human-readable JSON and are broadly interoperable. 
-        They excel in public APIs and heterogeneous client ecosystems. <strong>gRPC</strong> 
-        uses binary Protobufs over HTTP/2, offering compact payloads and bidirectional 
-        streaming. It is optimal for high-throughput service-to-service communication but 
-        requires tighter coupling of client/server tooling.
-      </p>
-      <h3>Versioning & Contracts</h3>
-      <p>
-        APIs must evolve without breaking clients. Options include path versioning 
-        (<code>/v1/resource</code>), backward-compatible fields, and deprecation schedules. 
-        Contracts should be explicit: OpenAPI specs, gRPC schemas, or GraphQL SDLs.
-      </p>
-      <div class="callout warn">
-        <strong>Trade-off:</strong> REST offers simplicity and flexibility; gRPC offers 
-        efficiency and strong typing. Choose based on client diversity and performance needs.
-      </div>
-    </section>
-
-    <!-- ============== SECTION 4: MIDDLEWARE & BROKERS ============== -->
-    <section class="section">
-      <h2>4) Middleware & Message Brokers</h2>
-      <p>
-        Middleware enables decoupling. <strong>Message queues</strong> (RabbitMQ, SQS) 
-        ensure reliable delivery and support retries. <strong>Streams</strong> (Kafka, 
-        Pulsar) provide ordered, replayable event logs. <strong>Event buses</strong> 
-        propagate state changes across services in real-time.
-      </p>
-      <h3>Example</h3>
-      <p>
-        In an e-commerce app, an order service publishes an “order placed” event to Kafka. 
-        Downstream services (inventory, billing, notifications) subscribe independently. 
-        This reduces coupling and isolates failures.
-      </p>
-      <figure>
-        <img src="../assets/ch02-broker-diagram.svg" alt="Diagram of order service publishing to Kafka and multiple consumers processing events">
-        <figcaption>Message broker decoupling producers and consumers in e-commerce.</figcaption>
-      </figure>
-    </section>
-
-    <!-- ============== COMPARE & CONTRAST ============== -->
-    <section class="section">
-      <h2>Compare &amp; Contrast: REST vs. gRPC</h2>
-      <table>
-        <thead>
-          <tr><th>Aspect</th><th>REST</th><th>gRPC</th></tr>
-        </thead>
+      <p>Compare: <strong>VMs vs Containers vs Serverless</strong></p>
+      <table class="table">
+        <thead><tr><th>Compute form</th><th>Elasticity</th><th>Isolation</th><th>Cold‑start</th><th>Ops overhead</th><th>Best for</th><th>Risks</th></tr></thead>
         <tbody>
-          <tr><td>Encoding</td><td>JSON (verbose, human-friendly)</td><td>Protobuf (compact, binary)</td></tr>
-          <tr><td>Use Case</td><td>Public APIs, broad adoption</td><td>Internal microservices, high performance</td></tr>
-          <tr><td>Streaming</td><td>Limited (HTTP/1.1, WebSockets)</td><td>First-class (HTTP/2)</td></tr>
-          <tr><td>Tooling</td><td>cURL, Postman, many SDKs</td><td>Requires generated stubs, strict contracts</td></tr>
+          <tr><td>Virtual machines (VMs)</td><td>Manual/auto‑scale minutes</td><td>Strong (hypervisor)</td><td>N/A (always on)</td><td>High (patching, capacity)</td><td>Stable, heavy workloads; custom kernels</td><td>Low utilization; slower scale</td></tr>
+          <tr><td>Containers</td><td>Seconds (or faster)</td><td>Medium (OS isolation)</td><td>Warm pools reduce</td><td>Medium (cluster mgmt)</td><td>Stateless services; steady web APIs</td><td>Cluster failures; noisy neighbors</td></tr>
+          <tr><td>Serverless (FaaS)</td><td>Instant to bursty</td><td>Managed per‑invocation</td><td>Possible (cold starts)</td><td>Low (platform manages)</td><td>Event‑driven, spiky workloads</td><td>Per‑request cost; limits; latency jitter</td></tr>
         </tbody>
       </table>
+
+      <p><strong>Analogy.</strong> Think of VMs as renting an apartment (you control most things), containers as co‑working desks (shared building, your desk), and serverless as a conference room you book by the minute (pay only when in use, but you can’t remodel it).</p>
+
+      <h3 id="2-1-2-when-to-use">2.1.2 When to use VMs, containers, FaaS</h3>
+      <p><strong>Plain.</strong> Choose the smallest abstraction that satisfies latency, isolation, and lifecycle needs. <strong>Formal.</strong> Minimize <em>operational load</em> subject to <em>SLOs</em> and <em>compliance</em>. <strong>Pitfall.</strong> Prematurely adopting Kubernetes for a two‑service prototype adds cognitive load; likewise, forcing everything into FaaS complicates state and networking. <strong>Examples.</strong> (A) A chat fan‑out service with persistent connections: containers with horizontal pod autoscaling and sticky sessions. (B) A nightly data export: one serverless function triggered by a scheduler, writing to object storage.</p>
+      <ul>
+        <li><strong>Use VMs</strong> when you need custom kernels, specialized networking, or strict tenant isolation.</li>
+        <li><strong>Use containers</strong> for most stateless HTTP/gRPC services and jobs that benefit from fast rollouts and bin‑packing.</li>
+        <li><strong>Use serverless</strong> for intermittent tasks, webhooks, cron‑like jobs, and embarrassingly parallel compute.</li>
+      </ul>
+      <p><em>Takeaway:</em> Let workload shape compute, not fashion. Measure P95/P99 latency and cost per request to validate the choice.</p>
     </section>
 
-    <!-- ============== CASE STUDY ============== -->
-    <section class="section">
-      <h2>Case Study: Adding a Message Broker to a Social App (≈200 words)</h2>
-      <p>
-        A social media startup initially routes all events (posts, likes, follows) through 
-        a monolithic API server that writes directly to a database. As traffic grows, 
-        latency spikes and failures cascade. To decouple workloads, the team introduces 
-        Kafka. Producers (API server) publish events; consumers (feed generator, analytics, 
-        notifications) subscribe. This separation allows independent scaling: analytics 
-        consumers can lag slightly without affecting real-time feed delivery. The broker 
-        also provides durability, enabling replay for bug fixes or new features. However, 
-        operational complexity increases: Kafka requires cluster management, monitoring, 
-        and tuning partitions. The trade-off: improved scalability and fault isolation at 
-        the cost of infrastructure overhead. The system transitions from tightly coupled 
-        synchronous workflows to modular, event-driven architecture.
-      </p>
+    <section class="section" id="2-2-networking">
+      <h2>2.2 Networking & routing</h2>
+      <p><strong>Why it matters.</strong> Most user‑visible failures are network‑shaped: timeouts, misrouted traffic, TLS problems, or cascading retries. Understanding roles of LBs, proxies, and gateways prevents accidental complexity.</p>
+
+      <h3 id="2-2-1-lb-proxy-gateway">2.2.1 Load balancers, reverse proxies, API gateways</h3>
+      <p><strong>Plain.</strong> A <em>load balancer</em> distributes traffic across instances; a <em>reverse proxy</em> sits in front of services for routing and caching; an <em>API gateway</em> provides lifecycle features (auth, rate limits, versioning). <strong>Formal.</strong> L4 LBs operate at transport (TCP/UDP) using 5‑tuples; L7 LBs/proxies inspect HTTP/gRPC semantics and can terminate TLS. <strong>Pitfall.</strong> Overloading a gateway with business logic couples many services to one release train. <strong>Example.</strong> Keep gateway concerns orthogonal: authN/Z, quotas, routing; put domain logic behind it.</p>
+
+      <p>Compare: <strong>LB vs Reverse Proxy vs API Gateway</strong></p>
+      <table class="table">
+        <thead><tr><th>Component</th><th>Layer</th><th>Primary job</th><th>Common features</th><th>Good for</th><th>Watch out</th></tr></thead>
+        <tbody>
+          <tr><td>Load Balancer</td><td>L4/L7</td><td>Distribute load</td><td>Health checks, connection draining</td><td>High availability; multi‑AZ fan‑in</td><td>Sticky sessions can hide unhealthy nodes</td></tr>
+          <tr><td>Reverse Proxy</td><td>L7</td><td>Front services</td><td>Caching, compression, TLS termination</td><td>Edge termination; static asset accel</td><td>Cache invalidation; header/timeout tuning</td></tr>
+          <tr><td>API Gateway</td><td>L7 + mgmt</td><td>Govern APIs</td><td>AuthN/Z, rate limiting, versioning</td><td>Cross‑cutting concerns</td><td>Vendor lock‑in; overcentralization</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Worked example — Safe timeouts.</strong> Suppose your origin P95 is 120 ms, P99 is 300 ms. Set gateway timeout ≈ <em>P99 + safety</em> (e.g., 400–500 ms), client timeout slightly larger (e.g., 600 ms), and <em>retry with jitter</em> only on idempotent requests. <em>Pitfall:</em> identical timeouts at every hop create synchronized retries and load spikes.</p>
+
+      <h3 id="2-2-2-edge-patterns">2.2.2 Edge patterns: CDNs and geo‑routing</h3>
+      <p><strong>Plain.</strong> A CDN caches content close to users; geo‑routing sends users to the nearest or healthiest region. <strong>Formal.</strong> CDNs use TTL‑based caching, ETags/If‑Modified‑Since, and content negotiation; geo‑routing uses anycast DNS or application‑level routing with health and latency signals. <strong>Pitfall.</strong> Stale or inconsistent caches break invariants (e.g., price freshness). <strong>Example.</strong> For an item page, cache immutable assets heavily, keep a short TTL for price fragments, and revalidate aggressively on price updates.</p>
+      <ul>
+        <li><strong>TTL strategy:</strong> immutable assets (images, hashed JS) → long TTL; personalized fragments → short TTL + revalidation.</li>
+        <li><strong>Invalidation:</strong> prefer <em>cache‑busting</em> via content hashes; use surrogate keys/tags for selective purge.</li>
+        <li><strong>HTTP/2 & HTTP/3:</strong> multiplexing reduces head‑of‑line blocking; QUIC helps on lossy networks.</li>
+        <li><strong>TLS termination:</strong> terminate at edge for best latency; re‑encrypt to origin if required.</li>
+      </ul>
+      <p><em>Takeaway:</em> The edge is a <em>performance safety net</em>; design contracts (TTL, validation, purge) like you design APIs.</p>
     </section>
 
-    <!-- ============== RESOURCES ============== -->
-    <section class="section">
-      <h2>Recommended Resources</h2>
-      <div class="resource-list">
-        <div class="item"><strong>RESTful Web APIs (O’Reilly)</strong><div class="meta">Deep dive into REST principles and design trade-offs.</div></div>
-        <div class="item"><strong>RabbitMQ &amp; Kafka Docs</strong><div class="meta">Practical guides to implementing queues and streams.</div></div>
-        <div class="item"><strong>Google API Design Guide</strong><div class="meta">Clear conventions for versioning and contracts.</div></div>
-      </div>
+    <section class="section" id="2-3-caching-messaging">
+      <h2>2.3 Caching & messaging</h2>
+      <p><strong>Why it matters.</strong> Caches protect origins and reduce latency; queues smooth bursts and decouple services. Used together, they create resilience — or new failure modes if misapplied.</p>
+
+      <h3 id="2-3-1-cache-patterns">2.3.1 Cache‑aside, write‑through, eviction strategies</h3>
+      <p><strong>Plain.</strong> Cache‑aside loads on miss; write‑through updates cache on write; eviction determines what stays under capacity pressure. <strong>Formal.</strong> Let <em>H</em> be hit ratio; origin QPS ≈ <em>Q × (1 − H)</em>. <strong>Pitfall.</strong> Ignoring <em>coherency</em>: two caches may serve conflicting values without a source of truth or invalidation plan. <strong>Example.</strong> Use cache tags to purge all items from the same seller after a bulk price update.</p>
+
+      <p>Compare: <strong>Eviction policies</strong></p>
+      <table class="table">
+        <thead><tr><th>Policy</th><th>Pros</th><th>Cons</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr><td>LRU</td><td>Simple; good temporal locality</td><td>Scan pollution; not frequency‑aware</td><td>General web caches; item pages</td></tr>
+          <tr><td>LFU</td><td>Frequency‑aware; stable</td><td>Complexity; stale hot items linger</td><td>Hot‑key heavy workloads</td></tr>
+          <tr><td>ARC/TinyLFU</td><td>Balances recency/frequency</td><td>More tuning required</td><td>Unpredictable access patterns</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Worked example — Thundering herd guard.</strong> For a hot item cache miss, <em>request coalescing</em> ensures only one in‑flight origin fetch; others wait on a promise/future. Add <em>jitter</em> to TTL to avoid simultaneous expiry.</p>
+
+      <h3 id="2-3-2-queues-backpressure">2.3.2 Message queues, backpressure, and asynchronous flows</h3>
+      <p><strong>Plain.</strong> A queue buffers work; consumers pull at their pace; backpressure prevents producers from overwhelming consumers. <strong>Formal.</strong> Little’s Law: <em>L = λW</em> (items in system = arrival rate × time in system); increased queue depth implies increased latency. <strong>Pitfall.</strong> Blind retries multiply traffic and break ordering; treat retries as <em>part</em> of capacity planning. <strong>Example.</strong> Use a <em>retry budget</em> (e.g., max 2 retries with exponential backoff and jitter) and expose retry counters as metrics.</p>
+      <ul>
+        <li><strong>Delivery semantics:</strong> at‑most‑once (fast, risky), at‑least‑once (common, needs idempotency), exactly‑once (costly; often simulated with dedupe).</li>
+        <li><strong>Ordering:</strong> guarantee per‑key ordering by hashing to partitions; avoid global ordering assumptions.</li>
+        <li><strong>Backpressure:</strong> use consumer lag/queue depth thresholds to slow producers or shed non‑critical load.</li>
+      </ul>
+      <p><em>Takeaway:</em> Queues decouple rate, not responsibility. You still need idempotency and observability to make them safe.</p>
     </section>
 
-    <!-- ============== PRACTICE TASKS ============== -->
-    <section class="section practice">
-      <h2>Practice</h2>
-      <div class="task">
-        <h3>Design an API for a URL Shortener</h3>
-        <p class="meta"><span>⏱️ 30–40 min</span> · <span>Success: clear endpoints, versioning, and error handling</span></p>
-        <p>Include endpoints for create, expand, and analytics. Define status codes and rate limiting policy.</p>
-      </div>
-      <div class="task">
-        <h3>Add a Message Broker</h3>
-        <p class="meta"><span>⏱️ 40–60 min</span> · <span>Success: producer/consumer separation and error handling plan</span></p>
-        <p>Take a monolithic design and add a broker. Define what events are produced and how consumers process them.</p>
-      </div>
-      <div class="task">
-        <h3>Thin vs. Thick Client Trade-offs</h3>
-        <p class="meta"><span>⏱️ 20–30 min</span> · <span>Success: table with pros/cons of each</span></p>
-        <p>Evaluate offline support, update complexity, server cost, and UX implications.</p>
-      </div>
+    <section class="section" id="2-4-background">
+      <h2>2.4 Queues & background processing</h2>
+      <p><strong>Why it matters.</strong> Many tasks don’t belong on the request path: emails, thumbnails, index updates, slow side‑effects. Moving them to background workers keeps tail latency in check and isolates failure domains.</p>
+
+      <h3 id="2-4-1-idempotency-retries">2.4.1 Idempotency and retries</h3>
+      <p><strong>Plain.</strong> Idempotency means repeated execution has the same effect. <strong>Formal.</strong> For an operation <em>f</em> and input <em>x</em>, <em>f(f(x)) = f(x)</em>. <strong>Pitfall.</strong> Confusing idempotent <em>API</em> with idempotent <em>implementation</em> — you also need deduplication and safe state transitions. <strong>Example.</strong> Use an <em>idempotency key</em> tied to the caller’s intent (e.g., payment attempt ID) and store a result log keyed by it.</p>
+
+      <pre data-lang="pseudo"><code>// Pseudo-code: idempotent handler with retry-safe side effect
+function handlePurchase(request) {
+  const key = request.idempotencyKey; // caller-provided unique key
+  let record = store.get(key);
+  if (record &amp;&amp; record.status === "DONE") return record.response; // replay
+  if (!record) store.put(key, { status: "IN_PROGRESS" });
+
+  try {
+    const charge = payments.charge(request.customer, request.amount);
+    const order  = orders.create(request.cart);
+    const resp   = { chargeId: charge.id, orderId: order.id };
+    store.put(key, { status: "DONE", response: resp });
+    return resp;
+  } catch (e) {
+    // allow retry with same idempotency key; no double-charge
+    throw e; // surfaced to queue for backoff &amp; retry
+  }
+}</code></pre>
+
+      <p><strong>Retry strategy.</strong> Use <em>exponential backoff with jitter</em>; cap the max delay; fail to a dead‑letter queue (DLQ) after a small number of attempts (e.g., 3–5) with context preserved.</p>
+
+      <h3 id="2-4-2-dlq-throttling">2.4.2 Dead‑letter queues and throttling</h3>
+      <p><strong>Plain.</strong> A DLQ holds messages that repeatedly fail. <strong>Formal.</strong> It is an <em>error isolation channel</em> with bounded growth and explicit ownership for triage. <strong>Pitfall.</strong> Letting DLQs grow without alerting silently accumulates user‑visible failures. <strong>Example.</strong> Create an <em>on‑call runbook</em>: when DLQ depth &gt; N, page the owning team; include a script to replay safely after fixing the root cause.</p>
+      <ul>
+        <li><strong>Throttling:</strong> rate‑limit work intake during incidents to protect critical paths; prefer <em>token buckets</em> for smooth control.</li>
+        <li><strong>Poison messages:</strong> detect with failure counters; route to DLQ immediately if error is deterministic (e.g., schema mismatch).</li>
+        <li><strong>Tracing background work:</strong> propagate correlation IDs from the request path into jobs so you can follow a user action through workers.</li>
+      </ul>
+      <p><em>Takeaway:</em> Background systems need product‑level ownership: SLOs, dashboards, and on‑call procedures like any user‑facing API.</p>
     </section>
 
-    <!-- ============== MASTERY CHECK ============== -->
-    <section class="section mastery">
-      <h2>Mastery Check</h2>
-      <div class="quiz-controls">
-        <button class="btn" data-quiz-toggle="open">Open all answers</button>
-        <button class="btn" data-quiz-toggle="close">Close all</button>
-      </div>
-      <details>
-        <summary>1) When is a stateful server justified?</summary>
-        <div><p>For real-time connections (e.g., WebSockets) where maintaining session context in-memory reduces latency and simplifies interaction. Trade-off: harder to scale and failover.</p></div>
-      </details>
-      <details>
-        <summary>2) Why choose gRPC over REST?</summary>
-        <div><p>When efficiency, type safety, and streaming are critical — e.g., microservices needing low-latency, high-throughput calls.</p></div>
-      </details>
-      <details>
-        <summary>3) What problem does a message broker solve?</summary>
-        <div><p>Decouples producers from consumers, smooths bursts, ensures delivery durability, and enables independent scaling.</p></div>
-      </details>
-      <details>
-        <summary>4) Example of middleware misuse?</summary>
-        <div><p>Using Kafka where a simple queue suffices, adding unnecessary operational overhead and complexity.</p></div>
-      </details>
-      <details>
-        <summary>5) How would you version an API safely?</summary>
-        <div><p>Path versioning (<code>/v1</code>, <code>/v2</code>), maintain backward compatibility during transition, document deprecations, and communicate timelines.</p></div>
-      </details>
+    <section class="section" id="2-5-examples">
+      <h2>2.5 End‑to‑end worked examples</h2>
+      <p><strong>Example A — E‑commerce image pipeline.</strong> A user uploads a product photo. The API gateway authenticates and streams to object storage; an event triggers a serverless thumbnailer; a CDN serves versions with long TTL and hashed filenames. <em>Trade‑offs:</em> serverless keeps cost low for bursts; choose a <em>warm pool</em> or provisioned concurrency if cold starts threaten P95. Ensure idempotent processing per upload ID; DLQ on repeated failures (e.g., corrupted image).</p>
+      <p><strong>Example B — Chat fan‑out service.</strong> Ingress terminates TLS at an L7 proxy; sticky routing keeps a user’s connection on the same pod; a <em>presence service</em> uses a fast KV store; messages publish to a partitioned stream keyed by conversation. Consumers push updates to websocket hubs. <em>Trade‑offs:</em> choose per‑conversation ordering (hash on conversation ID); use <em>backpressure</em> to slow publishers if a hub lags; place a small write‑through cache for profile lookups to avoid N+1 calls.</p>
     </section>
 
-    <!-- ============== RECAP ============== -->
-    <section class="section">
+    <section class="section" id="2-6-resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><strong>AWS Well‑Architected Framework</strong> — decision lenses and reliability/cost trade‑offs. <em>Why:</em> helps justify LB/gateway/caching choices. <em>(Free)</em></li>
+        <li><strong>Designing Data‑Intensive Applications</strong> — caching, streams, and exactly‑once myths. <em>Why:</em> clear mental models for queues and consistency. <em>(Paid)</em></li>
+        <li><strong>Martin Fowler — Microservices</strong> — boundary hygiene and gateway patterns. <em>Why:</em> avoid distributed monolith traps. <em>(Free)</em></li>
+        <li><strong>Google SRE Book/Site</strong> — timeouts, retries, and error budgets. <em>Why:</em> safer proxy and client settings. <em>(Free)</em></li>
+        <li><strong>Kubernetes Docs</strong> — readiness/liveness probes and HPA. <em>Why:</em> make containerized services autoscale predictably. <em>(Free)</em></li>
+      </ul>
+    </section>
+
+    <section class="section" id="2-7-recap-next">
       <h2>Recap & Next Steps</h2>
-      <p>
-        This chapter dissected the core building blocks of systems: clients, servers, APIs, 
-        and middleware. You examined their trade-offs, saw practical examples, and applied 
-        modular thinking. Next, Chapter 3 will extend to <strong>communication & networking</strong>, 
-        where these components interact across distributed environments.
-      </p>
+      <ul>
+        <li>You can now choose compute units that fit your workload and SLOs instead of defaulting to a trend.</li>
+        <li>You understand the distinct jobs of LBs, proxies, and gateways and how to set safe timeouts and retries.</li>
+        <li>You can design cache strategies (pattern + eviction) and couple queues with backpressure and observability.</li>
+        <li>You can move slow side‑effects off the request path with idempotency, DLQs, and clear runbooks.</li>
+      </ul>
+      <p><strong>Next:</strong> Continue to <a href="chapters/ch03.html#3-hero">Chapter 3 — Data &amp; Storage Patterns for Scale</a>, where you will select storage engines by workload, design partitioning, and plan indexing and denormalization.</p>
     </section>
 
-    <!-- ============== NEXT/PREV ============== -->
-    <nav class="next-prev" aria-label="Chapter navigation">
-      <a href="chapters/ch01.html" rel="prev">Previous: Introduction</a>
-      <a href="chapters/ch03.html" rel="next">Next: Communication & Networking</a>
+    <nav class="next-prev">
+      <a class="btn" rel="prev" href="chapters/ch01.html">← Previous</a>
+      <a class="btn btn-primary" rel="next" href="chapters/ch03.html">Next →</a>
     </nav>
 
-    <!-- Hidden Checklist -->
-    <!--
-    - [x] ≥1,200 words
-    - [x] ≥2 examples
-    - [x] Case study included
-    - [x] Compare/contrast table
-    - [x] ≥8 glossarized terms
-    - [x] Resources 3–6
-    - [x] Practice 3–5
-    - [x] Mastery 5–7 with answers
-    - [x] Figure included
-    -->
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
+      </div>
+    </footer>
   </main>
+
+  <!--
+  CHECKLIST (Chapter 02)
+  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+  - [x] Canonical nav (Home / Appendix / Glossary only)
+  - [x] Pager prev → ch01, next → ch03; ToC numbering matches
+  - [x] Order: Hero → Numbered Sections → Resources → Recap
+  - [x] ≥1,800 words of prose (body text)
+  - [x] Head/meta complete; no TODOs
+  - [x] Images: none in this chapter (no audit required)
+  -->
 </body>
 </html>

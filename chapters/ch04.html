@@ -1,274 +1,238 @@
-<!-- /chapters/ch04.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Chapter 4 — Data Management & Storage Patterns</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Chapter 4 explores how to design storage for scalability, availability, and consistency. Topics: SQL vs NoSQL, indexing, replication, sharding, and specialized storage patterns.">
-  <meta property="og:title" content="Chapter 4 — Data Management & Storage Patterns">
-  <meta property="og:description" content="Design storage for scalability, availability, and consistency. Compare SQL vs. NoSQL, apply replication and sharding strategies, and learn specialized storage patterns.">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 04 — Microservices, Boundaries & Integration</title>
+  <meta name="description" content="Define service boundaries with domain-driven design, choose sync/async integration patterns, design version-tolerant APIs, and plan pragmatic migration strategies.">
+  <meta property="og:title" content="Chapter 04 — Microservices, Boundaries & Integration">
+  <meta property="og:description" content="Bounded contexts, data ownership, REST/gRPC/GraphQL vs events, versioning and schema evolution, consumer-driven contracts, strangler patterns, and anti-corruption layers.">
+  <meta property="og:type" content="article">
   <base href="../">
   <link rel="stylesheet" href="styles/theme.css">
-  <script defer src="scripts/app.js"></script>
+  <script src="scripts/app.js" defer></script>
 </head>
 <body>
-  <!-- ================= NAV (Canonical) ================= -->
-  <nav class="app-nav">
-    <div class="bar">
-      <div class="brand"><a href="index.html">System Design</a></div>
-      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
-      <div class="spacer"></div>
-      <div class="links">
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="app-nav">
+    <div class="container inner">
+      <div class="brand">Intermediate System Design</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
+      <nav id="top-menu" class="menu" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="chapters/ch01.html">Chapters</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </div>
+      </nav>
     </div>
-  </nav>
-
-  <!-- ================= HERO ================= -->
-  <header class="page-hero container">
-    <div class="badge">Chapter 4</div>
-    <h1>Data Management &amp; Storage Patterns</h1>
-    <p>
-      Data is the beating heart of any system. Designing its storage requires balancing 
-      <strong>scalability</strong>, <strong>availability</strong>, and <strong>consistency</strong>. 
-      This chapter examines SQL vs. NoSQL trade-offs, indexing, replication, sharding, and 
-      specialized stores for time-series, graphs, and search.
-    </p>
   </header>
 
-  <main class="container">
-    <!-- PREREQS & OBJECTIVES -->
-    <section class="section">
-      <div class="grid two-col">
-        <div class="card">
-          <h2>Prerequisites</h2>
-          <ul>
-            <li>Comfort with CRUD operations and relational schemas.</li>
-            <li>Basic familiarity with distributed systems and CAP theorem.</li>
-            <li>Understanding of consistency vs. latency trade-offs.</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h2>Learning Objectives</h2>
-          <ul>
-            <li>Compare relational and non-relational databases.</li>
-            <li>Apply indexing, caching, and denormalization strategies.</li>
-            <li>Design replication and sharding approaches for scale.</li>
-            <li>Match specialized stores (time-series, graph, search) to workloads.</li>
-          </ul>
-        </div>
-      </div>
+  <main id="main" class="container fade-in">
+    <section class="page-hero" id="4-hero">
+      <div class="meta"><span class="badge badge-primary">Chapter 04</span></div>
+      <h1>Microservices, Boundaries & Integration</h1>
+      <p class="abstract">This chapter turns building blocks into coherent services. You will define boundaries using domain‑driven thinking, assign data ownership, and select integration styles that fit latency, consistency, and change cadence. You will design version‑tolerant APIs, adopt consumer‑driven contracts, and learn safe migration patterns such as the strangler and anti‑corruption layer. The focus is on practicality: fewer services than you think, clearer ownership than you might be used to, and integration choices that reduce accidental complexity.</p>
     </section>
 
-    <!-- SECTION 1 -->
-    <section class="section">
-      <h2>1) Storage System Basics</h2>
-      <h3>Relational vs. Non-relational</h3>
-      <p>
-        <strong>Relational databases</strong> (PostgreSQL, MySQL) enforce schemas, ACID guarantees, and strong consistency. 
-        They excel when data integrity matters: banking, inventory, healthcare. 
-        <strong>NoSQL databases</strong> (MongoDB, Cassandra, DynamoDB) sacrifice strict schema or consistency for 
-        horizontal scalability, flexible structures, or high availability.
-      </p>
-      <div class="callout info">
-        <strong>CAP Theorem Recap:</strong> In a network partition, you must choose 
-        between <abbr title="Every request gets the most recent data or error">consistency</abbr> 
-        and <abbr title="Every request receives a response, even if stale">availability</abbr>. 
-        Systems pick trade-offs along this triangle.
-      </div>
-    </section>
+    <section class="section" id="4-1-boundaries">
+      <h2>4.1 Defining boundaries</h2>
+      <p><strong>Why it matters.</strong> Boundary mistakes are the most expensive architecture errors. Good boundaries reduce coupling, localize changes, and allow teams to ship independently. Bad ones produce a distributed monolith: many services, one deployment fate.</p>
 
-    <!-- SECTION 2 -->
-    <section class="section">
-      <h2>2) Indexing &amp; Query Optimization</h2>
-      <p>
-        Indexes speed queries but add write overhead. A <strong>B-tree index</strong> supports range queries, 
-        while a <strong>hash index</strong> optimizes equality lookups. 
-        <strong>Denormalization</strong>—duplicating data for read speed—is common in large-scale systems. 
-        Combine with <strong>caching layers</strong> (Redis, Memcached) to reduce DB load.
-      </p>
-      <h3>Example: Dashboard</h3>
-      <p>
-        A metrics dashboard reading millions of rows per minute uses a denormalized table 
-        of pre-aggregated counts, backed by a cache. Trade-off: more complex writes, 
-        simpler reads.
-      </p>
-    </section>
+      <h3 id="4-1-1-bounded-contexts">4.1.1 Bounded contexts and cohesion</h3>
+      <p><strong>Plain.</strong> A <em>bounded context</em> is the region where a particular model and language apply consistently. <strong>Formal.</strong> Within a context, terms have one meaning; outside, the same word can legitimately mean something else. Cohesion emerges when a service handles a small set of related responsibilities that change together. <strong>Pitfall.</strong> Partitioning by CRUD (“user‑service”, “order‑service”, “price‑service”) without considering change cadence or transactional seams creates excessive cross‑service chatter and distributed transactions.</p>
+      <p><strong>Heuristics for boundaries.</strong> Prefer boundaries that maximize <em>cohesion of change</em> (things modified in the same feature) and minimize <em>runtime chat</em> (calls per request). A litmus test: could a two‑person team build and operate the service end‑to‑end for a quarter?</p>
 
-    <!-- SECTION 3 -->
-    <section class="section">
-      <h2>3) Replication &amp; Sharding Strategies</h2>
-      <h3>Replication</h3>
-      <p>
-        <strong>Leader–follower</strong> setups provide durability and scale reads. 
-        <strong>Multi-leader</strong> improves availability but risks conflicts. 
-        <strong>Quorum-based</strong> systems (Cassandra, Dynamo) balance consistency and availability dynamically.
-      </p>
-      <h3>Sharding</h3>
-      <p>
-        Split data across nodes by key (<strong>hash-based</strong>) or by range (<strong>range-based</strong>). 
-        Sharding reduces load but adds complexity in rebalancing, cross-shard queries, and transaction guarantees.
-      </p>
-      <figure>
-        <img src="../assets/ch04-sharding-diagram.svg" alt="Diagram of hash vs range sharding across nodes">
-        <figcaption>Hash sharding spreads evenly, range sharding supports range queries but risks hotspots.</figcaption>
-      </figure>
-    </section>
-
-    <!-- SECTION 4 -->
-    <section class="section">
-      <h2>4) Specialized Storage Patterns</h2>
-      <ul>
-        <li><strong>Time-series databases</strong> (InfluxDB, Timescale): optimized for writes and queries on timestamps.</li>
-        <li><strong>Graph databases</strong> (Neo4j): efficient for traversals like “friends of friends.”</li>
-        <li><strong>Search engines</strong> (Elasticsearch): inverted indexes, optimized for text search.</li>
-      </ul>
-      <div class="callout warn">
-        <strong>Trade-off:</strong> Specialized stores add power but increase operational burden. 
-        Evaluate whether a general-purpose DB with proper indexes suffices before adding another technology.
-      </div>
-    </section>
-
-    <!-- ANALOGY -->
-    <section class="section">
-      <h2>Analogy: Libraries &amp; Storage</h2>
-      <p>
-        A <strong>relational DB</strong> is like a meticulously cataloged library: 
-        every book has a fixed place (schema). A <strong>NoSQL store</strong> is like a flexible 
-        reading room: books may be scattered but quick to grab. A <strong>graph DB</strong> is 
-        more like a web of references, akin to a researcher’s citation network. 
-        Each structure serves different goals.
-      </p>
-    </section>
-
-    <!-- COMPARE & CONTRAST -->
-    <section class="section">
-      <h2>Compare &amp; Contrast: SQL vs. NoSQL</h2>
-      <table>
-        <thead>
-          <tr><th>Aspect</th><th>SQL</th><th>NoSQL</th></tr>
-        </thead>
+      <p>Compare: <strong>Boundary selection heuristics</strong></p>
+      <table class="table">
+        <thead><tr><th>Heuristic</th><th>Signals it applies</th><th>What to group</th><th>What to separate</th></tr></thead>
         <tbody>
-          <tr><td>Schema</td><td>Rigid, normalized</td><td>Flexible, dynamic</td></tr>
-          <tr><td>Transactions</td><td>ACID, strong consistency</td><td>Often BASE, eventual consistency</td></tr>
-          <tr><td>Scalability</td><td>Vertical (scale-up) + read replicas</td><td>Horizontal sharding built-in</td></tr>
-          <tr><td>Best For</td><td>Banking, inventory, critical data integrity</td><td>High-throughput, flexible workloads</td></tr>
+          <tr><td>Change together</td><td>Features always modify A and B together</td><td>Move A and B into same service</td><td>Keep unrelated side‑effects</td></tr>
+          <tr><td>Data affinity</td><td>Strong invariants across tables</td><td>Co‑locate to avoid cross‑service transactions</td><td>Split read‑only projections</td></tr>
+          <tr><td>Runtime chat</td><td>High QPS between two services</td><td>Reconsider split or add cache/projection</td><td>Batch async where possible</td></tr>
+          <tr><td>Team ownership</td><td>One team owns domain & on‑call</td><td>Give service + datastore to that team</td><td>Don’t split ownership of one invariant</td></tr>
         </tbody>
       </table>
+
+      <p><strong>Worked example — E‑commerce core.</strong> A common beginner split is Catalog, Inventory, Pricing, and Orders as four separate services. That looks clean but creates strong cross‑service invariants: “price at purchase time” and “stock decrement on successful payment.” A more cohesive split: <em>Merchandising</em> (catalog + pricing projections) and <em>Fulfillment</em> (orders + inventory) with an explicit contract “reserve stock at price P for T minutes.” This reduces transactional coupling and clarifies ownership of the purchase invariant.</p>
+
+      <h3 id="4-1-2-data-ownership">4.1.2 Data ownership and the “single source of truth” fallacy</h3>
+      <p><strong>Plain.</strong> In microservices, each service owns <em>its</em> truth. The old idea of one global “single source of truth” becomes a <em>source of truth per bounded context</em>. <strong>Formal.</strong> Ownership includes schema evolution, write permissions, and the authority to interpret data. Other services hold <em>read models</em> (caches, projections) that they can rebuild from events or APIs. <strong>Pitfall.</strong> A shared database across services prevents independent changes and turns every schema migration into a company‑wide outage window.</p>
+      <ul>
+        <li><strong>Golden rule:</strong> only the owning service writes to its store; others use APIs or events.</li>
+        <li><strong>Read models:</strong> non‑owners maintain their own projections materialized from events or batch imports; they accept bounded staleness with freshness SLIs.</li>
+        <li><strong>Schema stewardship:</strong> owners publish schemas with backward‑compatible evolution rules and deprecation timelines.</li>
+      </ul>
+      <p><em>Takeaway:</em> Replace “single source of truth” with “single <em>writer</em> of truth per context” plus many well‑defined readers.</p>
     </section>
 
-    <!-- CASE STUDY -->
-    <section class="section">
-      <h2>Case Study: Sharding a Messaging App (≈200 words)</h2>
-      <p>
-        A messaging app initially stored all user messages in a single relational database. 
-        As users grew to millions, queries slowed, backups became unwieldy, and single-node 
-        failure was catastrophic. The team adopted <strong>hash-based sharding</strong> by user ID, 
-        distributing data across ten database nodes. Each shard handled a subset of users, 
-        improving performance. For group chats crossing shards, they added a service layer to 
-        aggregate messages. Replication was added within each shard for durability, with one 
-        leader and two followers. The result: horizontal scale-out and reduced single points 
-        of failure. Trade-off: cross-shard operations became complex, requiring changes in 
-        application logic and monitoring. Eventually, they introduced a <strong>search index</strong> 
-        (Elasticsearch) for message lookup, since cross-shard LIKE queries were inefficient. 
-        The lesson: sharding improves scalability but pushes complexity upward into the application 
-        and supporting infrastructure.
-      </p>
+    <section class="section" id="4-2-communication">
+      <h2>4.2 Communication patterns</h2>
+      <p><strong>Why it matters.</strong> Integration style shapes latency, availability, and coupling. Choose sync calls for request/response needs and async for decoupling and buffering. Mixing styles is normal; doing it accidentally is dangerous.</p>
+
+      <h3 id="4-2-1-sync">4.2.1 REST/gRPC/GraphQL for synchronous needs</h3>
+      <p><strong>Plain.</strong> Use synchronous APIs when the caller needs an immediate answer. <strong>Formal.</strong> REST emphasizes resources over verbs and fits the web ecosystem; gRPC offers efficient, typed contracts over HTTP/2 with streaming; GraphQL lets clients shape their payloads by querying a graph. <strong>Pitfall.</strong> Piling business logic into gateways or abusing GraphQL as an internal data‑access layer creates tight coupling and performance traps.</p>
+
+      <p>Compare: <strong>REST vs gRPC vs GraphQL</strong></p>
+      <table class="table">
+        <thead><tr><th>Criterion</th><th>REST</th><th>gRPC</th><th>GraphQL</th></tr></thead>
+        <tbody>
+          <tr><td>Contract</td><td>OpenAPI/JSON</td><td>Protobuf/IDL</td><td>Schema (SDL)</td></tr>
+          <tr><td>Transport</td><td>HTTP/1.1 or 2</td><td>HTTP/2 (streams)</td><td>HTTP over POST</td></tr>
+          <tr><td>Strengths</td><td>Human‑friendly; cacheable</td><td>Low latency; strongly typed; streaming</td><td>Flexible client queries; avoids over/under‑fetch</td></tr>
+          <tr><td>Risks</td><td>Drift; ad‑hoc</td><td>Gateway/proxy needs; browser support</td><td>N+1 queries; server complexity</td></tr>
+          <tr><td>Use for</td><td>Public APIs; simple CRUD</td><td>Service‑to‑service; real‑time</td><td>Complex, client‑driven UIs</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Timeouts & retries.</strong> With synchronous calls, set timeouts based on downstream P99 with margin and retry only idempotent operations with exponential backoff and jitter. Use <em>circuit breakers</em> to fail fast and protect upstreams.</p>
+
+      <h3 id="4-2-2-async">4.2.2 Event‑driven and message‑based async integration</h3>
+      <p><strong>Plain.</strong> Use events to decouple services and let consumers process at their own rate. <strong>Formal.</strong> Events are facts (“order_placed”), not requests; commands (“reserve_stock”) are requests with responsibility semantics. <strong>Pitfall.</strong> Treating events as API calls (“do X”) muddles ownership and error handling.</p>
+      <ul>
+        <li><strong>Delivery semantics:</strong> most platforms provide at‑least‑once; design idempotent handlers and dedupe keys.</li>
+        <li><strong>Ordering:</strong> guarantee per key (e.g., order_id) by hashing to partitions; avoid global ordering assumptions.</li>
+        <li><strong>Schema evolution:</strong> prefer additive changes, provide defaults, and version in metadata rather than the topic name when possible.</li>
+        <li><strong>Observability:</strong> propagate correlation/causation IDs across events; expose consumer lag and dead‑letter queues.</li>
+      </ul>
+
+      <p><strong>Worked example — Orchestration vs choreography.</strong> Checkout may orchestrate: the <em>Checkout</em> service calls Payment, then Shipment; it owns retries and compensation. Alternatively, choreography: <em>Order</em> emits <code>order_created</code>; Payment and Fulfillment react independently; compensation uses a <em>Saga</em> with compensating events. <em>Trade‑off:</em> orchestration centralizes logic but can grow into a god‑service; choreography scales organizationally but is harder to reason about. A hybrid often wins: orchestration for the core path, events for side‑effects (emails, analytics).</p>
     </section>
 
-    <!-- RESOURCES -->
-    <section class="section">
-      <h2>Recommended Resources</h2>
-      <div class="resource-list">
-        <div class="item"><strong>Designing Data-Intensive Applications (Ch.3–6)</strong><div class="meta">Deep dive into storage trade-offs.</div></div>
-        <div class="item"><strong>MongoDB &amp; PostgreSQL Docs</strong><div class="meta">Practical guides to schema, indexing, and replication.</div></div>
-        <div class="item"><strong>Elasticsearch Guide</strong><div class="meta">How inverted indexes power fast search.</div></div>
-      </div>
+    <section class="section" id="4-3-versioning">
+      <h2>4.3 API versioning & backward compatibility</h2>
+      <p><strong>Why it matters.</strong> Independent deployability depends on compatibility. If new producers break old consumers, you’ve built a lock‑step system.</p>
+
+      <h3 id="4-3-1-compatibility">4.3.1 Compatibility strategies and schema evolution</h3>
+      <p><strong>Plain.</strong> Make changes additive whenever possible; when you must break, do it gradually. <strong>Formal.</strong> A change is <em>backward compatible</em> if old clients continue to work with the new server; it’s <em>forward compatible</em> if new clients work with the old server. <strong>Pitfall.</strong> “Rename” is a breaking change in most formats; “add optional field” usually is not.</p>
+
+      <p>Compare: <strong>Common changes and compatibility</strong></p>
+      <table class="table">
+        <thead><tr><th>Change</th><th>REST/JSON</th><th>gRPC/Protobuf</th><th>GraphQL</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Add field</td><td>Usually OK (clients ignore)</td><td>OK if optional; reserve IDs</td><td>OK; mark nullable</td><td>Document defaults</td></tr>
+          <tr><td>Remove field</td><td>Breaking</td><td>Breaking unless reserved</td><td>Breaking; use @deprecated first</td><td>Run deprecation window</td></tr>
+          <tr><td>Rename field</td><td>Breaking</td><td>Breaking; add alias & migrate</td><td>Breaking; add new, deprecate old</td><td>Prefer additive + alias</td></tr>
+          <tr><td>Change type</td><td>Breaking</td><td>Breaking</td><td>Breaking</td><td>Use new field/version</td></tr>
+          <tr><td>New endpoint/method</td><td>Additive</td><td>Additive</td><td>Additive (new query)</td><td>Advertise via docs</td></tr>
+        </tbody>
+      </table>
+
+      <pre data-lang="proto"><code>// gRPC example: adding an optional field (additive)
+message OrderSummary {
+  int64 order_id = 1;
+  int64 customer_id = 2;
+  // New optional field; older clients ignore, older servers ignore on input
+  string promo_code = 3; // reserve this ID if ever removed
+}
+</code></pre>
+
+      <p><strong>Deprecation policy.</strong> Publish a deprecation timeline (e.g., 90 days) with automated alerts when clients call deprecated versions. Expose version usage metrics in your gateway.</p>
+
+      <h3 id="4-3-2-contract-tests">4.3.2 Consumer‑driven contracts & contract tests</h3>
+      <p><strong>Plain.</strong> A <em>consumer‑driven contract</em> (CDC) captures what a client relies on. The provider runs contract tests before deploys to ensure it still satisfies all known consumers. <strong>Formal.</strong> This enables <em>“can I deploy?”</em> checks in CI/CD based on actual usage, not just broad schemas. <strong>Pitfall.</strong> Without CDCs, providers are forced to over‑constrain change or risk breaking hidden dependencies.</p>
+      <ul>
+        <li><strong>Flow:</strong> Consumer publishes contract → Provider verifies on CI → If all pass, deployment is allowed.</li>
+        <li><strong>Granularity:</strong> Define per endpoint or GraphQL query; track field‑level usage before removing.</li>
+        <li><strong>Tests:</strong> Include negative cases (e.g., missing optional fields) and error semantics (status codes, error shapes).</li>
+      </ul>
+
+      <pre data-lang="json"><code>{
+  "interaction": "GET /orders/{id}",
+  "expects": {
+    "status": 200,
+    "body": {
+      "order_id": "number",
+      "items": [ { "sku": "string", "qty": "number" } ],
+      "promo_code?": "string" // optional
+    }
+  }
+}</code></pre>
+
+      <p><em>Takeaway:</em> Compatibility is a product feature. Budget time for CDCs, version metrics, and deprecation automation.</p>
     </section>
 
-    <!-- PRACTICE -->
-    <section class="section practice">
-      <h2>Practice</h2>
-      <div class="task">
-        <h3>Design a Schema for a Messaging App</h3>
-        <p class="meta">⏱️ 45–60 min · Success: schema supports users, messages, and threads efficiently</p>
-      </div>
-      <div class="task">
-        <h3>Propose a Sharding Strategy</h3>
-        <p class="meta">⏱️ 40–50 min · Success: clear partitioning key, handling of cross-shard queries</p>
-      </div>
-      <div class="task">
-        <h3>Indexing Exercise</h3>
-        <p class="meta">⏱️ 20–30 min · Success: index selection justified by workload patterns</p>
-      </div>
+    <section class="section" id="4-4-migration">
+      <h2>4.4 Migration strategies</h2>
+      <p><strong>Why it matters.</strong> Most teams start from a monolith. The art is to add boundaries without halting delivery. Migration is a sequence of controlled experiments, not a rewrite.</p>
+
+      <h3 id="4-4-1-strangler">4.4.1 Strangling the monolith</h3>
+      <p><strong>Plain.</strong> The <em>strangler</em> pattern replaces one slice at a time by routing specific capabilities to a new service while the monolith continues to handle the rest. <strong>Formal.</strong> Route rules in your proxy/gateway divert traffic by path, header, or feature flag; data flows through an anti‑corruption layer to keep models separate. <strong>Pitfall.</strong> Extracting by technical layer (e.g., “all reads”) rather than cohesive capability yields hard‑to‑own services.</p>
+      <ul>
+        <li><strong>Choose a vertical slice:</strong> e.g., “price quoting” as a capability with clear inputs/outputs.</li>
+        <li><strong>Edge routing:</strong> send only that capability to the new service; everything else remains in the monolith.</li>
+        <li><strong>Shadow traffic:</strong> run the new service in <em>dark mode</em>, comparing responses before switching user‑visible paths.</li>
+      </ul>
+
+      <h3 id="4-4-2-anti-corruption">4.4.2 Anti‑corruption layers</h3>
+      <p><strong>Plain.</strong> An <em>anti‑corruption layer</em> (ACL) translates between old and new models to prevent leaky abstractions. <strong>Formal.</strong> It’s a dedicated component or library that maps fields, resolves enums, and enforces invariants at the boundary. <strong>Pitfall.</strong> Letting the monolith’s concepts bleed into the new service forces you to keep legacy constraints forever.</p>
+      <ul>
+        <li><strong>Keep ACLs thin:</strong> translation, not business rules.</li>
+        <li><strong>Own the map:</strong> document a mapping table <em>old → new</em> for every field; version it alongside code.</li>
+        <li><strong>Test with fixtures:</strong> record real payloads from production (redacted) and replay against the ACL.</li>
+      </ul>
+
+      <p><strong>Zero‑downtime database changes.</strong> Use the <em>expand/contract</em> pattern: (1) add new columns/tables while writing to both (expand); (2) backfill; (3) switch reads to the new schema; (4) remove old fields (contract) after a deprecation window. Apply dual‑writes carefully with idempotency keys; validate with <em>read‑after‑write</em> shadow checks.</p>
+
+      <pre data-lang="sql"><code>-- Expand: add new column
+ALTER TABLE orders ADD COLUMN promo_code TEXT NULL;
+-- Dual write from app; backfill from history
+-- Contract later: drop old column after verifying no reads depend on it</code></pre>
+
+      <p><strong>Runbooks & blast radius.</strong> Every migration step should have a rollback switch and a measurement. Limit blast radius with percentage‑based routing or feature flags; monitor error budget burn while ramping traffic.</p>
+
+      <p><em>Worked example — Extracting pricing.</em> Step 1: Gateway routes <code>/quote</code> to the new Pricing service in shadow; compare results. Step 2: Dual‑write <code>price_changes</code> to both stores; backfill. Step 3: Flip 5% of traffic, watch P95 and mismatch rate; escalate to 100% if budgets hold. Step 4: Remove old code path; keep an ACL for historical reads.</p>
     </section>
 
-    <!-- MASTERY -->
-    <section class="section mastery">
-      <h2>Mastery Check</h2>
-      <div class="quiz-controls">
-        <button class="btn" data-quiz-toggle="open">Open all answers</button>
-        <button class="btn" data-quiz-toggle="close">Close all</button>
-      </div>
-      <details>
-        <summary>1) When do you prefer SQL over NoSQL?</summary>
-        <div><p>When data integrity and ACID transactions are critical—banking, healthcare, inventory systems.</p></div>
-      </details>
-      <details>
-        <summary>2) What problem does sharding solve?</summary>
-        <div><p>Removes bottlenecks by spreading data across nodes, enabling horizontal scalability and reducing single-node load.</p></div>
-      </details>
-      <details>
-        <summary>3) Risk of multi-leader replication?</summary>
-        <div><p>Write conflicts; requires conflict resolution strategies like last-write-wins or CRDTs.</p></div>
-      </details>
-      <details>
-        <summary>4) Example of time-series DB use case?</summary>
-        <div><p>IoT sensor readings, server monitoring metrics, stock price data with timestamped writes.</p></div>
-      </details>
-      <details>
-        <summary>5) Why denormalize?</summary>
-        <div><p>To optimize read-heavy workloads by reducing joins at the expense of more complex writes.</p></div>
-      </details>
-      <details>
-        <summary>6) How does quorum-based consistency work?</summary>
-        <div><p>A read/write is acknowledged once it reaches a majority of replicas; balances consistency and availability per operation.</p></div>
-      </details>
+    <section class="section" id="4-5-applied-exercises">
+      <h2>4.5 Applied exercises</h2>
+      <ol>
+        <li><strong>Boundary sketch (30 min).</strong> For your capstone, propose two alternative service splits. For each, write one paragraph on change cohesion and runtime chat. Choose one and record an ADR with a revisit trigger (what evidence would make you change?).</li>
+        <li><strong>Contract design (45 min).</strong> Pick one API and one event. Define their schemas with additive evolution in mind (fields, defaults, enums). Note deprecation and error semantics. Add a consumer‑driven contract test for a critical client.</li>
+        <li><strong>Migration slice (60 min).</strong> Identify a vertical slice to extract from a monolith (or from a too‑busy service). Plan routing, data flows, metrics, and rollback. Define success metrics (P95 latency, mismatch rate, error budget burn).</li>
+      </ol>
     </section>
 
-    <!-- RECAP -->
-    <section class="section">
-      <h2>Recap &amp; Next Steps</h2>
-      <p>
-        You explored SQL vs. NoSQL, indexing, replication, and sharding, with case studies 
-        and trade-offs. Specialized stores can unlock performance for narrow workloads, 
-        but add operational cost. Next, Chapter 5 tackles <strong>scaling &amp; reliability strategies</strong>.
-      </p>
+    <section class="section" id="4-6-resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><strong>Microservices Guide</strong> — decomposition strategies, testing, and deployment discussions. <em>Why:</em> avoids distributed monolith pitfalls. <em>(Free)</em></li>
+        <li><strong>Designing Data‑Intensive Applications</strong> — events, stream processing, and consistency models informing integration style. <em>Why:</em> rigorous trade‑offs. <em>(Paid)</em></li>
+        <li><strong>SRE practices</strong> — error budgets and safe rollout patterns used during migrations. <em>Why:</em> aligns reliability with delivery. <em>(Free)</em></li>
+      </ul>
     </section>
 
-    <!-- NEXT/PREV -->
-    <nav class="next-prev" aria-label="Chapter navigation">
-      <a href="chapters/ch03.html" rel="prev">Previous: Communication &amp; Networking</a>
-      <a href="chapters/ch05.html" rel="next">Next: Scaling &amp; Reliability Strategies</a>
+    <section class="section" id="4-7-recap-next">
+      <h2>Recap & Next Steps</h2>
+      <ul>
+        <li>You can choose service boundaries using cohesion and ownership, not just nouns.</li>
+        <li>You understand when to use synchronous calls (REST/gRPC/GraphQL) and when to favor events, along with pitfalls for each.</li>
+        <li>You can evolve contracts compatibly, implement consumer‑driven contract tests, and run deprecations with metrics.</li>
+        <li>You can plan and execute safe migrations using strangler and anti‑corruption layers with expand/contract database changes.</li>
+      </ul>
+      <p><strong>Next:</strong> Continue to <a href="chapters/ch05.html#5-hero">Chapter 5 — Reliability, SLOs &amp; SRE Practices</a>, where you’ll turn SLOs into error budgets, incident workflows, and chaos experiments.</p>
+    </section>
+
+    <nav class="next-prev">
+      <a class="btn" rel="prev" href="chapters/ch03.html">← Previous</a>
+      <a class="btn btn-primary" rel="next" href="chapters/ch05.html">Next →</a>
     </nav>
 
-    <!-- HIDDEN CHECKLIST -->
-    <!--
-    - [x] theme.css+app.js loaded
-    - [x] <base> present & correct
-    - [x] Canonical nav verbatim
-    - [x] Pager prev/next valid
-    - [x] ≥1,200 words
-    - [x] ≥2 examples, 1 case study, 1 compare/contrast, 1 analogy
-    - [x] Practice 3–5
-    - [x] Mastery 5–7
-    - [x] ≥8 glossarized terms
-    - [x] ≥1 figure
-    -->
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
+      </div>
+    </footer>
   </main>
+
+  <!--
+  CHECKLIST (Chapter 04)
+  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+  - [x] Canonical nav (Home / Appendix / Glossary only)
+  - [x] Pager prev → ch03, next → ch05; ToC numbering matches
+  - [x] Order: Hero → Numbered Sections → Resources → Recap
+  - [x] ≥1,800 words of prose (body text)
+  - [x] Images: none (no audit required)
+  - [x] Head/meta complete; no TODOs
+  -->
 </body>
 </html>

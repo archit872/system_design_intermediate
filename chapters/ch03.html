@@ -1,423 +1,215 @@
-<!-- /chapters/ch03.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Chapter 3 — Communication & Networking in System Design</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Chapter 3 applies networking fundamentals to distributed systems. Compare synchronous vs. asynchronous communication, API gateways vs. reverse proxies, and failure-handling patterns like retries, backoff, and circuit breakers.">
-  <meta property="og:title" content="Chapter 3 — Communication & Networking in System Design">
-  <meta property="og:description" content="From TCP/IP and DNS to gateways and circuit breakers—design fast, reliable communication paths with clear trade-offs.">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 03 — Data & Storage Patterns for Scale</title>
+  <meta name="description" content="Choose storage engines by workload, design partitioning and sharding, plan indexing and denormalization, and understand analytics vs streaming trade-offs.">
+  <meta property="og:title" content="Chapter 03 — Data & Storage Patterns for Scale">
+  <meta property="og:description" content="Storage types and selection criteria, partitioning strategies, indexing and denormalization, and analytics & streaming design patterns.">
+  <meta property="og:type" content="article">
   <base href="../">
   <link rel="stylesheet" href="styles/theme.css">
-  <script defer src="scripts/app.js"></script>
+  <script src="scripts/app.js" defer></script>
 </head>
 <body>
-  <!-- ================= NAV (Canonical; verbatim) ================= -->
-  <nav class="app-nav">
-    <div class="bar">
-      <div class="brand"><a href="index.html">System Design</a></div>
-      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
-      <div class="spacer"></div>
-      <div class="links">
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="app-nav">
+    <div class="container inner">
+      <div class="brand">Intermediate System Design</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
+      <nav id="top-menu" class="menu" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="chapters/ch01.html">Chapters</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </div>
+      </nav>
     </div>
-  </nav>
-
-  <!-- ================= HERO ================= -->
-  <header class="page-hero container">
-    <div class="badge">Chapter 3</div>
-    <h1>Communication &amp; Networking in System Design</h1>
-    <p>
-      Distributed systems succeed or fail on the quality of their <strong>communication paths</strong>.
-      This chapter connects networking fundamentals—<abbr title="Transmission Control Protocol / Internet Protocol">TCP/IP</abbr>,
-      <abbr title="Domain Name System maps names to IP addresses">DNS</abbr>, and <abbr title="Software that distributes traffic across servers">load balancers</abbr>—to practical patterns:
-      synchronous vs. asynchronous calls, <strong>API gateways</strong>, <strong>reverse proxies</strong>, and resilience tools like
-      <abbr title="Automatic retry strategy that increases delay after each failure">exponential backoff</abbr> and
-      <abbr title="Fails fast after repeated errors to prevent cascading failures">circuit breakers</abbr>.
-    </p>
   </header>
 
-  <main class="container">
-    <!-- ============== PREREQS & OBJECTIVES ============== -->
-    <section class="section">
-      <div class="grid two-col">
-        <div class="card">
-          <h2>Prerequisites</h2>
-          <ul>
-            <li>Basic understanding of request–response flows and service decomposition.</li>
-            <li>Familiarity with HTTP semantics (<abbr title="GET, POST, PUT, DELETE">verbs</abbr>, status codes).</li>
-            <li>Comfort with basic reliability concepts: <abbr title="Service Level Indicator / Objective">SLIs/SLOs</abbr>, retries, and timeouts.</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h2>Learning Objectives</h2>
-          <ul>
-            <li>Ground designs in networking building blocks: TCP/IP, DNS, L4/L7 <abbr title="Layer of the OSI model (Transport/Application)">layers</abbr>, and load balancing.</li>
-            <li>Choose between synchronous and asynchronous communication with explicit trade-offs.</li>
-            <li>Apply gateways and reverse proxies safely with <abbr title="Cross-cutting concerns such as auth, rate limits, observability">policy</abbr> and observability.</li>
-            <li>Handle failures with retries, backoff, timeouts, hedging, and circuit breakers.</li>
-          </ul>
-        </div>
-      </div>
+  <main id="main" class="container fade-in">
+    <section class="page-hero" id="3-hero">
+      <div class="meta"><span class="badge badge-primary">Chapter 03</span></div>
+      <h1>Data & Storage Patterns for Scale</h1>
+      <p class="abstract">Storage choices multiply as systems grow: relational OLTP for correctness, schemaless stores for flexibility, columnar engines for analytics, time‑series for metrics, search indexes for discovery, and object storage for blobs. This chapter shows how to map workloads to stores, avoid hot partitions, design indices that fit read patterns, and balance normalization with denormalization. We end with streaming vs batch decisions and how to connect operational and analytic worlds without creating brittle data plumbing.</p>
     </section>
 
-    <!-- ============== SECTION 1: NETWORKING FUNDAMENTALS REFRESHER ============== -->
-    <section class="section">
-      <h2>1) Networking Fundamentals Refresher</h2>
-      <p>
-        Every request traverses layers. At L3/L4, IP routes packets and <abbr title="Transport layer protocol providing ordered, reliable delivery">TCP</abbr> establishes
-        connections with congestion control; at L7, HTTP carries semantics. <strong>DNS</strong> resolves a hostname
-        to one or more IPs, often returned with geographically aware answers. A <strong>load balancer</strong> spreads
-        traffic across instances via algorithms such as round-robin, least-connections, or consistent hashing.
-      </p>
-      <p>
-        In cloud environments, you’ll encounter two flavors: <strong>L4 balancers</strong> (operate on TCP/UDP ports,
-        faster and simpler) and <strong>L7 proxies</strong> (understand HTTP, can route by path/headers, perform
-        <abbr title="Transport Layer Security provides encryption and authentication">TLS</abbr> termination, and inject policies).
-        Both are useful: combine L4 for baseline distribution and L7 for smarter routing and policy enforcement.
-      </p>
-      <div class="callout info">
-        <h3>Latency Budget</h3>
-        <p>
-          Think in budgets: if your p95 end-to-end target is 250 ms and you cross three networks (client↔edge,
-          edge↔gateway, gateway↔service), allocate ~80 ms per hop with headroom. This forces disciplined
-          <strong>timeout</strong> and <strong>retry</strong> settings.
-        </p>
-      </div>
-    </section>
+    <section class="section" id="3-1-storage-selection">
+      <h2>3.1 Storage types & selection criteria</h2>
+      <p><strong>Why it matters.</strong> The wrong store quietly taxes every feature: queries stay slow, migrations drag on, and reliability erodes under load. Selecting by <em>workload</em> rather than fashion is the fastest way to keep both cost and complexity in check.</p>
 
-    <!-- ============== SECTION 2: SYNC VS ASYNC ============== -->
-    <section class="section">
-      <h2>2) Synchronous vs. Asynchronous Communication</h2>
-      <p>
-        <strong>Synchronous</strong> calls (request/response) are intuitive and keep user flows simple, but they tie
-        availability to every hop. <strong>Asynchronous</strong> messaging via queues or streams breaks tight coupling,
-        absorbs bursts, and enables bulk processing—at the cost of increased <abbr title="Operational work to keep a system healthy">operational</abbr> complexity and
-        eventual consistency. Many robust systems mix both: sync for user-facing paths, async for side effects.
-      </p>
-      <h3>Example: Image Upload</h3>
-      <p>
-        A media service accepts an upload synchronously to return a file ID quickly (< 200 ms), then publishes a
-        “process-image” event to a stream for <abbr title="Generate thumbnails and compressed variants">derivatives</abbr>.
-        The UI polls or subscribes to updates. If processing fails, the message lands in a <abbr title="Dead Letter Queue for messages that can't be processed">DLQ</abbr> for inspection.
-      </p>
-      <h3>Example: Inventory Reservation</h3>
-      <p>
-        For purchases, reservation must be confirmed synchronously to avoid oversell. Downstream notifications,
-        analytics updates, and recommendation signals can be asynchronous to avoid blocking checkout.
-      </p>
-      <div class="callout warn">
-        <strong>Trade-off:</strong> Async gives <em>throughput</em> and <em>resilience</em>; Sync gives <em>predictability</em> and
-        <em>simpler semantics</em>. Choose per user-critical step; document staleness windows and reconciliation.
-      </div>
-    </section>
+      <h3 id="3-1-1-oltp-olap-streaming">3.1.1 OLTP vs OLAP vs streaming</h3>
+      <p><strong>Plain.</strong> OLTP systems handle user transactions (reads/writes in small chunks) and demand low latency and strong integrity. OLAP systems crunch large datasets for insights and favor scans and aggregations. Streaming adds continuously arriving, ordered events processed with low latency. <strong>Formal.</strong> OLTP optimizes for point reads/writes and transactional guarantees (ACID). OLAP engines (often columnar) optimize for vectorized scans and aggregations across many rows but few columns, with looser write semantics. Streaming engines process unbounded logs with windowing semantics and exactly‑once or at‑least‑once delivery guarantees at the framework level. <strong>Pitfall.</strong> Forcing analytics onto your OLTP database degrades both: operational queries become slow and analysts circumvent safeguards.</p>
 
-    <!-- ============== SECTION 3: API GATEWAYS & REVERSE PROXIES ============== -->
-    <section class="section">
-      <h2>3) API Gateways &amp; Reverse Proxies</h2>
-      <p>
-        A <strong>reverse proxy</strong> (e.g., Nginx, Envoy) sits before services, terminating TLS, routing by host/path,
-        and applying basic policies. An <strong>API gateway</strong> builds on that with authentication (<abbr title="Open standard for delegated authorization">OAuth2</abbr> / <abbr title="OpenID Connect identity layer on top of OAuth2">OIDC</abbr>),
-        <abbr title="Restricting request rates per key or principal">rate limiting</abbr>, request/response transformation, schema validation, <abbr title="Cross-Origin Resource Sharing">CORS</abbr>,
-        and <strong>observability</strong> (metrics/tracing). Gateways centralize <em>cross-cutting concerns</em> so services stay slim.
-      </p>
-      <h3>Pattern: Strangler Fig</h3>
-      <p>
-        Place a gateway in front of a monolith; incrementally route paths to new services while keeping old endpoints.
-        This supports gradual decompositions with <strong>canary</strong> and <strong>blue/green</strong> rollouts.
-      </p>
-    </section>
-
-    <!-- ============== SECTION 4: HANDLING FAILURES IN COMMUNICATION ============== -->
-    <section class="section">
-      <h2>4) Handling Failures in Communication</h2>
-      <p>
-        Networks fail in partial, unpredictable ways. Design for <strong>timeouts</strong> (always), <strong>retries</strong> with
-        <strong>exponential backoff</strong> and <strong>jitter</strong>, <strong>circuit breakers</strong>, <strong>bulkheads</strong> (resource isolation),
-        and <strong>hedged requests</strong> for tail latencies. Use <abbr title="Unique value propagated to correlate logs and traces across services">correlation IDs</abbr> to trace a request end-to-end.
-      </p>
-      <h3>Idempotency &amp; Safety</h3>
-      <p>
-        Retries duplicate work. Ensure operations are <strong>idempotent</strong> (same effect if repeated) or protect with
-        an <code>Idempotency-Key</code>. For non-idempotent ops, use transactional outbox and exactly-once consumer semantics
-        where required—or design around <strong>at-least-once</strong> with reconciliation.
-      </p>
-      <div class="callout danger">
-        <strong>Anti-Pattern:</strong> “Retry on <em>any</em> error” without caps or jitter. This causes synchronized
-        thundering herds. Always cap attempts and randomize delay.
-      </div>
-    </section>
-
-    <!-- ============== FIGURE ============== -->
-    <figure>
-      <svg viewBox="0 0 940 300" role="img" aria-label="Communication paths with client, CDN, gateway, services, and async bus">
-        <rect x="0" y="0" width="940" height="300" fill="#0f141b" rx="12"/>
-        <g font-family="ui-sans-serif,system-ui,Roboto,Inter,Arial" font-size="12" fill="#e6edf3">
-          <rect x="30" y="120" width="120" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
-          <text x="50" y="155">Client</text>
-
-          <rect x="180" y="50" width="150" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
-          <text x="210" y="85">CDN / Edge</text>
-
-          <rect x="180" y="180" width="150" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
-          <text x="205" y="215">L4/L7 LB</text>
-
-          <rect x="360" y="120" width="170" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
-          <text x="392" y="155">API Gateway</text>
-
-          <rect x="560" y="50" width="150" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
-          <text x="590" y="85">Service A</text>
-
-          <rect x="560" y="180" width="150" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
-          <text x="590" y="215">Service B</text>
-
-          <rect x="740" y="120" width="170" height="60" rx="10" fill="#111726" stroke="#1b2330"/>
-          <text x="765" y="155">Queue / Stream</text>
-
-          <!-- arrows -->
-          <line x1="150" y1="150" x2="180" y2="80" stroke="#4cc2ff" stroke-width="3"/>
-          <polygon points="178,80 168,75 168,85" fill="#4cc2ff"/>
-          <line x1="150" y1="150" x2="180" y2="210" stroke="#4cc2ff" stroke-width="3"/>
-          <polygon points="178,210 168,205 168,215" fill="#4cc2ff"/>
-
-          <line x1="330" y1="80" x2="360" y2="150" stroke="#7a87ff" stroke-width="3"/>
-          <polygon points="358,150 348,145 348,155" fill="#7a87ff"/>
-
-          <line x1="330" y1="210" x2="360" y2="150" stroke="#7a87ff" stroke-width="3"/>
-          <polygon points="358,150 348,145 348,155" fill="#7a87ff"/>
-
-          <line x1="530" y1="150" x2="560" y2="80" stroke="#4cc2ff" stroke-width="3"/>
-          <polygon points="558,80 548,75 548,85" fill="#4cc2ff"/>
-
-          <line x1="530" y1="150" x2="560" y2="210" stroke="#4cc2ff" stroke-width="3"/>
-          <polygon points="558,210 548,205 548,215" fill="#4cc2ff"/>
-
-          <line x1="710" y1="80" x2="740" y2="150" stroke="#7a87ff" stroke-width="3"/>
-          <polygon points="738,150 728,145 728,155" fill="#7a87ff"/>
-          <line x1="710" y1="210" x2="740" y2="150" stroke="#7a87ff" stroke-width="3"/>
-          <polygon points="738,150 728,145 728,155" fill="#7a87ff"/>
-        </g>
-      </svg>
-      <figcaption>User path via Edge/LB → Gateway → Services. Side effects flow to a queue/stream asynchronously.</figcaption>
-    </figure>
-
-    <!-- ============== ANALOGY ============== -->
-    <section class="section">
-      <h2>Analogy: The Postal System</h2>
-      <p>
-        A synchronous call is like a phone conversation—immediate but both parties must be available.
-        Asynchronous messaging is mail: you drop a letter in a <em>queue</em>, routing centers (brokers)
-        sort and forward it, and the recipient processes later. Express mail (priority topics), return
-        receipts (acknowledgements), and <abbr title="A separate queue where undeliverable messages go">dead letters</abbr> all have clear parallels.
-        Use the right mode based on urgency, reliability, and cost.
-      </p>
-    </section>
-
-    <!-- ============== COMPARE & CONTRAST ============== -->
-    <section class="section">
-      <h2>Compare &amp; Contrast: API Gateway vs. Reverse Proxy</h2>
-      <table>
-        <thead>
-          <tr><th>Aspect</th><th>Reverse Proxy</th><th>API Gateway</th></tr>
-        </thead>
+      <p>Compare: <strong>OLTP vs OLAP vs Streaming</strong></p>
+      <table class="table">
+        <thead><tr><th>Axis</th><th>OLTP (relational)</th><th>OLAP (columnar)</th><th>Streaming (log + processor)</th></tr></thead>
         <tbody>
-          <tr><td>Primary Role</td><td>TLS, routing, basic policies</td><td>AuthN/AuthZ, rate limits, schema &amp; transformations</td></tr>
-          <tr><td>Protocol Awareness</td><td>L7 HTTP aware, minimal payload insight</td><td>Deep API awareness (OpenAPI/Protobuf)</td></tr>
-          <tr><td>Observability</td><td>Access logs, basic metrics</td><td>Request tracing, per-consumer analytics, quotas</td></tr>
-          <tr><td>Change Scope</td><td>Infra-centric</td><td>Product/API-centric</td></tr>
-          <tr><td>Operational Cost</td><td>Lower</td><td>Higher, but centralizes cross-cutting concerns</td></tr>
+          <tr><td>Typical latency</td><td>1–20 ms</td><td>Seconds to minutes</td><td>10–1000 ms</td></tr>
+          <tr><td>Data shape</td><td>Highly normalized rows</td><td>Wide, columnar tables</td><td>Append‑only events</td></tr>
+          <tr><td>Access pattern</td><td>Point read/write</td><td>Scans, group‑by, joins</td><td>Per‑key aggregation, window ops</td></tr>
+          <tr><td>Consistency</td><td>Strong (ACID)</td><td>Batch/append with isolation</td><td>Eventual per partition</td></tr>
+          <tr><td>Best for</td><td>Orders, users, inventory</td><td>Dashboards, BI, ML features</td><td>Metrics, feeds, CDC pipelines</td></tr>
         </tbody>
       </table>
-      <div class="callout success">
-        <strong>Guideline:</strong> Start with a reverse proxy. Add gateway features as your API surface and consumer
-        diversity grow. Keep service code simple by pushing cross-cutting concerns “left” into the gateway.
-      </div>
+
+      <h3 id="3-1-2-when-object-columnar-tsdb">3.1.2 When to use object storage, columnar stores, time‑series DBs</h3>
+      <p><strong>Plain.</strong> Object storage is your durable, cheap “data lake” for blobs and immutable files; columnar stores provide fast analytics; time‑series databases simplify metric and event retention. <strong>Formal.</strong> Object stores expose eventual consistency (increasingly strong for some operations), lifecycle policies, and tiered pricing. Columnar engines compress by column and exploit vectorized execution. TSDBs optimize for append, down‑sampling, and time‑based retention.</p>
+      <ul>
+        <li><strong>Object storage:</strong> product images, exports, model artifacts, raw logs; pair with a CDN for distribution. Plan for content hashes and immutable URLs to simplify cache busting.</li>
+        <li><strong>Columnar OLAP:</strong> event analytics, cohorts, dashboards; batch ingest or micro‑batches from a stream; expect seconds‑level query times.</li>
+        <li><strong>Time‑series:</strong> service metrics, IoT readings, financial ticks; prioritize cardinality control and retention policies to predict storage cost.</li>
+      </ul>
+      <p><em>Takeaway:</em> Separate concerns: OLTP for correctness, OLAP for insight, streaming for timeliness. Link them with reproducible data flows, not ad‑hoc copies.</p>
     </section>
 
-    <!-- ============== EXAMPLES WITH PATTERNS ============== -->
-    <section class="section">
-      <h2>Patterns in Practice</h2>
-      <h3>Example 1: Retries with Exponential Backoff &amp; Jitter</h3>
-      <p>
-        Suppose Service A calls Service B with a 200 ms timeout. On failure, retry up to <strong>3</strong> times with
-        base delay 50 ms, multiplier 2, and ±20% jitter. Cap total budget to 600 ms to protect user latency.
-        Mark operations <strong>idempotent</strong>, propagate a <code>X-Correlation-ID</code>, and record structured logs.
-      </p>
-      <pre class="code" data-lang="Pseudo">
-attempt = 0
-delay = 50ms
-while attempt &lt;= 3:
-  try call B (timeout 200ms)
-  if success: return
-  if transient error: sleep(jitter(delay)); delay *= 2; attempt++
-  else: break
-fail fast; trip circuit on consecutive errors
-      </pre>
+    <section class="section" id="3-2-partitioning">
+      <h2>3.2 Partitioning & sharding</h2>
+      <p><strong>Why it matters.</strong> Vertical scale runs out. Partitioning (splitting data across nodes) is how you grow beyond a single machine and avoid noisy‑neighbor effects. Do it thoughtfully and you get linear scale; do it naively and you get hot partitions and outages.</p>
 
-      <h3>Example 2: Hedged Reads for Tail Latency</h3>
-      <p>
-        For read-heavy endpoints with rare slow nodes, issue a second request after p95 latency elapses
-        (e.g., 120 ms). Cancel the loser. This reduces tail latency but increases load—apply carefully and
-        gate behind feature flags.
-      </p>
+      <h3 id="3-2-1-horizontal-vertical">3.2.1 Horizontal vs vertical partitioning</h3>
+      <p><strong>Plain.</strong> Horizontal partitioning (sharding) splits rows by key; vertical partitioning splits columns by access pattern or sensitivity. <strong>Formal.</strong> For sharding, a deterministic function maps a key to a shard: <em>shard = hash(key) mod N</em> or via consistent hashing that limits rebalancing when <em>N</em> changes. Vertical partitioning stores volatile or large columns separately to improve cache locality and reduce IO on hot paths. <strong>Pitfall.</strong> Using an ever‑increasing key (e.g., timestamp) concentrates writes on one shard; mixing transactional and blob columns bloats working sets.</p>
+
+      <p><strong>Worked example — Hash vs range vs directory sharding.</strong> A catalog with item_id lookups can hash on <em>item_id</em> for even spread; a metrics pipeline that queries time windows prefers range partitions by time; a multi‑tenant SaaS that needs data isolation uses directory‑based sharding (a mapping table from tenant → shard). <em>Trade‑off:</em> hashing gives balance but complicates range scans; ranges give locality but risk hot shards; directories add flexibility but require an always‑consistent mapping service.</p>
+
+      <h3 id="3-2-2-hot-partitions">3.2.2 Hot‑partition mitigation strategies</h3>
+      <p><strong>Plain.</strong> Hot partitions occur when a small set of keys attract disproportionate traffic. <strong>Formal.</strong> The 99th percentile key may receive 10–100× the median; load must be spread in time or space. <strong>Pitfall.</strong> Key design is often chosen once and forgotten; revisit it as traffic evolves.</p>
+      <ul>
+        <li><strong>Key randomization:</strong> add a small prefix/suffix bucket to distribute writes (e.g., 0–9 + user_id) and read from all buckets when fetching. Good for counters and logs.</li>
+        <li><strong>Write buffering:</strong> accumulate writes in a log, then batch/merge to the base table to smooth spikes (common for counters).</li>
+        <li><strong>Time bucketing:</strong> for time‑ordered data, split by time windows (hour/day) to limit write contention and compact cold partitions.</li>
+        <li><strong>Read‑replicas & fan‑out:</strong> for hot reads, replicate and use request coalescing to avoid stampedes.</li>
+        <li><strong>Adaptive rebalancing:</strong> with consistent hashing, increase virtual nodes for hot tenants; with directory sharding, move the tenant to a larger shard group.</li>
+      </ul>
+      <p><em>Takeaway:</em> Treat key choice as a performance feature; instrument per‑key skew and act before it pages you.</p>
     </section>
 
-    <!-- ============== CASE STUDY ============== -->
-    <section class="section">
-      <h2>Case Study: Dispatching in a Ride-Hailing Service (≈200 words)</h2>
-      <p>
-        Dispatch decides which driver gets a ride request. The path must be <strong>low latency</strong> and
-        <strong>highly available</strong>. Early versions used synchronous calls from the mobile app to a monolith,
-        which then called multiple microservices (pricing, maps, driver availability). During spikes, a slow
-        dependency stalled the entire flow. The team redesigned the path: the app sends a synchronous request
-        to an <strong>edge gateway</strong> with <strong>strict timeouts</strong> (p95 150 ms). The gateway fans out to
-        services using <strong>hedged reads</strong> for maps, applies <strong>circuit breakers</strong> to non-critical
-        enrichments, and immediately returns a provisional offer. Side effects—driver notifications, analytics,
-        surge model updates—are published asynchronously to a <strong>stream</strong>. If a downstream system lags,
-        the user still gets an assignment, and the system reconciles later. Observability includes RED metrics,
-        <strong>distributed tracing</strong>, and synthetic probes from key regions. Result: stable p95 latency with
-        bounded tails and fewer cascading failures. Trade-off: higher infra cost and more moving parts, offset by
-        business impact.
-      </p>
+    <section class="section" id="3-3-indexing-denorm">
+      <h2>3.3 Indexing, secondary indices & denormalization</h2>
+      <p><strong>Why it matters.</strong> Most production latency problems stem from mismatched access patterns and indices. The right index often beats adding more hardware. The right denormalization avoids expensive fan‑out queries at scale.</p>
+
+      <h3 id="3-3-1-read-patterns">3.3.1 Read patterns and denormalization trade‑offs</h3>
+      <p><strong>Plain.</strong> Indexes accelerate reads by maintaining a structure keyed by columns; denormalization stores pre‑joined or aggregated data for common queries. <strong>Formal.</strong> A B‑tree index maintains sorted keys for logarithmic lookup; a hash index gives O(1) equality but no range order. Denormalization increases write amplification and risks staleness; design invalidation or refresh mechanisms up front. <strong>Pitfall.</strong> Adding many indexes speeds some reads but slows every write and complicates recovery.</p>
+
+      <p>Compare: <strong>Index & denormalization options</strong></p>
+      <table class="table">
+        <thead><tr><th>Technique</th><th>Helps</th><th>Costs</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td>Composite index (A, B)</td><td>Filters on A and B; ORDER BY B</td><td>Extra space; maintain on write</td><td>Frequent query on (tenant_id, created_at)</td></tr>
+          <tr><td>Covering index</td><td>Query served from index alone</td><td>Wider index = more memory</td><td>Hot endpoints with fixed projections</td></tr>
+          <tr><td>Partial index</td><td>Ignore cold rows</td><td>Query planner complexity</td><td>Predicates like active=true</td></tr>
+          <tr><td>Materialized view</td><td>Pre‑aggregated results</td><td>Refresh cost; staleness</td><td>Dashboards; fan‑out reads</td></tr>
+          <tr><td>Pre‑joined table</td><td>One read instead of many</td><td>Duplication; incoherency risk</td><td>Latency‑critical endpoints</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Worked example — Product page.</strong> Endpoint reads: product → seller → price → inventory. Instead of four joins per request, create a <em>product_view</em> table containing denormalized fields and a <em>last_refreshed_at</em> column. Updates flow via change events from source tables to refresh the view. Latency drops; write cost rises. <em>Mitigation:</em> batch/schedule refresh for non‑critical fields (e.g., description) and use immediate updates for price/stock.</p>
+
+      <h3 id="3-3-2-materialized-eventual">3.3.2 Materialized views and eventual consistency</h3>
+      <p><strong>Plain.</strong> If you precompute, you accept staleness. <strong>Formal.</strong> Define freshness SLIs (e.g., “P99 product_view age ≤ 120 seconds”). <strong>Pitfall.</strong> Lacking a backfill path leads to permanent gaps after outages. <strong>Example.</strong> Maintain a durable event log (CDC from OLTP); processors rebuild the view by replay. Keep idempotent updates keyed by primary key + version.</p>
+
+      <pre data-lang="sql"><code>-- Example: materialized view refresh marker
+CREATE TABLE product_view (
+  product_id     BIGINT PRIMARY KEY,
+  seller_id      BIGINT,
+  price_cents    BIGINT,
+  inventory_qty  INT,
+  last_refreshed_at TIMESTAMP NOT NULL
+);
+
+-- CDC consumer (pseudocode):
+-- on event e for product_id:
+--   read current source rows
+--   upsert into product_view with refreshed fields and now() as last_refreshed_at</code></pre>
+
+      <p><em>Takeaway:</em> With denormalization, your job is not to eliminate staleness but to bound and communicate it.</p>
     </section>
 
-    <!-- ============== RESOURCES ============== -->
-    <section class="section">
-      <h2>Recommended Resources &amp; Why</h2>
-      <div class="resource-list">
-        <div class="item">
-          <div><strong>Nginx &amp; Envoy Documentation</strong></div>
-          <div class="meta">Authoritative guidance on reverse proxying, TLS termination, routing, and observability hooks.</div>
-        </div>
-        <div class="item">
-          <div><strong>High Scalability Blog (Networking Case Studies)</strong></div>
-          <div class="meta">Real incidents that highlight failure modes and tail latency mitigation techniques.</div>
-        </div>
-        <div class="item">
-          <div><strong>Google SRE Book / Workbook</strong></div>
-          <div class="meta">Timeouts, retries, and error budgets connected to user-facing reliability.</div>
-        </div>
-        <div class="item">
-          <div><strong>“Release It!” Patterns</strong></div>
-          <div class="meta">Circuit breakers, bulkheads, and stability patterns for production systems.</div>
-        </div>
-      </div>
+    <section class="section" id="3-4-analytics-streaming">
+      <h2>3.4 Storage for analytics & streaming</h2>
+      <p><strong>Why it matters.</strong> Many teams need both dashboards and fresh features (recommendations, fraud detection). Bridging streaming and batch without duplication avoids two sources of truth.</p>
+
+      <h3 id="3-4-1-kafka-vs-batch">3.4.1 Kafka‑like patterns vs batch ETL</h3>
+      <p><strong>Plain.</strong> A log of immutable events decouples producers and consumers; consumers build their own state. Batch ETL collects data into files and transforms them periodically. <strong>Formal.</strong> Streaming favors low latency and incremental state; batch favors throughput and simplified correctness with full reprocessing. <strong>Pitfall.</strong> Over‑streaming: pushing low‑value events through expensive real‑time paths; over‑batching: dashboards and ML features too stale for the application.</p>
+
+      <ul>
+        <li><strong>When to stream:</strong> user‑visible freshness under a few minutes; online features; operational alerting; incremental ML features.</li>
+        <li><strong>When to batch:</strong> heavy transforms; cost‑sensitive backfills; daily/weekly reporting; long historical joins.</li>
+        <li><strong>Hybrid:</strong> stream to serve operational needs; land to object storage for batch backfills and training.</li>
+      </ul>
+
+      <p><strong>Worked example — Real‑time metrics with OLAP sink.</strong> Ingest events to a partitioned log; a streaming job aggregates per key and writes (1) low‑latency counters to a TSDB for dashboards and alerts, and (2) hourly parquet files to object storage for a columnar warehouse. This yields both quick graphs and cheap historical analytics. <em>Trade‑off:</em> duplicate pipelines; mitigate with shared schemas and a governance process.</p>
+
+      <h3 id="3-4-2-event-sourcing-vs-cdc">3.4.2 Event‑sourcing vs change‑data‑capture (CDC)</h3>
+      <p><strong>Plain.</strong> Event sourcing stores the sequence of domain events as the truth and rebuilds state from them; CDC taps changes from an OLTP database and forwards them elsewhere. <strong>Formal.</strong> Event sourcing requires event design and versioning; CDC mirrors mutations with minimal app changes. <strong>Pitfall.</strong> Using event sourcing only to feed analytics complicates the write path without clear benefit; using CDC without schema discipline spawns schema‑drift problems downstream.</p>
+      <ul>
+        <li><strong>Use event sourcing</strong> when events are first‑class (auditing, replay requirements) and you can invest in event schemas and tooling.</li>
+        <li><strong>Use CDC</strong> when OLTP remains the source of truth but you need read models, caches, or analytics mirrors.</li>
+        <li><strong>Both</strong> when some domains are event‑native (payments) and others are CRUD; don’t force a single pattern everywhere.</li>
+      </ul>
+      <p><em>Takeaway:</em> Choose the <em>simplest</em> mechanism that preserves required history and enables downstream uses.</p>
     </section>
 
-    <!-- ============== PRACTICE TASKS ============== -->
-    <section class="section practice">
-      <h2>Practice</h2>
-
-      <div class="task">
-        <h3>Add Retry + Backoff to an API Design</h3>
-        <p class="meta"><span>⏱️ 30–45 min</span> · <span>Success: explicit timeouts, capped retries, jitter, and idempotency rationale</span></p>
-        <p>Pick one synchronous hop in your system. Specify error budget, timeouts, retry policy, and logs/metrics you’ll emit.</p>
-      </div>
-
-      <div class="task">
-        <h3>Diagram Communication Paths in a Microservices App</h3>
-        <p class="meta"><span>⏱️ 40–60 min</span> · <span>Success: annotated diagram with sync vs. async paths and failure containment</span></p>
-        <p>Show client→edge→gateway→services. Mark which calls can degrade gracefully. Identify one bulkhead boundary.</p>
-      </div>
-
-      <div class="task">
-        <h3>Gateway vs. Reverse Proxy Decision</h3>
-        <p class="meta"><span>⏱️ 20–30 min</span> · <span>Success: table across 5 criteria; clear recommendation</span></p>
-        <p>For your current API surface and consumers, decide what to run today and what to add later as needs grow.</p>
-      </div>
+    <section class="section" id="3-5-applied">
+      <h2>3.5 Applied scenarios & calculations</h2>
+      <p><strong>Scenario A — Sizing a partitioned log.</strong> You expect 20k events/s steady, spikes to 100k. With per‑partition throughput ≈ 5k events/s, start with 32–48 partitions to keep P95 commit latency under your 500 ms target. Reserve headroom (≈ 30%) for retries and consumer lag recovery. Monitor the <em>producer‑to‑commit latency</em> and <em>consumer lag</em> SLIs; adjust partitions or consumer parallelism based on burn‑in data.</p>
+      <p><strong>Scenario B — Hot‑key catalog.</strong> A celebrity seller lists items causing a key skew: 30% of reads for 0.1% of items. Add a <em>read‑through cache</em> with request coalescing and pre‑warming; move to <em>composite key</em> buckets for write distribution. If miss storms persist, add <em>per‑item rate limiting</em> and a fallback to static pages.</p>
+      <p><strong>Scenario C — Denormalized product view freshness.</strong> Suppose your SLO: P99 <em>product_view</em> freshness ≤ 120 s. You process CDC with a stream job; under backlog, freshness burns error budget. Set a <em>graceful degradation</em>: expose a “price may be updating” banner if staleness &gt; 2 min and block checkout on stale price for regulated regions.</p>
+      <p><strong>Scenario D — Time‑series cardinality control.</strong> Your TSDB stores metrics with tags (service, endpoint, status). Adding user_id explodes cardinality. Establish <em>tag hygiene</em>: only high‑cardinality dimensions go to logs or sampled traces; metrics keep bounded labels. Use metrics exemplars to link to traces for high‑cardinality drill‑downs.</p>
     </section>
 
-    <!-- ============== MASTERY CHECK ============== -->
-    <section class="section mastery">
-      <h2>Mastery Check</h2>
-      <div class="quiz-controls">
-        <button class="btn" data-quiz-toggle="open">Open all answers</button>
-        <button class="btn" data-quiz-toggle="close">Close all</button>
-      </div>
-
-      <details>
-        <summary>1) When do you prefer async over sync?</summary>
-        <div>
-          <p>When the work is non-critical to the user’s immediate flow, benefits from batching, or needs burst absorption.
-             Examples: notifications, analytics, search indexing. Document staleness windows and reconciliation.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>2) What’s a sane default timeout and retry policy?</summary>
-        <div>
-          <p>Set timeouts slightly above the p95 for that hop; cap retries (e.g., 2–3) with exponential backoff + jitter and
-             a total budget below the user’s latency target. Require idempotency or use outbox patterns.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>3) How does a circuit breaker protect upstreams?</summary>
-        <div>
-          <p>After repeated failures/timeouts, it opens to fail fast, preventing thread/connection exhaustion and cascading
-             failures. It half-opens to test recovery before fully closing.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>4) Gateway vs. reverse proxy: which for partner APIs?</summary>
-        <div>
-          <p>A gateway. You need auth, quotas, schema validation, and analytics per consumer. A reverse proxy is sufficient
-             for internal routing without rich policy.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>5) What are bulkheads?</summary>
-        <div>
-          <p>Isolation boundaries (pools/quotas) that prevent one noisy neighbor from starving others—e.g., separate thread
-             pools or connection pools per dependency.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>6) Give a concrete correlation ID practice.</summary>
-        <div>
-          <p>Generate a UUID at the edge, inject as <code>X-Correlation-ID</code> in all upstream requests, log it in structured
-             logs, and propagate in trace context to tie metrics and logs together.</p>
-        </div>
-      </details>
+    <section class="section" id="3-6-mini-exercises">
+      <h2>3.6 Mini‑exercises</h2>
+      <ol>
+        <li><strong>Workload matrix:</strong> For your capstone, list three core queries and three core writes. For each, choose a store (OLTP, search, TSDB, object, columnar) and justify with latency and consistency needs.</li>
+        <li><strong>Shard key design:</strong> Propose a primary shard key and two alternatives. For each, analyze hot‑key risk and the cost of moving to the alternative later.</li>
+        <li><strong>Index plan:</strong> For your two hottest endpoints, propose indices (including composite/covering). Estimate write amplification and memory overhead and set a review trigger (e.g., when table reaches 100M rows).</li>
+        <li><strong>Freshness SLI:</strong> Define a freshness SLI and target for one denormalized view. Decide whether to reprocess on demand or lazily, and document how users will experience staleness.</li>
+      </ol>
     </section>
 
-    <!-- ============== RECAP & NEXT STEPS ============== -->
-    <section class="section">
-      <h2>Recap &amp; Next Steps</h2>
-      <p>
-        You connected layers (DNS, TCP, L4/L7) to application decisions (sync vs. async, gateway vs. proxy) and
-        learned to tame failures with timeouts, retries with backoff/jitter, hedging, and circuit breakers.
-        Next, in Chapter 4, you’ll design <strong>data management &amp; storage</strong> for scale and consistency.
-      </p>
+    <section class="section" id="3-7-resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><strong>Data system fundamentals (book)</strong> — clears up transactional vs analytical trade‑offs and consistency models. <em>Why:</em> decide <em>when</em> to denormalize and how to bound staleness. <em>(Paid)</em></li>
+        <li><strong>Microservices integration essays</strong> — practical guidance for using read models and avoiding distributed transactions. <em>Why:</em> safer ways to let services own their data. <em>(Free)</em></li>
+        <li><strong>SRE guidance on SLIs/SLOs</strong> — model freshness/error budgets for data pipelines and views. <em>Why:</em> keeps user value front‑and‑center. <em>(Free)</em></li>
+        <li><strong>Cloud architecture lenses</strong> — cost, reliability, and performance questions to ask before choosing a store. <em>Why:</em> forces decision hygiene. <em>(Free)</em></li>
+      </ul>
     </section>
 
-    <!-- ============== NEXT/PREV ============== -->
-    <nav class="next-prev" aria-label="Chapter navigation">
-      <a href="chapters/ch02.html" rel="prev">Previous: Designing Core Building Blocks of Systems</a>
-      <a href="chapters/ch04.html" rel="next">Next: Data Management &amp; Storage Patterns</a>
+    <section class="section" id="3-8-recap-next">
+      <h2>Recap & Next Steps</h2>
+      <ul>
+        <li>You can select stores by workload rather than brand: OLTP for correctness, OLAP for insights, TSDB for metrics, search for discovery, object storage for blobs.</li>
+        <li>You can design partitioning schemes that avoid hot shards and have a concrete playbook for skew and rebalancing.</li>
+        <li>You can map read patterns to indices and decide when to denormalize, with freshness SLIs to bound staleness.</li>
+        <li>You can connect streaming and batch without creating two sources of truth, and you know when to use CDC vs event sourcing.</li>
+      </ul>
+      <p><strong>Next:</strong> Proceed to <a href="chapters/ch04.html#4-hero">Chapter 4 — Microservices, Boundaries &amp; Integration</a>, where we use domain‑driven boundaries and integration patterns to connect your stores and services into a coherent whole.</p>
+    </section>
+
+    <nav class="next-prev">
+      <a class="btn" rel="prev" href="chapters/ch02.html">← Previous</a>
+      <a class="btn btn-primary" rel="next" href="chapters/ch04.html">Next →</a>
     </nav>
 
-    <!-- ============== HIDDEN CHECKLIST COMMENT ============== -->
-    <!--
-    - [x] theme.css+app.js loaded
-    - [x] <base> present & correct (../)
-    - [x] Canonical nav verbatim; active link handled by app.js
-    - [x] Pager prev/next valid (ch02 ↔ ch04)
-    - [x] ≥1,200 words; ≥2 examples; 1 case study; 1 compare/contrast; 1 analogy
-    - [x] Resources 3–6 with rationale
-    - [x] Practice 3–5 w/ criteria
-    - [x] Mastery 5–7 with sample answers
-    - [x] ≥8 terms glossarized; ≥1 figure
-    - [x] Head/meta ok
-    -->
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
+      </div>
+    </footer>
   </main>
+
+  <!--
+  CHECKLIST (Chapter 03)
+  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+  - [x] Canonical nav (Home / Appendix / Glossary only)
+  - [x] Pager prev → ch02, next → ch04; ToC numbering matches
+  - [x] Order: Hero → Numbered Sections → Resources → Recap
+  - [x] ≥1,800 words of prose (body text)
+  - [x] Images: none (no audit required)
+  - [x] Head/meta complete; no TODOs
+  -->
 </body>
 </html>

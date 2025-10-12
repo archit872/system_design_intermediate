@@ -1,360 +1,215 @@
-<!-- /chapters/ch10.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Chapter 10 — Pitfalls, Anti-Patterns & Next Steps</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Recognize common mistakes in system design, learn from real outages, and chart a path to advanced mastery with deliberate practice and career tactics.">
-  <meta property="og:title" content="Chapter 10 — Pitfalls, Anti-Patterns & Next Steps">
-  <meta property="og:description" content="From over-engineering to premature sharding—avoid classic traps, study failures, and plan your growth beyond intermediate level.">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 10 — Pitfalls, Next Steps & Optional Advanced Topics</title>
+  <meta name="description" content="Avoid common intermediate‑level architecture mistakes, plan your next steps toward advanced topics like capacity planning and multi‑region, and sample optional deep dives in global consistency, streaming, and platform engineering.">
+  <meta property="og:title" content="Chapter 10 — Pitfalls, Next Steps & Optional Advanced Topics">
+  <meta property="og:description" content="A field guide to what goes wrong (and how to fix it), how to keep growing after the capstone, and three optional advanced topics with practical entry ramps.">
+  <meta property="og:type" content="article">
   <base href="../">
   <link rel="stylesheet" href="styles/theme.css">
-  <script defer src="scripts/app.js"></script>
+  <script src="scripts/app.js" defer></script>
 </head>
 <body>
-  <!-- ================= NAV (Canonical; verbatim) ================= -->
-  <nav class="app-nav">
-    <div class="bar">
-      <div class="brand"><a href="index.html">System Design</a></div>
-      <button class="menu-btn" data-nav-toggle aria-expanded="false">Menu</button>
-      <div class="spacer"></div>
-      <div class="links">
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="app-nav">
+    <div class="container inner">
+      <div class="brand">Intermediate System Design</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
+      <nav id="top-menu" class="menu" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="chapters/ch01.html">Chapters</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </div>
+      </nav>
     </div>
-  </nav>
-
-  <!-- ================= HERO ================= -->
-  <header class="page-hero container">
-    <div class="badge">Chapter 10</div>
-    <h1>Pitfalls, Anti-Patterns &amp; Next Steps</h1>
-    <p>
-      Great systems fail in <em>predictable</em> ways. This chapter surfaces the most costly
-      <strong>anti-patterns</strong>, dissects real-world <strong>failure stories</strong>, and provides a
-      pragmatic plan for advancing beyond the intermediate level—without over-engineering or burning out
-      your team.
-    </p>
   </header>
 
-  <main class="container">
-    <!-- ============== PREREQS & OBJECTIVES ============== -->
-    <section class="section">
-      <div class="grid two-col">
-        <div class="card">
-          <h2>Prerequisites</h2>
-          <ul>
-            <li>Completed Chapters 1–9 (or equivalent experience).</li>
-            <li>Comfort evaluating trade-offs and articulating SLOs.</li>
-            <li>Exposure to incidents and postmortems (even small ones).</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h2>Learning Objectives</h2>
-          <ul>
-            <li>Spot and avoid common anti-patterns in design and operations.</li>
-            <li>Translate failure stories into review checklists and guardrails.</li>
-            <li>Plan career growth via deliberate practice and mentorship.</li>
-            <li>Prepare a roadmap into advanced topics and research directions.</li>
-          </ul>
-        </div>
-      </div>
+  <main id="main" class="container fade-in">
+    <section class="page-hero" id="10-hero">
+      <div class="meta"><span class="badge badge-primary">Chapter 10</span></div>
+      <h1>Pitfalls, Next Steps &amp; Optional Advanced Topics</h1>
+      <p class="abstract">You now have the tools to design, justify, and run a production‑like system. This final chapter shows the most common ways good teams still get into trouble—and how to get out. Then we lay a practical path to the advanced tier: capacity planning, multi‑region, and cost discipline. Finally, we preview three optional deep dives—global consistency & geo‑replication, advanced streaming, and platform engineering—so you can choose where to invest next.</p>
     </section>
 
-    <!-- ============== SECTION 1: COMMON ANTI-PATTERNS ============== -->
-    <section class="section">
-      <h2>1) Common Anti-Patterns</h2>
-      <h3>Over-Engineering &amp; Premature Optimization</h3>
-      <p>
-        Building for hypothetical scale (multi-region, <abbr title="Conflict-free replicated data types">CRDTs</abbr>,
-        <abbr title="Command Query Responsibility Segregation">CQRS</abbr>) before product–market fit slows delivery
-        and increases <strong>operational complexity</strong>. <em>Smell:</em> no SLOs, but lots of microservices.
-      </p>
-      <div class="callout warn">
-        <strong>Trade-off:</strong> Every new component improves one metric but worsens <em>change cost</em> and <em>blast radius</em>.
-        If in doubt, choose the option with lower operational load and a clear exit strategy.
-      </div>
+    <section class="section" id="10-1-pitfalls">
+      <h2>10.1 Common pitfalls</h2>
+      <p><strong>Why it matters.</strong> Most failures are not exotic; they are predictable results of ignoring ownership, operations, or user‑centric reliability. Naming the trap gives you leverage to avoid it.</p>
 
-      <h3>Premature Sharding</h3>
-      <p>
-        Sharding adds <strong>rebalancing</strong>, <strong>cross-shard queries</strong>, and <strong>hot-spot</strong> risks.
-        Start with vertical headroom and read replicas; shard only when single-node limits or multi-tenant isolation demand it.
-      </p>
-
-      <h3>Unbounded Fan-out</h3>
-      <p>
-        A request that fans out to many downstream calls multiplies tail latency and failure probability. Cap fan-out, apply
-        <strong>bulkheads</strong>, and aggregate upstream to keep the call graph manageable.
-      </p>
-
-      <h3>Hidden State in Stateless Systems</h3>
-      <p>
-        Caches, feature flags, and local disks can create <strong>implicit state</strong>. Document stateful dependencies and
-        design <strong>warm-up</strong>, <strong>drain</strong>, and <strong>rebuild</strong> procedures. Otherwise rollbacks misbehave.
-      </p>
-
-      <h3>“Retry All the Things”</h3>
-      <p>
-        Retrying on any error causes <strong>thundering herds</strong>. Use <strong>timeouts</strong>, <strong>exponential backoff</strong> with
-        <strong>jitter</strong>, idempotency, and circuit breakers. Cap total retry budgets to protect UX and upstreams.
-      </p>
-
-      <h3>Observability as a Postscript</h3>
-      <p>
-        Shipping features without RED/USE metrics, <strong>structured logs</strong>, or traces makes incident response a guessing game.
-        Treat observability as a first-class requirement; otherwise SLOs are wishful thinking.
-      </p>
-    </section>
-
-    <!-- ============== SECTION 2: FAILURE STORIES (SYNTHESIZED) ============== -->
-    <section class="section">
-      <h2>2) Real-World Failure Stories &amp; Lessons</h2>
-      <h3>Story A: Cache Stampede During Launch</h3>
-      <p>
-        A product launch caused a simultaneous expiry on several hot keys. All instances missed the cache and hammered the DB.
-        The fix introduced <strong>soft TTL</strong>, <strong>stale-while-revalidate</strong>, and <strong>request coalescing</strong>.
-        <em>Checklist addition:</em> Expiration jitter for popular keys; pre-warm on deploy.
-      </p>
-
-      <h3>Story B: Partial Region Outage → Cascading Failures</h3>
-      <p>
-        One region went unhealthy; traffic shifted, saturating the remaining one. Without quotas and bulkheads, the gateway and
-        databases overloaded. The remediation established <strong>per-tenant quotas</strong>, <strong>priority traffic lanes</strong>,
-        and <strong>graceful degradation</strong> for non-critical features.
-      </p>
-
-      <h3>Story C: Schema Migration Without Backward Compatibility</h3>
-      <p>
-        A column rename shipped before all services updated drivers. Writes failed; readers returned partial data. The fix mandated
-        <strong>expand–migrate–contract</strong> with feature flags and dual writes. <em>Checklist:</em> migrations are multi-step and reversible.
-      </p>
-
-      <figure>
-        <svg viewBox="0 0 940 260" role="img" aria-label="Failure modes and mitigations diagram">
-          <rect x="0" y="0" width="940" height="260" rx="12" fill="#0f141b"/>
-          <g fill="#e6edf3" font-family="ui-sans-serif,system-ui,Roboto,Inter,Arial" font-size="12">
-            <rect x="40" y="40" width="240" height="180" rx="10" fill="#111726" stroke="#1b2330"/>
-            <text x="60" y="70">Failure</text>
-            <text x="60" y="95" fill="#9fb0c3">Cache stampede</text>
-            <text x="60" y="115" fill="#9fb0c3">Region overload</text>
-            <text x="60" y="135" fill="#9fb0c3">Bad migration</text>
-
-            <rect x="350" y="40" width="240" height="180" rx="10" fill="#111726" stroke="#1b2330"/>
-            <text x="370" y="70">Mitigation</text>
-            <text x="370" y="95" fill="#9fb0c3">Stale-while-revalidate</text>
-            <text x="370" y="115" fill="#9fb0c3">Quotas, bulkheads</text>
-            <text x="370" y="135" fill="#9fb0c3">Expand–contract</text>
-
-            <rect x="660" y="40" width="240" height="180" rx="10" fill="#111726" stroke="#1b2330"/>
-            <text x="680" y="70">Guardrail</text>
-            <text x="680" y="95" fill="#9fb0c3">Jittered TTLs</text>
-            <text x="680" y="115" fill="#9fb0c3">Priority lanes</text>
-            <text x="680" y="135" fill="#9fb0c3">Dual reads/writes</text>
-
-            <line x1="280" y1="130" x2="350" y2="130" stroke="#4cc2ff" stroke-width="3"/>
-            <polygon points="348,130 338,125 338,135" fill="#4cc2ff"/>
-            <line x1="590" y1="130" x2="660" y2="130" stroke="#7a87ff" stroke-width="3"/>
-            <polygon points="658,130 648,125 648,135" fill="#7a87ff"/>
-          </g>
-        </svg>
-        <figcaption>Map failures → mitigations → guardrails; convert incidents into durable design rules.</figcaption>
-      </figure>
-    </section>
-
-    <!-- ============== SECTION 3: CAREER GROWTH & PRACTICE ============== -->
-    <section class="section">
-      <h2>3) Career Growth in System Design</h2>
-      <h3>Deliberate Practice Loop</h3>
-      <ol>
-        <li><strong>Pick a scenario</strong> (feed, checkout, streaming).</li>
-        <li><strong>Write constraints</strong> (SLIs/SLOs, workload, PII).</li>
-        <li><strong>Design + trade-offs</strong> (two options minimum).</li>
-        <li><strong>Peer review</strong> (record gaps, risks).</li>
-        <li><strong>Revise</strong> (document what you’d simplify).</li>
-      </ol>
-
-      <h3>Mentorship &amp; Review Culture</h3>
-      <p>
-        Volunteer to <strong>scribe</strong> in design reviews; you’ll learn decision criteria and vocabulary.
-        Ask for <strong>shadowing</strong> on postmortems; write one improvement PR per incident (docs, runbook, test).
-      </p>
-
-      <h3>Portfolio &amp; Storytelling</h3>
-      <p>
-        Keep a <strong>design journal</strong>: before/after diagrams, SLIs, and real latency/availability results.
-        These become artifacts for promotions and interviews.
-      </p>
-    </section>
-
-    <!-- ============== SECTION 4: PREPARING FOR ADVANCED LEVEL ============== -->
-    <section class="section">
-      <h2>4) Preparing for Advanced Level</h2>
-      <p>
-        Advanced topics deepen rigor: <strong>consensus</strong> (Raft/Paxos), <strong>multi-region data</strong>,
-        <strong>conflict resolution</strong> (CRDTs), <strong>formal verification</strong> (TLA+), and <strong>cost-aware architectures</strong>.
-        Enter with strong fundamentals: you should estimate capacity, reason about quorums, and debug distributed failures.
-      </p>
-      <div class="grid two-col">
-        <div class="card">
-          <h3>Pathways</h3>
-          <ul>
-            <li>Implement a toy <strong>Raft</strong> log; visualize leader election.</li>
-            <li>Model an API in <strong>TLA+</strong>; check invariants (e.g., no double-spend).</li>
-            <li>Run a <strong>chaos day</strong> with fault injection and error-budget policies.</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>Signals You’re Ready</h3>
-          <ul>
-            <li>You can <strong>predict tail latency</strong> drivers in reviews.</li>
-            <li>You propose <strong>simpler designs</strong> that still meet SLOs.</li>
-            <li>You convert incidents into <strong>guardrails</strong>, not folklore.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============== COMPARE & CONTRAST ============== -->
-    <section class="section">
-      <h2>Compare &amp; Contrast: “Monolith-First” vs. “Microservices-First” (as anti-patterns)</h2>
-      <table>
-        <thead><tr><th>Aspect</th><th>Monolith-First (Dogma)</th><th>Microservices-First (Dogma)</th></tr></thead>
+      <h3 id="10-1-1-over-splitting">10.1.1 Over‑splitting services before need</h3>
+      <p><strong>Plain.</strong> Breaking a monolith into many tiny services too early makes everything slower: design, testing, releases, on‑call. <strong>Formal.</strong> <em>Premature decomposition</em> increases <em>coordination cost</em> (number of cross‑service contracts to maintain), <em>failure surface</em> (more hops and timeouts), and <em>operational overhead</em> (pipelines, dashboards, runbooks) without proportional benefit. <strong>Pitfall.</strong> Decomposing by CRUD tables (“user service,” “profile service,” “preferences service”) rather than cohesive capabilities that change together. A sure sign is lock‑step deploys across “independent” services.</p>
+      <p><strong>Example.</strong> A team extracted notifications into three services (composer, scheduler, sender). Each release required choreography across all three to fix a single bug. Consolidating into one <em>Notifications</em> service with a background worker cut deploy time and resolved most incidents; a queue separated the UI thread from actual sends.</p>
+      <p><strong>Analogy.</strong> If your kitchen is one cook and two burners, you don’t build a restaurant with seven stations. You first master a small menu and only split stations when each is constantly busy.</p>
+      <p>Compare: <strong>Should we split?</strong></p>
+      <table class="table">
+        <thead><tr><th>Signal</th><th>Split now</th><th>Consolidate / wait</th><th>Why</th></tr></thead>
         <tbody>
-          <tr><td>Speed</td><td>Fast initially; slows with tangled boundaries</td><td>Slow initially; org overhead</td></tr>
-          <tr><td>Risk</td><td>Big-bang refactors later</td><td>Distributed failure modes early</td></tr>
-          <tr><td>When Sensible</td><td>Small team, uncertain domains</td><td>Many teams, stable bounded contexts</td></tr>
-          <tr><td>Anti-Pattern Smell</td><td>“One repo forever” despite scaling needs</td><td>“Split everything” without ops maturity</td></tr>
+          <tr><td>Change cadence</td><td>Different teams change independently</td><td>Same team always changes both</td><td>Split by cohesion of change, not nouns</td></tr>
+          <tr><td>Runtime chat</td><td>Low QPS between services</td><td>High QPS, hot path needs both</td><td>Chatty split adds latency & failure modes</td></tr>
+          <tr><td>Data invariants</td><td>Weak cross‑table invariants</td><td>Strong invariants across tables</td><td>Co‑locate strong invariants</td></tr>
+          <tr><td>Ownership</td><td>Clear owners for each slice</td><td>Ownership unclear or shared</td><td>Shared ownership breeds outages</td></tr>
         </tbody>
       </table>
-      <div class="callout success">
-        <strong>Guideline:</strong> Prefer <em>modular monolith → carve-out hotspots → event-driven decoupling</em>. Evolve; don’t convert wholesale.
-      </div>
+      <p><em>Action.</em> If two services always change together or chat on every request, merge them behind one deployable. Keep the API boundary if useful; re‑split later when evidence appears.</p>
+
+      <h3 id="10-1-2-cost-observability">10.1.2 Ignoring operational cost and observability</h3>
+      <p><strong>Plain.</strong> A design that looks elegant on a whiteboard can bankrupt your team’s time or budget when it meets reality. <strong>Formal.</strong> <em>Total cost of ownership</em> (TCO) = cloud spend + licenses + engineering time (toil, incident response, slow iteration) + risk (outages, security incidents). <strong>Pitfall.</strong> Optimizing for per‑request compute while ignoring <em>telemetry</em> costs, on‑call load, and slow developer loops.</p>
+      <ul>
+        <li><strong>Telemetry budgets.</strong> Set explicit ingestion and retention targets for logs and traces; use sampling (head/tail) and exemplars (OpenTelemetry, various vendors; Google SRE, 2016) to keep high‑signal detail without runaway indexing costs.</li>
+        <li><strong>Cost aware patterns.</strong> Choose managed services when feature velocity is the bottleneck; switch to self‑managed only when stable workloads justify it (AWS Well‑Architected, 2025).</li>
+        <li><strong>Observability first.</strong> If you can’t explain a regression within one hour using dashboards and traces, your next sprint starts with instrumentation work. Treat this policy as a <em>guardrail</em>.</li>
+      </ul>
+      <p>Compare: <strong>Observability investment vs hidden costs</strong></p>
+      <table class="table">
+        <thead><tr><th>Choice</th><th>Short‑term cost</th><th>Long‑term effect</th><th>When right</th><th>When wrong</th></tr></thead>
+        <tbody>
+          <tr><td>Full tracing on critical path</td><td>Higher ingest</td><td>Faster incident resolution; safer deploys</td><td>When SLOs tight, complex fan‑out</td><td>When you never read traces → sample instead</td></tr>
+          <tr><td>Log everything</td><td>Exploding indexes</td><td>Searchable forensics</td><td>Short‑term during a spike</td><td>Default posture—use structure + sampling</td></tr>
+          <tr><td>Managed broker</td><td>Higher invoice</td><td>Lower SRE toil</td><td>Feature‑constrained teams</td><td>When steady, predictable throughput + SRE time available</td></tr>
+        </tbody>
+      </table>
+      <p><em>Action.</em> Write a one‑page telemetry budget and review it monthly like any other product budget. Alert on ingestion overshoot and cardinality explosions.</p>
+
+      <h3 id="10-1-3-slos-mismatch">10.1.3 SLOs that don’t map to business outcomes</h3>
+      <p><strong>Plain.</strong> Teams sometimes measure what’s easy (CPU, queue depth) instead of what users feel (latency to complete a task, success rate). <strong>Formal.</strong> An SLI is only valid if it correlates with user happiness and business outcomes; otherwise you are optimizing a proxy. <strong>Pitfall.</strong> “99.99% availability” on a health check while users can’t log in due to configuration or third‑party outages.</p>
+      <p><strong>Worked example — Login SLO.</strong> Weak SLO: “Auth service 99.99% up.” Better: “95% of users can sign in within 400 ms, measured at the client with a valid token in hand.” Add a dependency budget: “Third‑party identity calls may consume at most 20% of the error budget; otherwise we switch to cached tokens or degrade MFA with clear messaging.”</p>
+      <p>Compare: <strong>Weak vs strong SLO mapping</strong></p>
+      <table class="table">
+        <thead><tr><th>Goal</th><th>Weak SLI/SLO</th><th>Strong SLI/SLO</th><th>Why strong</th></tr></thead>
+        <tbody>
+          <tr><td>Checkout reliability</td><td>DB CPU &lt; 70%</td><td>95% of checkouts &lt; 300 ms with 2xx (client‑measured)</td><td>Captures user experience end‑to‑end</td></tr>
+          <tr><td>Fresh analytics</td><td>Pipeline throughput</td><td>P99 dashboard freshness &lt; 120 s</td><td>Measures lag users see</td></tr>
+          <tr><td>Chat delivery</td><td>Broker uptime</td><td>Send→receive P95 &lt; 150 ms</td><td>End‑to‑end delivery, not a hop</td></tr>
+        </tbody>
+      </table>
+      <p><em>Action.</em> Audit SLIs quarterly. For each, ask: “If this gets worse, can a user notice? If users complain, does this move?” If not, demote to a diagnostic metric.</p>
     </section>
 
-    <!-- ============== ANALOGY ============== -->
-    <section class="section">
-      <h2>Analogy: Mountain Hiking</h2>
-      <p>
-        Designing systems is like hiking: packing too much gear (features) slows you, packing too little (observability)
-        leaves you vulnerable. Weather (traffic) changes fast; good hikers set <strong>turnaround times</strong>
-        (error budgets) and pick routes with <strong>bailout options</strong> (rollbacks). Summiting (launch) is optional;
-        returning safely (reliability) is mandatory.
-      </p>
+    <section class="section" id="10-2-next-steps">
+      <h2>10.2 Next steps toward Advanced</h2>
+      <p><strong>Why it matters.</strong> The jump from intermediate to advanced is not more jargon—it’s comfort with scale, failure, and cost under uncertainty. A deliberate learning path prevents thrash.</p>
+
+      <h3 id="10-2-1-advanced-topics">10.2.1 Topics: capacity planning, multi‑region, cost optimization</h3>
+      <p><strong>Plain.</strong> Advanced engineers make systems predictable before they are large, resilient before they break, and affordable before the bill surprises. <strong>Formal.</strong> Capacity planning estimates resource demand (CPU, memory, IO, network) under forecasted load with statistical safety margins; multi‑region architectures define <em>failure domains</em>, <em>RPO</em> (recovery point objective), and <em>RTO</em> (recovery time objective); cost optimization balances architecture choices against a monthly budget with <em>unit economics</em> (cost per user/request/message).</p>
+      <ul>
+        <li><strong>Capacity planning loop.</strong> Measure current headroom, model arrival patterns, project growth, and set <em>scaling guardrails</em> (autoscaler bounds, queue limits). Validate with load tests and track forecast error.</li>
+        <li><strong>Multi‑region options.</strong> Active‑passive (failover), active‑active (global read/write), and regional isolation (cell‑based) each trade availability, consistency, and cost.</li>
+        <li><strong>Cost optimization.</strong> Right‑size instances, prefer managed where developer time is scarce, move cold data to cheap storage, and set deletion/retention policies. Establish <em>cost SLOs</em> (e.g., telemetry budget, peak infra budget) to bound spend volatility (AWS Well‑Architected, 2025).</li>
+      </ul>
+
+      <p>Compare: <strong>Multi‑region strategies</strong></p>
+      <table class="table">
+        <thead><tr><th>Strategy</th><th>Data model</th><th>Pros</th><th>Cons</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td>Active‑passive</td><td>Primary + async replica</td><td>Simpler; cheaper</td><td>RPO &gt; 0; failover drills needed</td><td>Most business apps; tolerate minutes of RTO</td></tr>
+          <tr><td>Active‑active (read local, write global)</td><td>Partitioned writes + global coordination</td><td>Low read latency; higher availability</td><td>Complex conflict handling; cost</td><td>Global read‑heavy apps; tolerate eventual consistency</td></tr>
+          <tr><td>Cell‑based (regional isolation)</td><td>Fully independent cells</td><td>Fault isolation; blast radius control</td><td>Operational duplication</td><td>Large scale; strong isolation needs</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="10-2-2-research-skills">10.2.2 Research skills: reading papers & evaluating technologies</h3>
+      <p><strong>Plain.</strong> Advanced work requires forming your own opinion about tools and papers. <strong>Formal.</strong> Evaluate with <em>claims</em> (what it promises), <em>assumptions</em> (workload, hardware), <em>evidence</em> (benchmarks, failure modes), and <em>fit</em> (your constraints). <strong>Pitfall.</strong> Treating a paper as a product or a vendor blog as proof.</p>
+      <ul>
+        <li><strong>Paper workflow.</strong> Read abstract and evaluation sections first; write a 5‑sentence summary in your own words; list 3 assumptions that don’t match your world; design a small experiment to test one claim.</li>
+        <li><strong>Tool evaluation.</strong> Create a <em>scorecard</em>: problem fit, integration cost, operability, community/docs, lock‑in risk, TCO. Run a 
+          2‑week spike with success criteria and an exit plan.</li>
+        <li><strong>Decision record.</strong> Capture your choice in an ADR with at least two rejected alternatives and the <em>evidence</em> that would change your mind.</li>
+      </ul>
+      <p><em>Analogy.</em> Treat new technologies like renting a car in a foreign city: start slow, stay on main roads, and know how to turn around before you explore alleys.</p>
     </section>
 
-    <!-- ============== CASE STUDY ============== -->
-    <section class="section">
-      <h2>Case Study: The Over-Abstracted E-commerce Platform (≈220 words)</h2>
-      <p>
-        A mid-size e-commerce team rewrote a healthy monolith into 40 services in six months. The goal was “team autonomy”
-        and “infinite scale.” Reality: increased page volume, missed SLAs, and slower feature delivery. The architecture
-        had deep call chains, no correlation IDs, and <strong>idempotency</strong> gaps causing duplicate orders under retries.
-        There was no <strong>gateway policy</strong>—auth and rate limits were inconsistent. A new tech lead proposed a rescue:
-        collapse to a <strong>modular monolith</strong> for catalog, cart, and checkout, keep payments and search as services,
-        and introduce an <strong>API gateway</strong> for cross-cutting concerns. Events (<code>OrderPlaced</code>,
-        <code>InventoryReserved</code>) enabled async side effects. They added RED/USE instrumentation, <strong>soft TTL</strong> caches,
-        and <strong>circuit breakers</strong> for non-critical calls. Within two quarters, p95 checkout latency fell by 45%,
-        incidents dropped, and deploy cadence increased. The lesson: patterns serve the system—not the other way around.
-        Choose <em>operationally simple</em> designs that meet SLOs; evolve boundaries when data proves the need.
-      </p>
+    <section class="section" id="10-3-advanced-topics">
+      <h2>10.3 Optional advanced topics (pick 2–3)</h2>
+      <p><strong>Why it matters.</strong> A taste of the next tier helps you choose a focused path without boiling the ocean. Each subsection sketches the problem space, key techniques, trade‑offs, and a safe entry ramp.</p>
+
+      <h3 id="10-3-1-global-consistency">10.3.1 Global consistency & geo‑replication strategies</h3>
+      <p><strong>Plain.</strong> Users are everywhere, networks fail, and latency across oceans is real. Global systems balance <em>freshness</em> and <em>availability</em> with <em>compliance</em> and <em>cost</em>. <strong>Formal.</strong> Designs range from leader‑based replication with <em>read‑my‑writes</em> routing and bounded staleness, to partitioned leaders (<em>multi‑leader</em>) with conflict resolution, to true global consensus for a narrow core (CP under partition) (Kleppmann, 2017; SRE corpus).</p>
+      <ul>
+        <li><strong>Choices:</strong> geo‑partition by tenant or key; keep writes local to reduce latency and replicate async; or centralize the write path and cache/read local.</li>
+        <li><strong>Techniques:</strong> quorum writes, <em>R + W &gt; N</em>; <em>fencing tokens</em> with leases; <em>session consistency</em> for UX; <em>bounded staleness</em> with freshness SLIs and UI hints.</li>
+        <li><strong>Compliance:</strong> data residency may force partitioning; design APIs that reveal where data lives and how it moves.</li>
+      </ul>
+      <p><strong>Trade‑offs.</strong> Strong global consistency raises latency and cost; eventual consistency requires reconciliation and user‑visible safeguards. A hybrid often wins: CP for money‑moving, AP for feeds and presence.</p>
+      <p><strong>Entry ramp.</strong> Start with a second region in <em>read‑only</em> mode and an <em>active‑passive</em> database. Practice failover and back. Add <em>read‑my‑writes</em> sticky routing for critical flows before considering global writes.</p>
+
+      <h3 id="10-3-2-advanced-streaming">10.3.2 Advanced streaming & stateful processing at scale</h3>
+      <p><strong>Plain.</strong> Streaming systems turn unbounded event flows into timely, correct results. <strong>Formal.</strong> Key concepts are <em>event time</em> vs <em>processing time</em>, <em>watermarks</em> (progress indicators), <em>windowing</em> (tumbling, sliding, sessions), <em>exactly‑once</em> semantics (idempotent sinks + transactional writes), and <em>state backends</em> with checkpoints. <strong>Pitfall.</strong> Assuming in‑order events; ignoring late data; using unbounded joins without guards.</p>
+      <ul>
+        <li><strong>Event time first.</strong> Publish timestamps at the producer; use watermarks to control lateness and trigger results; handle late data with updates or correction streams.</li>
+        <li><strong>State size.</strong> Keep per‑key state bounded; evict with TTLs and compaction; monitor checkpoint duration.</li>
+        <li><strong>Delivery semantics.</strong> Most brokers are at‑least‑once; design idempotent consumers and dedupe by keys. Exactly‑once claims usually hide constraints; verify in your stack.</li>
+      </ul>
+      <p><strong>Trade‑offs.</strong> Lower latency increases compute and duplicate work; tighter correctness (exactly‑once) increases coordination and cost. Choose the point that meets your SLIs at the lowest TCO.</p>
+      <p><strong>Entry ramp.</strong> Convert one batch job (daily aggregates) into near real time with a small window (e.g., 5‑minute tumbling), measure freshness and cost, then iterate.</p>
+
+      <h3 id="10-3-3-platform-engineering">10.3.3 Platform engineering: building internal developer platforms</h3>
+      <p><strong>Plain.</strong> A platform team productizes paved roads for delivery: templates, build/test/deploy, observability, and guardrails. <strong>Formal.</strong> An <em>Internal Developer Platform</em> (IDP) offers golden paths (well‑supported tech stacks) and self‑service abstractions (create a service, get CI/CD, SLO dashboards, and a runbook skeleton) with <em>SLOs</em> for the platform itself (provisioning time, deploy success, incident MTTR).</p>
+      <ul>
+        <li><strong>Scope wisely.</strong> Start with the top three friction points (e.g., “create service,” “get a dashboard,” “deploy safely”).</li>
+        <li><strong>Product mindset.</strong> Treat developers as customers; collect NPS‑style feedback; publish a roadmap and <em>support SLOs</em>.</li>
+        <li><strong>Guardrails over gates.</strong> Prefer linting, templates, and scorecards to manual approvals. The platform should speed teams up while keeping them safe.</li>
+      </ul>
+      <p><strong>Trade‑offs.</strong> Platforms reduce duplicate toil but can calcify if over‑standardized. Build modular components and allow controlled escapes for novel workloads.</p>
+      <p><strong>Entry ramp.</strong> Ship a CLI or wizard that scaffolds a new service with: repo, CI pipeline, container template, health probes, tracing hooks, SLO dashboard, alert skeletons, and a <em>one‑click rollback</em> job.</p>
     </section>
 
-    <!-- ============== RESOURCES ============== -->
-    <section class="section">
-      <h2>Recommended Resources &amp; Why</h2>
-      <div class="resource-list">
-        <div class="item"><strong>ACM Queue &amp; “High Scalability” archives</strong><div class="meta">Postmortems and scaling stories to convert into checklists.</div></div>
-        <div class="item"><strong>“Release It!”</strong><div class="meta">Anti-patterns and stability patterns in production.</div></div>
-        <div class="item"><strong>Google SRE Book</strong><div class="meta">Error budgets, incident management, and practical reliability levers.</div></div>
-      </div>
+    <section class="section" id="10-4-applied-exercises">
+      <h2>10.4 Applied exercises</h2>
+      <ol>
+        <li><strong>Pitfall audit (45 min).</strong> List your top five operational pains. For each, map to a pitfall in 10.1 and write one action (merge services, add ownership, write a telemetry budget, or fix an SLO).</li>
+        <li><strong>Capacity plan (60 min).</strong> Pick one bottleneck service. Forecast 3‑month growth, set autoscaler bounds, and plan a load test to validate headroom. Record forecast error after the test.</li>
+        <li><strong>Multi‑region mini‑design (60 min).</strong> Draft an active‑passive plan with RPO/RTO and a failover runbook. Define what runs read‑only during failover and how you’ll reconcile on failback.</li>
+        <li><strong>Streaming upgrade (60 min).</strong> Take one batch aggregation and convert it to a 5‑minute windowed streaming job. Define freshness SLI and late‑data policy.</li>
+        <li><strong>Platform starter kit (45 min).</strong> Create a template or script that generates a new service with CI, health probes, tracing, and a basic dashboard. Include a documented rollback path.</li>
+      </ol>
     </section>
 
-    <!-- ============== PRACTICE TASKS ============== -->
-    <section class="section practice">
-      <h2>Practice</h2>
-      <div class="task">
-        <h3>Write a Fictional Postmortem</h3>
-        <p class="meta"><span>⏱️ 45–60 min</span> · <span>Success: timeline, root causes, 3 concrete guardrails</span></p>
-        <p>Invent an outage (e.g., cache stampede). Produce a blameless postmortem with actions tied to owner and due date.</p>
-      </div>
-      <div class="task">
-        <h3>Anti-Pattern Audit</h3>
-        <p class="meta"><span>⏱️ 30–45 min</span> · <span>Success: list of 5 smells in your system + mitigations</span></p>
-        <p>Scan your current architecture for unbounded fan-out, premature sharding, and missing SLOs. Propose small, high-leverage fixes.</p>
-      </div>
-      <div class="task">
-        <h3>Next-Step Roadmap</h3>
-        <p class="meta"><span>⏱️ 25–35 min</span> · <span>Success: 90-day plan across design, ops, and learning</span></p>
-        <p>Pick one advanced topic, one operational improvement, and one mentorship action. Define outcomes and metrics.</p>
-      </div>
+    <section class="section" id="10-5-resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><strong>Google SRE Book &amp; Workbook</strong> — SLOs, error budgets, incident practices, and organizational patterns. <em>Why:</em> align reliability with delivery; avoid SLO anti‑patterns. <em>(Free/Paid)</em></li>
+        <li><strong>AWS Well‑Architected Framework</strong> — lenses for reliability, performance efficiency, and cost. <em>Why:</em> structured trade‑off prompts for capacity and multi‑region choices. <em>(Free)</em></li>
+        <li><strong>Kubernetes docs</strong> — orchestration fundamentals for probes, autoscaling, and policies. <em>Why:</em> practical deployment building blocks. <em>(Free)</em></li>
+        <li><strong>Martin Fowler’s essays</strong> — microservices boundaries, testing strategies, and decomposition cautions. <em>Why:</em> avoid distributed monoliths and over‑splitting. <em>(Free)</em></li>
+        <li><strong>Designing Data‑Intensive Applications</strong> (Kleppmann) — consistency, replication, and log‑centric architectures. <em>Why:</em> deep mental models for global and streaming topics. <em>(Paid)</em></li>
+      </ul>
+      <p>Where the above sources disagree, prefer <em>measured</em> claims (benchmarks, incident analyses) over anecdote. Document your local context before adopting guidance.</p>
     </section>
 
-    <!-- ============== MASTERY CHECK ============== -->
-    <section class="section mastery">
-      <h2>Mastery Check</h2>
-      <div class="quiz-controls">
-        <button class="btn" data-quiz-toggle="open">Open all answers</button>
-        <button class="btn" data-quiz-toggle="close">Close all</button>
-      </div>
-
-      <details>
-        <summary>1) Name two symptoms of over-engineering.</summary>
-        <div><p>Many services with overlapping concerns; incident rate rising despite “more architecture.”</p></div>
-      </details>
-      <details>
-        <summary>2) How do you prevent cache stampedes?</summary>
-        <div><p>Soft TTLs, stale-while-revalidate, request coalescing, expiration jitter, and backpressure.</p></div>
-      </details>
-      <details>
-        <summary>3) What’s the safer path to microservices?</summary>
-        <div><p>Start with a modular monolith, carve out hotspots behind clear contracts, add a gateway for policy, and invest in observability.</p></div>
-      </details>
-      <details>
-        <summary>4) Give one example of a reversible migration step.</summary>
-        <div><p>Dual-write to new table while serving reads from old; feature flag controls cutover; rollback by disabling flag.</p></div>
-      </details>
-      <details>
-        <summary>5) What’s a good rule for retries?</summary>
-        <div><p>Bounded attempts, exponential backoff with jitter, idempotency, and a total latency budget aligned to user SLOs.</p></div>
-      </details>
-      <details>
-        <summary>6) How do incidents improve designs over time?</summary>
-        <div><p>Convert findings into guardrails: runbook changes, automated checks, dashboard panels, and pre-flight review questions.</p></div>
-      </details>
-    </section>
-
-    <!-- ============== RECAP & NEXT STEPS ============== -->
-    <section class="section">
+    <section class="section" id="10-6-recap-next">
       <h2>Recap &amp; Next Steps</h2>
-      <p>
-        You learned to spot anti-patterns, translate failures into guardrails, and structure your growth.
-        Next, head to the <strong>Appendix</strong> for a consolidated checklist, common pitfalls, and a progression map.
-        Keep shipping <em>simpler</em> systems that meet promises—and grow them deliberately.
-      </p>
+      <ul>
+        <li>You can spot and remediate three high‑leverage pitfalls: over‑splitting, ignoring operational cost/observability, and misaligned SLOs.</li>
+        <li>You have a concrete ramp to advanced work: capacity planning with headroom, a pragmatic multi‑region strategy, and cost guardrails.</li>
+        <li>You’ve sampled advanced areas—global consistency, streaming, and platform engineering—and have an entry plan for each if it fits your context.</li>
+        <li>You know how to keep learning deliberately: summarize papers, run spikes with scorecards, and record ADRs with explicit “revisit when…” triggers.</li>
+      </ul>
+      <p><strong>Next:</strong> Move to the <a href="chapters/appendix.html#appendix-hero">Appendix</a> for a final coverage checklist, a progression map to the advanced tier, and a “top 10 pitfalls + fixes” quick‑reference you can print and bring to design reviews.</p>
     </section>
 
-    <!-- ============== NEXT/PREV ============== -->
-    <nav class="next-prev" aria-label="Chapter navigation">
-      <a href="chapters/ch09.html" rel="prev">Previous: Capstone Project — End-to-End System Design</a>
-      <a href="chapters/appendix.html" rel="next">Next: Appendix — Pitfalls, Checklists &amp; Progression</a>
+    <nav class="next-prev">
+      <a class="btn" rel="prev" href="chapters/ch09.html">← Previous</a>
+      <a class="btn btn-primary" rel="next" href="chapters/appendix.html">Next →</a>
     </nav>
 
-    <!-- ============== HIDDEN CHECKLIST COMMENT ============== -->
-    <!--
-    - [x] theme.css+app.js loaded
-    - [x] <base> present & correct (../)
-    - [x] Canonical nav verbatim; active link handled by app.js
-    - [x] Pager prev/next valid (ch09 ↔ appendix)
-    - [x] ≥1,200 words; ≥2 examples; 1 case study; 1 compare/contrast; 1 analogy
-    - [x] Resources 3–6 with rationale
-    - [x] Practice 3–5 with time + success criteria
-    - [x] Mastery 5–7 with answers
-    - [x] ≥8 glossarized terms; ≥1 figure
-    - [x] Head/meta ok; no TODOs
-    -->
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
+      </div>
+    </footer>
   </main>
+
+  <!--
+  CHECKLIST (Chapter 10)
+  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+  - [x] Canonical nav (Home / Appendix / Glossary only)
+  - [x] Pager prev → ch09, next → appendix; ToC numbering matches
+  - [x] Order: Hero → Numbered Sections → Resources → Recap
+  - [x] ≥1,800 words of prose (body text)
+  - [x] Images: none (no audit required)
+  - [x] Head/meta complete; no TODOs
+  -->
 </body>
 </html>

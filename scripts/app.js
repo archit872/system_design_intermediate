@@ -1,136 +1,154 @@
-/* System Design Book — Shared behaviors
-   Path: scripts/app.js
-   Responsibilities:
-   - Highlight current nav link by toggling aria-current (does NOT build nav)
-   - Toggle mobile nav visibility
-   - Toggle quiz <details> open/close within .mastery
-   - Lightweight enhancements only; no external calls
-*/
-
+/* ==========================================================================
+   BOOK WEBSITE APP
+   File: scripts/app.js
+   ========================================================================== */
 (function () {
-  const bySel = (s, r = document) => r.querySelector(s);
-  const bySelAll = (s, r = document) => Array.from(r.querySelectorAll(s));
+  "use strict";
 
-  document.addEventListener('DOMContentLoaded', () => {
-    highlightActiveNav();
-    setupMobileNavToggle();
-    setupQuizToggles();
-  });
+  // ----------------------------
+  // Utilities
+  // ----------------------------
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $all = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  /* ================
-     Active Nav
-     ================ */
-  function highlightActiveNav() {
-    const current = sanitizePath(location.pathname);
-    const baseEl = bySel('base');
-    const baseHref = baseEl ? baseEl.getAttribute('href') || '' : '';
-    // With <base>, anchor.href becomes absolute; compare by last path segment(s)
-    const links = bySelAll('.app-nav .links a');
+  // ----------------------------
+  // Mobile menu toggle
+  // ----------------------------
+  function setupMobileMenu() {
+    const toggle = $(".js-nav-toggle");
+    const menu = $(".app-nav .menu");
+    if (!toggle || !menu) return;
 
-    links.forEach(a => a.removeAttribute('aria-current'));
-
-    let bestMatch = null;
-    let bestScore = -1;
-
-    links.forEach(a => {
-      const href = a.getAttribute('href') || '';
-      const score = matchScore(current, href, baseHref);
-      if (score > bestScore) { bestScore = score; bestMatch = a; }
-    });
-
-    if (bestMatch) {
-      bestMatch.setAttribute('aria-current', 'page');
+    function setOpen(open) {
+      menu.classList.toggle("is-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
     }
-  }
-
-  function sanitizePath(p) {
-    if (!p) return 'index.html';
-    // GitHub Pages-safe default: if path ends with '/', treat as index.html
-    if (p.endsWith('/')) return p + 'index.html';
-    return p;
-  }
-
-  // Prefer exact suffix match of href against current path. Higher is better.
-  function matchScore(currentPath, href, baseHref) {
-    // Normalize to relative comparison contexts
-    const curr = currentPath.split('/').filter(Boolean); // e.g., ['chapters','ch01.html']
-    const ref = href.split('/').filter(Boolean);
-
-    // Simple cases
-    if (href === 'index.html' && currentPath.endsWith('index.html')) return 100;
-    if (ref.length && curr.length && ref.at(-1) === curr.at(-1)) return 90;
-
-    // Chapters vs root: consider base href
-    // If link points to chapters/* and current path is inside /chapters/, boost
-    const inChapters = curr.includes('chapters');
-    const refChapters = ref.includes('chapters');
-    if (inChapters && refChapters) return 80;
-
-    // Partial overlap score
-    let overlap = 0;
-    for (let i = 0; i < Math.min(curr.length, ref.length); i++) {
-      if (curr[i] === ref[i]) overlap++;
-    }
-    return 10 + overlap;
-  }
-
-  /* ================
-     Mobile Nav Toggle
-     ================ */
-  function setupMobileNavToggle() {
-    const nav = bySel('.app-nav');
-    const toggle = bySel('[data-nav-toggle]');
-    if (!nav || !toggle) return;
-
-    const setOpen = (open) => {
-      nav.classList.toggle('open', open);
-      toggle.setAttribute('aria-expanded', String(open));
-    };
-
-    toggle.addEventListener('click', () => {
-      const open = !nav.classList.contains('open');
+    toggle.addEventListener("click", () => {
+      const open = !menu.classList.contains("is-open");
       setOpen(open);
     });
-
-    // Close nav when clicking outside on small screens
-    document.addEventListener('click', (e) => {
-      if (!nav.classList.contains('open')) return;
-      const within = nav.contains(e.target);
-      if (!within) setOpen(false);
-    });
-
-    // Close on escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') setOpen(false);
+    menu.addEventListener("click", (e) => {
+      if (e.target.closest("a")) setOpen(false);
     });
   }
 
-  /* ================
-     Quiz Toggles
-     ================ */
-  function setupQuizToggles() {
-    // Button API:
-    // <div class="quiz-controls">
-    //   <button class="btn" data-quiz-toggle="open">Open all answers</button>
-    //   <button class="btn" data-quiz-toggle="close">Close all</button>
-    // </div>
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-quiz-toggle]');
-      if (!btn) return;
+  // ----------------------------
+  // <details> helpers for Mastery
+  // ----------------------------
+  function setupDetailsControls() {
+    const blocks = $all(".mastery");
+    blocks.forEach(block => {
+      const details = $all("details", block);
+      if (details.length < 2) return;
 
-      const intent = (btn.getAttribute('data-quiz-toggle') || '').toLowerCase();
-      // Scope: nearest .mastery section, else whole document
-      const scope = btn.closest('.mastery') || document;
-      const panels = bySelAll('details', scope);
+      const ctrl = document.createElement("div");
+      Object.assign(ctrl.style, {display:"flex",gap:"8px",margin:"8px 0 12px"});
 
-      if (intent === 'open') {
-        panels.forEach(d => d.open = true);
-      } else if (intent === 'close') {
-        panels.forEach(d => d.open = false);
-      } else if (intent === 'toggle') {
-        const anyClosed = panels.some(d => !d.open);
-        panels.forEach(d => d.open = anyClosed);
+      const mkBtn = (label, fn) => {
+        const b = document.createElement("button");
+        b.className = "btn"; b.type = "button"; b.textContent = label;
+        b.addEventListener("click", fn); return b;
+      };
+      ctrl.append(
+        mkBtn("Expand all answers", () => details.forEach(d => d.open = true)),
+        mkBtn("Collapse all", () => details.forEach(d => d.open = false))
+      );
+      block.prepend(ctrl);
+    });
+  }
+
+  // ----------------------------
+  // Smooth in-page anchors
+  // ----------------------------
+  function setupSmoothAnchors() {
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = a.getAttribute("href").slice(1);
+      const target = document.getElementById(id);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      history.pushState(null, "", `#${id}`);
+      target.focus({ preventScroll: true });
+    });
+  }
+
+  // ----------------------------
+  // Keyboard focus ring helper
+  // ----------------------------
+  function setupFocusRings() {
+    function onFirstTab(e) {
+      if (e.key === "Tab") {
+        document.documentElement.classList.add("user-is-tabbing");
+        window.removeEventListener("keydown", onFirstTab);
+      }
+    }
+    window.addEventListener("keydown", onFirstTab);
+  }
+
+  // ----------------------------
+  // External link hardening
+  // ----------------------------
+  function hardenExternalLinks() {
+    $all('a[target="_blank"]').forEach(a => {
+      const rel = (a.getAttribute('rel') || '').trim();
+      if (!/\bnoopener\b/i.test(rel)) {
+        a.setAttribute('rel', (rel ? rel + ' ' : '') + 'noopener');
       }
     });
   }
+
+  // ----------------------------
+  // TOC active section highlighting
+  // ----------------------------
+  function setupTocActive() {
+    const toc = $(".toc-list");
+    if (!toc) return;
+    const tocLinks = $all("a[href^='#'], a[href*='#']", toc);
+    if (!tocLinks.length) return;
+
+    // Map section id -> link
+    const map = new Map();
+    tocLinks.forEach(a => {
+      const href = a.getAttribute("href");
+      const id = href.includes("#") ? href.split("#").pop() : href.slice(1);
+      if (id) map.set(id, a);
+    });
+
+    const sections = $all("main h2[id], main h3[id]");
+    if (!sections.length) return;
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const id = entry.target.id;
+        const link = map.get(id);
+        if (!link) return;
+        if (entry.isIntersecting) {
+          // Remove existing
+          tocLinks.forEach(l => l.classList.remove("is-active"));
+          link.classList.add("is-active");
+        }
+      });
+    }, { rootMargin: "-40% 0px -55% 0px", threshold: [0, 1] });
+
+    sections.forEach(s => io.observe(s));
+  }
+
+  // ----------------------------
+  // Init
+  // ----------------------------
+  document.addEventListener("DOMContentLoaded", () => {
+    setupMobileMenu();
+    setupDetailsControls();
+    setupSmoothAnchors();
+    setupFocusRings();
+    hardenExternalLinks();
+    setupTocActive();
+  });
+
+  // Optional API
+  window.BookBuilder = { refreshActiveNav: () => {} };
 })();

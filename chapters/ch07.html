@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 07 — Operational Practices: CI/CD, Observability & Security</title>
+  <meta name="description" content="Design a CI/CD pipeline with safe deployment strategies and rollbacks, implement observability across metrics/logs/traces, and apply security fundamentals including secrets management and threat modeling. Includes Kubernetes adoption guidance.">
+  <meta property="og:title" content="Chapter 07 — Operational Practices: CI/CD, Observability & Security">
+  <meta property="og:description" content="Blue/green, canary and feature flags; rollback plans and schema changes; metrics, logs, tracing and alerting; zero‑trust, secrets, threat modeling; Kubernetes fundamentals and when to adopt it.">
+  <meta property="og:type" content="article">
+  <base href="../">
+  <link rel="stylesheet" href="styles/theme.css">
+  <script src="scripts/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="app-nav">
+    <div class="container inner">
+      <div class="brand">Intermediate System Design</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
+      <nav id="top-menu" class="menu" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="chapters/appendix.html">Appendix</a>
+        <a href="chapters/glossary.html">Glossary</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="container fade-in">
+    <section class="page-hero" id="7-hero">
+      <div class="meta"><span class="badge badge-primary">Chapter 07</span></div>
+      <h1>Operational Practices: CI/CD, Observability &amp; Security</h1>
+      <p class="abstract">Shipping code is only half the job. This chapter connects <em>how</em> you ship (CI/CD), <em>how</em> you know it’s healthy (observability), and <em>how</em> you keep users safe (security). You’ll design deployment strategies that reduce blast radius, set up telemetry that explains user experience, and apply security patterns that scale with your platform choices. We finish with pragmatic guidance on adopting Kubernetes: what it gives you, what it demands, and when serverless might be the wiser choice.</p>
+    </section>
+
+    <section class="section" id="7-1-cicd">
+      <h2>7.1 CI/CD &amp; deployment strategies</h2>
+      <p><strong>Why it matters.</strong> The fastest feature is worthless if it breaks SLOs or takes hours to roll back. CI/CD turns risky big‑bang releases into a series of safe, observable nudges.</p>
+
+      <h3 id="7-1-1-strategies">7.1.1 Blue/green, canary, and feature‑flag‑driven releases</h3>
+      <p><strong>Plain.</strong> Blue/green keeps two production environments; you flip traffic between them. Canary sends a slice of real traffic to the new version and expands if SLIs hold. Feature flags let you toggle behavior at runtime by user cohort. <strong>Formal.</strong> Each strategy reduces <em>blast radius</em> by either isolating environments (blue/green), constraining exposure (canary), or decoupling deploy from release (flags). <strong>Pitfall.</strong> Flags without lifecycle discipline become configuration debt; canaries without representative cohorts hide device‑ or region‑specific regressions.</p>
+
+      <p>Compare: <strong>Release strategies at a glance</strong></p>
+      <table class="table">
+        <thead><tr><th>Strategy</th><th>Best for</th><th>Pros</th><th>Cons</th><th>Operational notes</th></tr></thead>
+        <tbody>
+          <tr><td>Blue/Green</td><td>Few, high‑risk releases</td><td>Instant rollback; isolation</td><td>Infra cost; data sync</td><td>Keep DB migrations backward‑compatible; verify background jobs</td></tr>
+          <tr><td>Canary</td><td>Frequent releases</td><td>Real traffic; small blast radius</td><td>Longer rollouts; cohort design</td><td>Automate expand/abort rules by SLI deltas</td></tr>
+          <tr><td>Feature flags</td><td>UX experiments; hotfixes</td><td>Decouple deploy/release</td><td>Flag debt; branching logic</td><td>Tag with owner, expiry date, and rollback plan</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Worked example — Progressive canary policy.</strong> Start at 1% of traffic for 10 minutes; if <em>P95 latency</em> delta ≤ +10% and <em>error rate</em> delta ≤ +0.3% absolute, move to 5% → 10% → 25% → 50% → 100%, doubling dwell time each step. Abort if thresholds exceed; the pipeline rolls back automatically and posts a summary to the team channel with links to dashboards and the diff.</p>
+
+      <h3 id="7-1-2-rollback-migrations">7.1.2 Rollback plans and database migrations</h3>
+      <p><strong>Plain.</strong> You don’t have a release strategy until you’ve scripted a rollback. <strong>Formal.</strong> Schema evolution follows <em>expand/contract</em>: add new fields/tables, dual‑write, backfill, switch reads, then remove old after a deprecation window. <strong>Pitfall.</strong> Irreversible migrations (data loss) without backups or backfills; dual‑writes without idempotency keys leading to duplication.</p>
+
+      <pre data-lang="sql"><code>-- Expand: additive change
+ALTER TABLE orders ADD COLUMN promo_code TEXT NULL;
+-- App dual‑writes to both columns/paths; backfill in batches with retries
+-- Contract only after verifying reads and removing consumers of the old path</code></pre>
+
+      <ul>
+        <li><strong>Rollback checklist:</strong> config/flag revert, image revert, DB migration revert or forward‑fix, cache invalidation strategy, incident comms template, owner on call.</li>
+        <li><strong>Backfill discipline:</strong> rate‑limit; measure lag; prefer idempotent upserts; pause canary expansion during backfills to guard tail latency.</li>
+        <li><strong>Data invariants:</strong> add <em>fencing tokens</em> or version checks for dual‑writers; verify counts before and after.</li>
+      </ul>
+      <p><em>Takeaway:</em> Treat schema as code with rollbacks and tests. Practice reversals like fire drills.</p>
+    </section>
+
+    <section class="section" id="7-2-observability">
+      <h2>7.2 Observability</h2>
+      <p><strong>Why it matters.</strong> You can’t canary or roll back safely without trustworthy signals. Observability is not “add logs”; it is the ability to answer new questions about your system <em>without</em> shipping new code.</p>
+
+      <h3 id="7-2-1-mlt">7.2.1 Metrics (Prometheus‑style), logs, and distributed tracing (OpenTelemetry)</h3>
+      <p><strong>Plain.</strong> Metrics are numeric time series for fast alerts and dashboards. Logs are detailed, high‑cardinality records for forensics. Traces connect operations across services to explain latency. <strong>Formal.</strong> Each request carries a <em>trace id</em> and <em>span ids</em>; spans have timing, attributes, and status. <strong>Pitfall.</strong> Sampling traces so heavily that you can’t debug rare failures; logging personally identifiable information (PII) without redaction.</p>
+
+      <ul>
+        <li><strong>Metrics design:</strong> choose <em>golden signals</em> per service: request rate, error rate, latency (P95/P99), saturation (CPU/memory/queue depth). Add <em>exemplars</em> to link spikes to representative traces.</li>
+        <li><strong>Log hygiene:</strong> structured JSON; keys for request_id, user_id (or hashed), feature_flag states; redact secrets; cap line length; include sampling.</li>
+        <li><strong>Trace coverage:</strong> instrument the critical path end‑to‑end; annotate with tenant, SKU, or conversation id carefully to control cardinality.</li>
+      </ul>
+
+      <p>Compare: <strong>When to use metrics, logs, and traces</strong></p>
+      <table class="table">
+        <thead><tr><th>Tool</th><th>Great for</th><th>Weak at</th><th>Keep in mind</th></tr></thead>
+        <tbody>
+          <tr><td>Metrics</td><td>Fast detection; SLOs; trends</td><td>Root cause detail</td><td>Define labels up front; avoid unbounded cardinality</td></tr>
+          <tr><td>Logs</td><td>Forensics; rare bugs</td><td>Real‑time detection</td><td>Sample; redact; index costs grow with volume</td></tr>
+          <tr><td>Traces</td><td>Latency breakdown; causality</td><td>Global status view</td><td>Sample intelligently; add exemplars on metrics</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Worked example — Trace‑first debugging.</strong> An item page P95 degrades. Metrics show a latency jump in <em>ItemService</em>. Traces reveal 70% of spans wait on <em>PriceService</em> due to head‑of‑line blocking at the gateway. Fix: enable connection pools and per‑route concurrency limits; add a cache to short‑circuit repeated price lookups. P95 returns to baseline; traces confirm fewer blocked spans.</p>
+
+      <h3 id="7-2-2-alerting">7.2.2 Alerting best practices and reducing alert fatigue</h3>
+      <p><strong>Plain.</strong> Alert on <em>symptoms</em> that users feel, not internal counters that engineers like. <strong>Formal.</strong> Tie alerts to SLOs and <em>burn rate</em> (how quickly you consume error budget). <strong>Pitfall.</strong> Noisy alerts train humans to ignore pages.</p>
+      <ul>
+        <li><strong>Alert types:</strong> <em>Page</em> when immediate action is required; <em>Ticket</em> when it isn’t; <em>Dashboard</em> when the metric is informative.</li>
+        <li><strong>Burn‑rate alerts:</strong> combine fast and slow windows (e.g., 2× over 1 hour; 14× over 5 minutes) so you catch both smoldering and explosive failures.</li>
+        <li><strong>Ownership:</strong> every alert has a team owner, runbook link, and snooze policy; delete or fix flapping alerts.</li>
+      </ul>
+      <p><em>Takeaway:</em> Your alerting posture should reflect user promises (SLOs) and operator capacity (on‑call health).</p>
+    </section>
+
+    <section class="section" id="7-3-security">
+      <h2>7.3 Security &amp; compliance</h2>
+      <p><strong>Why it matters.</strong> Security failures erode user trust and can create existential risk. The good news: a handful of disciplined habits catch most issues before they escalate.</p>
+
+      <h3 id="7-3-1-secrets-zero-trust">7.3.1 Secrets management and zero‑trust basics</h3>
+      <p><strong>Plain.</strong> Secrets are credentials (API keys, tokens, passwords, private keys). Do not store them in code or environment files checked into source control. <strong>Formal.</strong> Use a <em>secret manager</em> (KMS‑backed) with envelope encryption, least‑privilege access policies, rotation, and audit logs. <strong>Pitfall.</strong> Leaking long‑lived keys in CI logs or crash dumps; sharing one key across services or environments.</p>
+      <ul>
+        <li><strong>Rotation:</strong> short TTLs and automated rotation reduce blast radius; prefer workload identity (OIDC‑based) over static secrets in cloud.</li>
+        <li><strong>Zero‑trust:</strong> never assume “inside is safe.” Enforce mutual TLS, authenticate service‑to‑service calls, and authorize by service identity and scope (not IP).</li>
+        <li><strong>Key hygiene:</strong> pin dependencies; verify signatures for third‑party code; maintain an SBOM (software bill of materials) for vulnerability tracking.</li>
+      </ul>
+
+      <p>Compare: <strong>Secret delivery patterns</strong></p>
+      <table class="table">
+        <thead><tr><th>Pattern</th><th>How it works</th><th>Pros</th><th>Cons</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td>Env vars via CI</td><td>CI injects at deploy</td><td>Simple; widely supported</td><td>Leak risk in logs; rotation coordination</td><td>Low‑risk, small apps; short‑lived tokens</td></tr>
+          <tr><td>Sidecar agent</td><td>Local agent fetches secrets</td><td>On‑demand rotation; audit</td><td>Extra process; failure mode</td><td>Multi‑service platforms; fine‑grained authz</td></tr>
+          <tr><td>Workload identity</td><td>Instance identity → token</td><td>No static secrets; strong isolation</td><td>Cloud‑specific; setup complexity</td><td>Managed runtimes/Kubernetes</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="7-3-2-threat-modeling">7.3.2 Threat modeling and secure‑by‑default architectures</h3>
+      <p><strong>Plain.</strong> Threat modeling asks: what are we protecting, from whom, and how might they succeed? <strong>Formal.</strong> Walk a data flow diagram; enumerate assets, trust boundaries, and threats (spoofing, tampering, repudiation, information disclosure, denial of service, elevation of privilege). <strong>Pitfall.</strong> Treating it as paperwork instead of a design tool.</p>
+      <ul>
+        <li><strong>Secure defaults:</strong> HTTPS everywhere; HSTS; least privilege; deny by default; parameterized queries; validated inputs; output encoding; safe deserialization.</li>
+        <li><strong>Secrets in CI/CD:</strong> restrict who can alter pipelines; require code review for pipeline changes; scan artifacts for embedded credentials.</li>
+        <li><strong>Data lifecycle:</strong> classify data (public, internal, confidential, regulated); set retention and deletion automation; encrypt at rest and in transit.</li>
+      </ul>
+      <p><em>Takeaway:</em> Security is a property of everyday choices, not a separate stage. Make the secure path the easy path in tooling.</p>
+    </section>
+
+    <section class="section" id="7-4-platform">
+      <h2>7.4 Platform choices: Kubernetes &amp; cloud orchestration</h2>
+      <p><strong>Why it matters.</strong> Kubernetes (K8s) can standardize deployments and scaling, but it also adds operational surface area. The decision to adopt it should follow workload needs, not resume‑driven development.</p>
+
+      <h3 id="7-4-1-kubernetes-fundamentals">7.4.1 Kubernetes architecture and orchestration fundamentals</h3>
+      <p><strong>Plain.</strong> Kubernetes schedules containers onto nodes and keeps the declared state (“there should be N replicas of service X”) in sync with the actual state. <strong>Formal.</strong> The control plane (API server, scheduler, controller manager, etcd) reconciles desired state from manifests against cluster reality; kubelets on nodes run pods and report status. <strong>Pitfall.</strong> Treating readiness/liveness probes as checkboxes; poor probes cause flapping and traffic to unhealthy pods.</p>
+
+      <ul>
+        <li><strong>Core resources:</strong> Pod (one or more containers), Deployment (replicated pods), Service (stable virtual IP and load balancer), Ingress (HTTP routing), ConfigMap/Secret (configuration), HPA (horizontal pod autoscaler).</li>
+        <li><strong>Probes:</strong> <em>Liveness</em> restarts crashed pods; <em>Readiness</em> gates traffic until dependencies are ready; <em>Startup</em> avoids premature restarts of slow starters.</li>
+        <li><strong>Scaling:</strong> HPA scales by CPU, memory, or custom metrics (QPS, queue depth). For bursty traffic, combine with <em>pod autoscaling buffers</em> and cluster autoscaler.</li>
+        <li><strong>Networking:</strong> CNI provides pod networking; use NetworkPolicies to restrict east‑west traffic (zero‑trust inside the cluster).</li>
+      </ul>
+
+      <p><strong>Worked example — Safe rollouts on K8s.</strong> Use <em>RollingUpdate</em> with maxUnavailable=0 and maxSurge=1 for latency‑sensitive services; wire metrics into <em>progressDeadlineSeconds</em> and abort on SLO deltas. For breaking changes, combine feature flags with <em>blue/green</em> via two Deployments and a Service switch.</p>
+
+      <h3 id="7-4-2-when-managed">7.4.2 When to adopt managed Kubernetes vs serverless</h3>
+      <p><strong>Plain.</strong> Managed K8s gives you flexibility and ecosystem power at the cost of cluster operations. Serverless gives you simplicity and cost elasticity at the cost of control. <strong>Formal.</strong> Choose the platform that <em>minimizes operational load</em> subject to your SLOs and compliance requirements. <strong>Pitfall.</strong> Migrating to K8s for two small services with spiky traffic; or forcing long‑lived, low‑latency streaming into FaaS and fighting cold starts forever.</p>
+
+      <p>Compare: <strong>Managed K8s vs Serverless</strong></p>
+      <table class="table">
+        <thead><tr><th>Dimension</th><th>Managed Kubernetes</th><th>Serverless (FaaS)</th><th>Guidance</th></tr></thead>
+        <tbody>
+          <tr><td>Control</td><td>High (tuning, custom runtimes)</td><td>Low (provider constraints)</td><td>K8s for complex networking, custom sidecars</td></tr>
+          <tr><td>Ops burden</td><td>Medium‑high (upgrades, nodes)</td><td>Low (no servers)</td><td>Serverless for intermittent, bursty tasks</td></tr>
+          <tr><td>Latency</td><td>Stable</td><td>Jitter; cold starts</td><td>Provisioned concurrency if you must use FaaS for latency‑sensitive endpoints</td></tr>
+          <tr><td>Cost model</td><td>Capacity‑based</td><td>Per‑invocation</td><td>Right‑size; beware idle clusters vs hot functions</td></tr>
+          <tr><td>Ecosystem</td><td>Rich (operators, CRDs)</td><td>Rich per‑provider</td><td>Prefer managed add‑ons to DIY operators early on</td></tr>
+        </tbody>
+      </table>
+
+      <p><em>Rule of thumb:</em> If you have &lt; 4 services, no stateful workloads, and unpredictable spikes, prefer serverless. If you need custom networking, sidecars (auth/mesh), or steady multi‑service traffic, managed K8s can centralize operations and policy.</p>
+    </section>
+
+    <section class="section" id="7-5-applied">
+      <h2>7.5 Applied scenarios</h2>
+      <p><strong>Scenario A — CI/CD for chat presence.</strong> Implement a canary that targets mobile networks first, since they are more sensitive to timeouts. Collect traces with <em>network_type</em> attribute (Wi‑Fi/4G/5G). Abort promotion if P95 send‑to‑receive delta &gt; 15% for mobile while desktop remains green; this catches gateway compression and retry corner cases early.</p>
+      <p><strong>Scenario B — Observability for the metrics pipeline.</strong> Expose <em>produce→commit latency</em>, <em>consumer lag</em>, and <em>drop rate</em> as first‑class metrics. Attach trace exemplars to spikes. Alert with burn‑rate pairs (fast/slow). Add a runbook to shed non‑critical producers when lag exceeds thresholds.</p>
+      <p><strong>Scenario C — Secrets for an e‑commerce importer.</strong> Use workload identity to fetch temporary credentials for object storage; rotate keys daily; store no static keys on disk. Add a pre‑commit hook to scan for secrets and block merges that include potential credentials.</p>
+      <p><strong>Scenario D — Deciding on Kubernetes.</strong> You run five HTTP APIs, one background worker, and a Postgres instance. Traffic is steady; you need mutual TLS and policy enforcement. Adopt managed K8s: use a service mesh for mTLS and rate limiting; deploy HPA on QPS and queue depth; keep Postgres managed (outside the cluster). Revisit serverless for the nightly report generator.</p>
+    </section>
+
+    <section class="section" id="7-6-mini-exercises">
+      <h2>7.6 Mini‑exercises</h2>
+      <ol>
+        <li><strong>Design a rollout.</strong> Write the canary steps, SLI thresholds, and abort criteria for your most critical endpoint. Include a rollback script outline and the dashboards you’ll watch.</li>
+        <li><strong>Instrument a trace.</strong> Add trace context to a request path end‑to‑end. Attach at least three attributes you can filter on (tenant, endpoint, cache_hit) and one event for retries.</li>
+        <li><strong>Alert audit.</strong> List your current alerts. For each, classify: page/ticket/dashboard. Delete or merge noisy alerts; add burn‑rate pairs for SLOs.</li>
+        <li><strong>Threat model.</strong> Draw a data flow for your capstone. Identify trust boundaries and two concrete threats. Add two mitigations that are enforceable by tooling.</li>
+      </ol>
+    </section>
+
+    <section class="section" id="7-7-resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><strong>Kubernetes documentation</strong> — architecture and components for orchestration fundamentals. <em>Why:</em> informs readiness probes, HPA, and service design. <em>(Free)</em></li>
+        <li><strong>OpenTelemetry docs</strong> — metrics, logs, and traces standards. <em>Why:</em> consistent instrumentation across services. <em>(Free)</em></li>
+        <li><strong>Google SRE resources</strong> — SLOs, error budgets, alerting, incident playbooks. <em>Why:</em> tie operations to user value. <em>(Free)</em></li>
+        <li><strong>AWS Well‑Architected Framework</strong> — reliability and security lenses. <em>Why:</em> structured decision prompts for deployment and secrets. <em>(Free)</em></li>
+        <li><strong>Security engineering checklists</strong> — threat modeling and secure defaults. <em>Why:</em> repeatable processes and tooling hooks. <em>(Free)</em></li>
+      </ul>
+    </section>
+
+    <section class="section" id="7-8-recap-next">
+      <h2>Recap &amp; Next Steps</h2>
+      <ul>
+        <li>You can release with lower risk using blue/green, canary, and feature flags, and you have a concrete rollback plan including schema changes.</li>
+        <li>You can instrument metrics, logs, and traces that illuminate user‑visible SLIs, with alerting that respects error budgets instead of paging on every wiggle.</li>
+        <li>You can manage secrets safely, adopt zero‑trust habits, and use lightweight threat modeling to shape designs and pipelines.</li>
+        <li>You can evaluate Kubernetes vs serverless by operational load and SLOs, and run K8s fundamentals (probes, HPA, policies) when it’s the right fit.</li>
+      </ul>
+      <p><strong>Next:</strong> Head to <a href="chapters/ch08.html#8-hero">Chapter 8 — Patterns, Trade‑offs &amp; Architecture Anti‑Patterns</a>, where we connect recurring patterns (CQRS, event sourcing, bulkheads) to real constraints, and learn to spot distributed monoliths before they bite.</p>
+    </section>
+
+    <nav class="next-prev">
+      <a class="btn" rel="prev" href="chapters/ch06.html">← Previous</a>
+      <a class="btn btn-primary" rel="next" href="chapters/ch08.html">Next →</a>
+    </nav>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
+      </div>
+    </footer>
+  </main>
+
+  <!--
+  CHECKLIST (Chapter 07)
+  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+  - [x] Canonical nav (Home / Appendix / Glossary only)
+  - [x] Pager prev → ch06, next → ch08; ToC numbering matches
+  - [x] Order: Hero → Numbered Sections → Resources → Recap
+  - [x] ≥1,800 words of prose (body text)
+  - [x] Images: none (no audit required)
+  - [x] Head/meta complete; no TODOs
+  -->
+</body>
+</html>
