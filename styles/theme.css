@@ -161,8 +161,9 @@ tr:last-child td{border-bottom:none}
 /* ------------------------------
    12) Figures & Media
    ------------------------------ */
-figure{margin:16px 0;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-elev);box-shadow:var(--shadow-sm);overflow:hidden}
-figcaption{padding:8px 12px;font-size:.9rem;color:var(--muted);border-top:1px solid var(--border)}
+figure{margin:16px 0;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-elev);box-shadow:var(--shadow-sm);overflow:hidden;text-align:center}
+figure img{margin-inline:auto}
+figcaption{padding:8px 12px;font-size:.9rem;color:var(--muted);border-top:1px solid var(--border);text-align:center}
 
 /* ------------------------------
    13) Next/Prev Pager
