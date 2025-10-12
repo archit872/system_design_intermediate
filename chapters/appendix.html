@@ -2,188 +2,261 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Appendix — Coverage Checklist & Progression Map</title>
-  <meta name="description" content="Quick‑reference appendix with a coverage checklist mapped to chapters, a progression plan from Beginner→Intermediate→Advanced, a top‑10 pitfalls + fixes list, and review templates you can print and bring to design sessions.">
-  <meta property="og:title" content="Appendix — Coverage Checklist & Progression Map">
-  <meta property="og:description" content="Coverage checklist, readiness scorecard, top 10 pitfalls and fixes, progression map, and review templates for teams and solo learners.">
-  <meta property="og:type" content="article">
   <base href="../">
-  <link rel="stylesheet" href="styles/theme.css">
-  <script src="scripts/app.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Appendix — Pitfalls, Review, and Progression</title>
+  <meta name="description" content="A compact field guide: top pitfalls with quick fixes, review checklists, interview drills, and a progression roadmap from Intermediate to Advanced System Design.">
+  <meta property="og:title" content="Appendix — Pitfalls, Review, and Progression">
+  <meta property="og:description" content="Use this appendix as your practical playbook: anti-patterns, remediation steps, checklists, and a step-by-step progression plan for the next 90 days.">
+  <meta property="og:type" content="article">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="stylesheet" href="../styles/theme.css">
+  <script src="../scripts/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
 
-  <header class="app-nav">
+  <!-- Canonical Top Navigation (copy verbatim to all pages) -->
+  <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">Intermediate System Design</div>
-      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
-      <nav id="top-menu" class="menu" aria-label="Primary">
+      <div class="brand">System Design — Intermediate</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
+      <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </nav>
+      </div>
+    </div>
+  </nav>
+
+  <header class="page-hero" id="appendix-hero">
+    <div class="container">
+      <div class="meta">
+        <span class="badge badge-primary">Appendix</span>
+        <span class="badge">Playbook &amp; Progression</span>
+      </div>
+      <h1>Appendix — Pitfalls, Review, and Progression</h1>
+      <p class="abstract">A practical companion to the book. Use these checklists and playbooks to review designs, prepare for interviews, and guide production changes. Start with the top pitfalls and their quick fixes, then work through review questions, drills, and a 90-day progression plan toward advanced system design.</p>
     </div>
   </header>
 
-  <main id="main" class="container fade-in">
-    <section class="page-hero" id="appendix-hero">
-      <div class="meta"><span class="badge badge-secondary">Appendix</span></div>
-      <h1>Coverage Checklist &amp; Progression Map</h1>
-      <p class="abstract">Use this appendix as a quick reference and a quality gate. It includes a coverage checklist tied to chapters, a readiness scorecard, a <em>Top 10 Pitfalls + Fixes</em> list, and a progression plan from Beginner → Intermediate → Advanced. Print sections as needed for reviews and retros.</p>
-    </section>
+  <main id="main" class="container">
+    <!-- A. Top 10 Pitfalls -->
+    <section class="section" id="apx-top10">
+      <h2>A. Top 10 Pitfalls &amp; Quick Fixes</h2>
+      <p>These patterns account for a majority of interview misses and production incidents. Each item includes a concise <em>symptom</em>, a <em>why it happens</em>, and a <em>fix you can ship this week</em>.</p>
 
-    <section class="section" id="app-a-coverage">
-      <h2>Appendix A — Coverage Checklist</h2>
-      <p>Mark each item as you complete the relevant chapter content and exercise. The checklist is organized by the book’s flow so you can use it for project readiness as well.</p>
-      <table class="table">
-        <thead>
-          <tr><th>Area</th><th>What good looks like</th><th>Chapter(s)</th><th>Status</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Foundations</td><td>Beginner concepts refreshed; scope and milestones defined</td><td>Ch1</td><td>[ ]</td></tr>
-          <tr><td>Scalable components</td><td>LBs, caches, queues, CDNs, databases mapped to requirements with trade‑offs</td><td>Ch2</td><td>[ ]</td></tr>
-          <tr><td>Data & storage</td><td>Store selection by workload; partitioning; indexing; denormalization plan</td><td>Ch3</td><td>[ ]</td></tr>
-          <tr><td>Boundaries & integration</td><td>Bounded contexts; ownership; sync vs async; contracts and versioning</td><td>Ch4</td><td>[ ]</td></tr>
-          <tr><td>Reliability & SRE</td><td>SLIs/SLOs written; error‑budget policy; runbooks; incident roles</td><td>Ch5</td><td>[ ]</td></tr>
-          <tr><td>Consistency & concurrency</td><td>Consistency model chosen; concurrency strategy; reconciliation plan</td><td>Ch6</td><td>[ ]</td></tr>
-          <tr><td>CI/CD & observability & security</td><td>Rollout strategy; tracing; burn‑rate alerts; secrets & threat model</td><td>Ch7</td><td>[ ]</td></tr>
-          <tr><td>Patterns & anti‑patterns</td><td>Pattern fit matrix; saga plan; bulkheads/breakers; anti‑pattern refactor path</td><td>Ch8</td><td>[ ]</td></tr>
-          <tr><td>Capstone project</td><td>Delivered prototype with SLO dashboards, chaos + load results, postmortem</td><td>Ch9</td><td>[ ]</td></tr>
-          <tr><td>Pitfalls & next steps</td><td>Top pitfalls audited; advanced learning plan drafted</td><td>Ch10</td><td>[ ]</td></tr>
-        </tbody>
-      </table>
+      <ol class="spaced">
+        <li id="apx-top10-1">
+          <h3>A.1 Caching Personal Data at the Edge</h3>
+          <p><strong>Symptom:</strong> Users intermittently see others’ content; CDN shows high hit ratio and 200 OKs.</p>
+          <p><strong>Why:</strong> Missing <code>Vary</code> on auth-related headers or shared cache keys for personalized responses.</p>
+          <p><strong>Fix:</strong> Mark personalized endpoints <code>Cache-Control: private, no-store</code>. Move public data to cacheable endpoints with strong validators (<code>ETag</code>). Use token-bound keys or segment-specific variants when partial personalization is required.</p>
+        </li>
 
-      <h3 id="app-a-readiness">A.1 Readiness scorecard</h3>
-      <p>Rate each dimension 0–3 (0 = not started, 3 = excellent). A score ≥ 22 suggests you are ready for an external architecture review.</p>
-      <table class="table">
-        <thead><tr><th>Dimension</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead>
-        <tbody>
-          <tr><td>SLIs/SLOs</td><td>None</td><td>Drafted</td><td>Measured</td><td>Burn‑rate alerts + runbooks</td></tr>
-          <tr><td>Data design</td><td>Ad hoc</td><td>Schema only</td><td>Indexes/partitions</td><td>Hot‑key plan + rebuild paths</td></tr>
-          <tr><td>Boundaries</td><td>Shared DB</td><td>APIs drafted</td><td>Ownership clarified</td><td>CDC tests + independent deploys</td></tr>
-          <tr><td>CI/CD</td><td>Manual</td><td>Build only</td><td>Staging + smoke</td><td>Progressive canary + auto‑rollback</td></tr>
-          <tr><td>Observability</td><td>Logs</td><td>Metrics</td><td>Traces E2E</td><td>Dashboards tied to SLIs</td></tr>
-          <tr><td>Security</td><td>Secrets in env files</td><td>Central store</td><td>Rotation + mTLS</td><td>Least‑privilege + SBOM</td></tr>
-          <tr><td>Resilience</td><td>None</td><td>Retries</td><td>Breakers + bulkheads</td><td>Chaos tested</td></tr>
-          <tr><td>Cost</td><td>Unknown</td><td>Estimate</td><td>Budget set</td><td>Unit economics + telemetry budget</td></tr>
-        </tbody>
-      </table>
-    </section>
+        <li id="apx-top10-2">
+          <h3>A.2 Breaking APIs with “Minor” Changes</h3>
+          <p><strong>Symptom:</strong> Client errors spike after adding or renaming fields.</p>
+          <p><strong>Why:</strong> Silent contract changes, strict client validation, no versioning window.</p>
+          <p><strong>Fix:</strong> Enforce additive-only changes by default; introduce <code>/v{n}/</code> or media-type versions for breaks; keep two adjacent versions live; add contract tests to CI and publish deprecation dates.</p>
+        </li>
 
-    <section class="section" id="app-c-pitfalls">
-      <h2>Top 10 Pitfalls + Fixes</h2>
-      <ol>
-        <li><strong>Premature microservices.</strong> <em>Smell:</em> lock‑step deploys; chatty calls. <em>Fix:</em> consolidate into one deployable per cohesive capability; keep API boundary; re‑split later.</li>
-        <li><strong>Shared databases across services.</strong> <em>Smell:</em> cross‑service writes; implicit invariants. <em>Fix:</em> single‑writer ownership; read models/CDC for others; contract tests.</li>
-        <li><strong>Weak SLIs.</strong> <em>Smell:</em> CPU “green” while users complain. <em>Fix:</em> measure client‑visible latency/success; add freshness where relevant; tie alerts to burn rate.</li>
-        <li><strong>Cache stampedes.</strong> <em>Smell:</em> origin spikes on TTL boundary. <em>Fix:</em> jitter TTLs, request coalescing, background refresh, and cache tags.</li>
-        <li><strong>Hot partitions.</strong> <em>Smell:</em> one shard’s p99 far worse. <em>Fix:</em> better shard keys, salting, adaptive rebalancing; backfills with idempotency.</li>
-        <li><strong>Missing idempotency.</strong> <em>Smell:</em> duplicate orders on retries. <em>Fix:</em> idempotency keys on write endpoints; de‑dup at sinks.</li>
-        <li><strong>Unsafe rollouts.</strong> <em>Smell:</em> “all‑or‑nothing” deploys. <em>Fix:</em> canary steps with SLI gates; 1‑click rollback; expand/contract migrations.</li>
-        <li><strong>Telemetry bloat.</strong> <em>Smell:</em> soaring log bills; slow queries. <em>Fix:</em> structured logs, sampling, metric cardinality caps, tiered retention.</li>
-        <li><strong>Secrets leakage.</strong> <em>Smell:</em> keys in repo/CI logs. <em>Fix:</em> secret manager or workload identity; rotation and audit; pre‑commit scanners.</li>
-        <li><strong>Unrehearsed incidents.</strong> <em>Smell:</em> chaos during chaos. <em>Fix:</em> roles (IC/Comms/Op/Scribe), templates, and game days with abort criteria.</li>
+        <li id="apx-top10-3">
+          <h3>A.3 One Database, Many Owners</h3>
+          <p><strong>Symptom:</strong> A change for team A breaks team B; deploys require coordination across the org.</p>
+          <p><strong>Why:</strong> Shared mutable schemas across domains, poor boundaries.</p>
+          <p><strong>Fix:</strong> Assign a single owner per data entity; introduce read models for cross-domain consumers; apply the outbox pattern for change propagation.</p>
+        </li>
+
+        <li id="apx-top10-4">
+          <h3>A.4 Average-Driven Capacity Planning</h3>
+          <p><strong>Symptom:</strong> System fine in tests, melts during peak or tenant surges.</p>
+          <p><strong>Why:</strong> Ignoring skew and tails; fan-out amplifies latency variance.</p>
+          <p><strong>Fix:</strong> Plan with P95/P99 and Zipf-like key distributions; introduce virtual shards for hot tenants; budget headroom 20–40% below the knee of the throughput–latency curve.</p>
+        </li>
+
+        <li id="apx-top10-5">
+          <h3>A.5 Retries without Budgets or Backoff</h3>
+          <p><strong>Symptom:</strong> A minor dependency hiccup cascades into a self-DDoS.</p>
+          <p><strong>Why:</strong> Sync retries defaulting to tight loops; concurrent autoscalers magnify load.</p>
+          <p><strong>Fix:</strong> Use exponential backoff + jitter; cap global retry rate; add circuit breakers and server-side backpressure. Make retries idempotent.</p>
+        </li>
+
+        <li id="apx-top10-6">
+          <h3>A.6 DR that Isn’t</h3>
+          <p><strong>Symptom:</strong> “Passive” region fails during the only real failover.</p>
+          <p><strong>Why:</strong> Unpracticed runbooks; configuration bit-rot; untested data promotion.</p>
+          <p><strong>Fix:</strong> Automate quarterly failovers; measure RTO/RPO; script promotion and cache warmups; alert on replication lag and failover health.</p>
+        </li>
+
+        <li id="apx-top10-7">
+          <h3>A.7 Observability without User SLIs</h3>
+          <p><strong>Symptom:</strong> Green dashboards during user-visible incidents.</p>
+          <p><strong>Why:</strong> Host metrics without user-journey SLIs; no traces tied to metrics.</p>
+          <p><strong>Fix:</strong> Put success rate and P95/P99 for top journeys on the first dashboard row; link metrics to exemplars and traces; page on error-budget burn.</p>
+        </li>
+
+        <li id="apx-top10-8">
+          <h3>A.8 Schema Changes in One Shot</h3>
+          <p><strong>Symptom:</strong> DB locks and timeouts during “simple” alters.</p>
+          <p><strong>Why:</strong> Blocking <code>ALTER</code> under load; coupling app and DB deploys.</p>
+          <p><strong>Fix:</strong> Expand/contract: add nullable columns; backfill in batches; flip reads behind a flag; remove old columns later using online tools.</p>
+        </li>
+
+        <li id="apx-top10-9">
+          <h3>A.9 Secrets in Code or Images</h3>
+          <p><strong>Symptom:</strong> Keys discovered in logs or repos; difficult rotations.</p>
+          <p><strong>Why:</strong> Convenience beats hygiene; missing workload identity.</p>
+          <p><strong>Fix:</strong> Replace static keys with workload identity or short-lived credentials; centralize secrets; automate rotation and usage alerts.</p>
+        </li>
+
+        <li id="apx-top10-10">
+          <h3>A.10 Flag Debt</h3>
+          <p><strong>Symptom:</strong> Unpredictable behavior; “works for me” with stale flag states.</p>
+          <p><strong>Why:</strong> Flags never removed; no owners or expiry dates.</p>
+          <p><strong>Fix:</strong> Track owner and expiry on each flag; add lint rules and dashboards; delete flags after rollout; create emergency kill switches for risky features.</p>
+        </li>
       </ol>
     </section>
 
-    <section class="section" id="app-b-progression">
-      <h2>Appendix B — Progression Map (Beginner → Intermediate → Advanced)</h2>
-      <p>The progression synthesizes the study plan into a concrete ladder. Use it to plan personal growth or to structure a team upskilling program.</p>
+    <!-- B. Review & Drills -->
+    <section class="section" id="apx-review">
+      <h2>B. Design Review Checklist</h2>
+      <p>Run this checklist before you ship a design document or walk into an interview. Each item should be answerable in one or two crisp sentences.</p>
 
-      <h3 id="app-b-1-beginner">B.1 Beginner → Intermediate (this book)</h3>
-      <ul>
-        <li><strong>Outcome:</strong> name architecture pieces; draw simple diagrams; explain baseline trade‑offs.</li>
-        <li><strong>Bridge tasks:</strong> implement a microservice + DB; add tracing; run a small load test; write your first SLOs.</li>
-        <li><strong>Milestone for entry:</strong> you can design service boundaries, select storage/caching, author SLOs, deploy with CI/CD, and run one fault‑injection test.</li>
+      <ul class="checklist">
+        <li><strong>Scope:</strong> What are the top 2–3 user journeys and their SLOs (success %, P95/P99)?</li>
+        <li><strong>Scale:</strong> What are peak QPS, data size, and skew (e.g., 1% keys drive 25% traffic)?</li>
+        <li><strong>State:</strong> For each entity, who is source of truth? What replicas exist and with what consistency?</li>
+        <li><strong>Partitioning:</strong> What keys and shard counts? How will you handle hotspots and reshard?</li>
+        <li><strong>Communication:</strong> Which calls are sync/async? Retries, idempotency, and backpressure policies?</li>
+        <li><strong>Caching:</strong> Where (browser/CDN/service/DB)? TTLs, invalidation triggers, and stampede protection?</li>
+        <li><strong>Reliability:</strong> Fault domains and redundancy (N+1, multi-AZ/region). Graceful degradation paths?</li>
+        <li><strong>Observability:</strong> SLIs/SLOs, key dashboards, traces, error-budget policy, and alert routing?</li>
+        <li><strong>Security:</strong> User and service identity, authorization model, secrets management, and egress controls?</li>
+        <li><strong>Evolution:</strong> Versioning plan, expand/contract migrations, rollout strategy, and rollback button?</li>
+        <li><strong>Cost:</strong> Unit cost (₹/1k requests, ₹/order). Top 3 cost levers and risks to SLOs?</li>
       </ul>
 
-      <h3 id="app-b-2-advanced">B.2 Intermediate → Advanced</h3>
+      <h3 id="apx-drills">B.1 Interview & Whiteboard Drills</h3>
+      <ol>
+        <li><strong>URL Shortener (Re-evaluation):</strong> Redo from Chapter 1 with explicit SLOs and CAP trade-offs. Add rate-limiting and analytics events; quantify hot-key handling.</li>
+        <li><strong>Chat Backend (Scalable):</strong> Model fan-out, message persistence, and real-time delivery with WebSockets or gRPC streams; plan offline delivery and backpressure.</li>
+        <li><strong>Feed Service:</strong> Choose push vs pull vs hybrid; specify ranking latency budgets and cache invalidation.</li>
+      </ol>
+
+      <h3 id="apx-templates">B.2 One-Page Design Template</h3>
+      <pre data-lang="md"><code>**Problem &amp; SLOs**: Journeys + SLIs/SLOs
+**Scale Model**: QPS, skew, data growth
+**Architecture**: Edge, services, state, messaging
+**Consistency**: For each entity: SoT → replicas → staleness
+**Reliability**: Fault domains, redundancy, degradation
+**Observability**: Dashboards, alerts, traces
+**Security**: IAM, secrets, network policy
+**Evolution**: Versioning, migrations, rollout/rollback
+**Cost**: Unit economics + levers
+**Risks &amp; Tests**: Top 5 risks + test plan</code></pre>
+    </section>
+
+    <!-- C. Progression Map -->
+    <section class="section" id="apx-progression">
+      <h2>C. Progression Map — Beginner → Intermediate → Advanced</h2>
+      <p>Use this map to plan your next quarter. Each level adds capabilities without discarding earlier practices.</p>
+
+      <table>
+        <thead>
+          <tr><th>Level</th><th>Focus</th><th>Skills &amp; Artifacts</th><th>Exit Criteria</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Beginner</td>
+            <td>Core concepts &amp; vocabulary</td>
+            <td>Latency/throughput/availability; simple read-heavy designs; single region; basic caching</td>
+            <td>Can design a CRUD system with clear SLOs and a single data store</td>
+          </tr>
+          <tr>
+            <td>Intermediate</td>
+            <td>Applied trade-offs</td>
+            <td>Partitioning, replication patterns, graceful degradation, tracing, CDNs, error budgets, cost basics</td>
+            <td>Can design and defend a scalable, reliable system with quantified choices</td>
+          </tr>
+          <tr>
+            <td>Advanced</td>
+            <td>Global scale &amp; research-grade depth</td>
+            <td>Consensus, geo-replication, formal performance modeling, zero-trust meshes, multi-tenant isolation</td>
+            <td>Can architect multi-region systems; critique alternatives with data and controlled experiments</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 id="apx-90d">C.1 90-Day Plan</h3>
+      <ol>
+        <li><strong>Days 1–21:</strong> Rebuild two past designs using the one-page template; add SLIs/SLOs and cost estimates.</li>
+        <li><strong>Days 22–45:</strong> Implement tracing on one production flow; add burn-rate alerts; run one incident game day.</li>
+        <li><strong>Days 46–70:</strong> Execute a safe schema expand/contract on a non-trivial table with backfill and rollback.</li>
+        <li><strong>Days 71–90:</strong> Deliver a capstone slice (e.g., feed or checkout) with a benchmark report and unit cost brief.</li>
+      </ol>
+    </section>
+
+    <!-- D. Quick Reference Tables -->
+    <section class="section" id="apx-quickref">
+      <h2>D. Quick Reference</h2>
+
+      <h3 id="apx-quickref-cache">D.1 Cache Invalidation Cheats</h3>
       <ul>
-        <li><strong>Outcome:</strong> design multi‑region, high‑scale systems; perform capacity planning; run platform components.</li>
-        <li><strong>Bridge tasks:</strong>
-          <ul>
-            <li>Multi‑region replication exercise (active‑passive with failover drills).</li>
-            <li>Capacity planning with unit economics and a telemetry budget.</li>
-            <li>Platform engineering mini‑project (self‑service templates, CI/CD, SLO dashboards).</li>
-          </ul>
-        </li>
-        <li><strong>Milestone for entry:</strong> you can demonstrate a production‑like capstone (Ch9) and articulate trade‑offs with data.</li>
+        <li><strong>Default:</strong> TTL + versioned keys (<code>resource:{id}:v3</code>)</li>
+        <li><strong>High-value objects:</strong> Outbox/CDC event → targeted delete/update</li>
+        <li><strong>Stampede control:</strong> Singleflight + <em>stale-while-revalidate</em> + TTL jitter</li>
       </ul>
 
-      <h3 id="app-b-3-rubrics">B.3 Review & learning cadence</h3>
-      <p>Adopt a cadence that matches real‑world teams:</p>
+      <h3 id="apx-quickref-capacity">D.2 Capacity Sanity Checks</h3>
       <ul>
-        <li><strong>Weekly:</strong> one‑page update + a passing test + tiny demo.</li>
-        <li><strong>After Ch3, Ch5, Ch8:</strong> design review sessions (data, reliability, patterns).</li>
-        <li><strong>Per milestone:</strong> risk burndown reviewed; ADRs updated; SLO burn rate checked.</li>
+        <li>Pick a target P95 and find the knee via step-load; operate 20–40% below.</li>
+        <li>Provision N+1 at steady-state utilization 50–70% for stateless tiers.</li>
+        <li>Watch tail amplifiers: fan-out width, queue depths, GC pauses, cold starts.</li>
+      </ul>
+
+      <h3 id="apx-quickref-security">D.3 Security Defaults</h3>
+      <ul>
+        <li>Users: OIDC Authorization Code + PKCE; sessions via HTTP-only cookies or BFF.</li>
+        <li>Services: mTLS + workload identity; audience-bound JWTs.</li>
+        <li>Data: TLS 1.3 everywhere; envelope encryption at rest; secrets manager with rotation.</li>
       </ul>
     </section>
 
-    <section class="section" id="app-d-templates">
-      <h2>Appendix C — Review & Template Pack</h2>
-      <p>These lightweight templates fit on a page and keep discussions grounded in user value and measurable outcomes.</p>
-
-      <h3 id="app-d-1-slo-template">C.1 SLO definition template</h3>
-      <pre data-lang="md"><code>### Service: ___ (owner: ___)
-**User Journey:** ___
-**SLI(s):**
-- Availability = success/total at ___
-- Latency P95 &lt; ___ ms measured at ___
-- Freshness P99 &lt; ___ s for ___
-**SLO(s):** target ___ over ___ days
-**Burn‑rate alerts:** fast ___×/5m; slow ___×/1h
-**Dashboards:** links ___
-**Runbook:** link ___</code></pre>
-
-      <h3 id="app-d-2-postmortem">C.2 Blameless postmortem template</h3>
-      <pre data-lang="md"><code>### Summary
-**Impact:** ___ users; duration ___; business effect ___
-**Timeline:** key events with timestamps
-**Detection:** when/how; gaps
-**Contributing factors:** technical + org
-**What worked:** ___
-**Actions:** owner, due date, test to verify
-**Follow‑up review date:** ___</code></pre>
-
-      <h3 id="app-d-3-adr">C.3 Architecture Decision Record (ADR) snippet</h3>
-      <pre data-lang="md"><code># ADR-___: Decision Title
-**Context:** problem, constraints
-**Decision:** chosen option
-**Alternatives considered:** A, B (why rejected)
-**Consequences:** pros/cons, risk
-**Revisit when:** signal or metric threshold</code></pre>
+    <!-- E. Review Exercises -->
+    <section class="section" id="apx-exercises">
+      <h2>E. Review Exercises</h2>
+      <p>Pick one per week. Keep artifacts: diagrams, SLIs/SLOs, trade-off tables, and a short retrospective.</p>
+      <ol>
+        <li><strong>Design a Multi-Region Read Strategy:</strong> Choose latency-based routing, read replicas, and a single write region; specify RTO/RPO and failover drills.</li>
+        <li><strong>Optimize an API:</strong> Add CDN headers, Redis read-through, and stampede protection. Report before/after P95 and unit cost.</li>
+        <li><strong>Secure a Webhook:</strong> HMAC signatures with rotation, replay windows, idempotency keys, and tenant scoping.</li>
+        <li><strong>Run a Game Day:</strong> Inject 250 ms DB latency and zone loss. Measure MTTR, breakers, and degradation paths.</li>
+      </ol>
     </section>
 
-    <section class="section" id="app-e-print">
-      <h2>Print tips</h2>
-      <ul>
-        <li>Use your browser’s print dialog; dark theme is legible on white via built‑in <em>styles/theme.css</em> print rules.</li>
-        <li>Print <em>Appendix A</em> for live reviews and <em>Appendix C</em> for incidents and design decisions.</li>
-        <li>Update digital copies after reviews so your design history remains a living document.</li>
-      </ul>
+    <!-- F. Glossary Pointers -->
+    <section class="section" id="apx-glossary-links">
+      <h2>F. Glossary Pointers</h2>
+      <p>Before interviews or design reviews, refresh on these terms in the <a href="chapters/glossary.html">Glossary</a>: <em>SLI/SLO/SLA</em>, <em>RPO/RTO</em>, <em>idempotency</em>, <em>quorum</em>, <em>outbox</em>, <em>hedged requests</em>, <em>bulkhead</em>, <em>eventual consistency</em>, <em>expand/contract</em>, and <em>zero trust</em>.</p>
     </section>
 
+    <!-- Pager -->
     <nav class="next-prev">
-      <a class="btn" rel="prev" href="chapters/ch10.html">← Previous</a>
-      <a class="btn btn-primary" rel="next" href="chapters/glossary.html">Next →</a>
+      <a class="prev" rel="prev" href="chapters/ch10.html"><span class="muted">Prev</span><span>← Chapter 10 — Common Pitfalls and Next Steps</span></a>
+      <a class="next" rel="next" href="chapters/glossary.html"><span class="muted">Next</span><span>Glossary →</span></a>
     </nav>
 
-    <footer class="site-footer">
-      <div class="container">
-        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
-      </div>
-    </footer>
+    <!--
+    CHECKLIST
+    - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+    - [x] Canonical nav (Home / Appendix / Glossary only)
+    - [x] Pager prev/next valid (Prev→Ch10, Next→Glossary)
+    - [x] Clear ordering: Top 10 Pitfalls → Review → Progression → Quick Reference → Exercises
+    - [x] No external images (image audit N/A)
+    - [x] Head/meta complete; no TODOs
+    -->
   </main>
-
-  <!--
-  CHECKLIST (Appendix)
-  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
-  - [x] Canonical nav (Home / Appendix / Glossary only)
-  - [x] Pager prev → ch10, next → glossary
-  - [x] Includes Coverage Checklist, Progression Map, Top 10 Pitfalls + Fixes, and templates
-  - [x] Head/meta complete; no TODOs
-  -->
 </body>
 </html>

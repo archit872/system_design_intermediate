@@ -2,229 +2,234 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Intermediate System Design — Book Overview</title>
-  <meta name="description" content="A dark-themed, chapter-based curriculum that elevates you from beginner system design fluency to practical, production-grade distributed systems with a deployable capstone.">
-  <meta property="og:title" content="Intermediate System Design — Book Overview">
-  <meta property="og:description" content="From beginner concepts to production-grade systems: boundaries, storage patterns, SLOs, SRE, CI/CD, observability, security, and a full capstone.">
-  <meta property="og:type" content="website">
   <base href="./">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>System Design — Intermediate Level · Book Website</title>
+  <meta name="description" content="A multi-chapter, dark-themed book site that teaches applied system design: scalability, reliability, data, consistency, security, and trade-offs.">
+  <meta property="og:title" content="System Design — Intermediate Level">
+  <meta property="og:description" content="From fundamentals to applied design: scalable architectures, data strategies, communication, reliability, performance, security, and a capstone system.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b0f14">
   <link rel="stylesheet" href="styles/theme.css">
   <script src="scripts/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
-  
-  <header class="app-nav">
+
+  <!-- Canonical Top Navigation (copy verbatim to all pages) -->
+  <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">Intermediate System Design</div>
-      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
-      <nav id="top-menu" class="menu" aria-label="Primary">
+      <div class="brand">System Design — Intermediate</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
+      <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </nav>
+      </div>
+    </div>
+  </nav>
+
+  <header class="page-hero">
+    <div class="container">
+      <div class="meta">
+        <span class="badge badge-primary">Intermediate</span>
+        <span class="badge">Dark theme</span>
+        <span class="badge">Vanilla HTML/CSS/JS</span>
+      </div>
+      <h1>System Design — Intermediate Level</h1>
+      <p class="abstract">This book turns beginner system-design fluency into applied, production-grade skill. You’ll learn to design scalable, reliable, and evolvable systems, evaluate trade-offs with metrics, and deliver a complete capstone architecture.</p>
     </div>
   </header>
 
-  <main id="main" class="container fade-in">
-    <section class="page-hero">
-      <div class="meta"><span class="badge badge-primary">Book</span><span class="muted">Author: BookBuilder</span></div>
-      <h1>Intermediate System Design — From Foundations to Production</h1>
-      <p class="abstract">This book takes a software engineer who has completed a beginner system-design course and guides them to a practical, applied level. You will design service boundaries, choose data and storage patterns for scale, define SLOs/SLIs, implement CI/CD and observability, and deliver a capstone prototype with fault-injection tests and a blameless postmortem.</p>
-    </section>
-
-    <section class="section" id="overview">
+  <main id="main" class="container">
+    <!-- Overview -->
+    <section class="section">
       <div class="grid two">
         <div class="card">
-          <h2>Who this is for</h2>
-          <p>You have beginner-level system design vocabulary (can name core components and draw simple request flows) and want to make <em>production-grade</em> decisions: service boundaries, data/storage choices, SLOs and error budgets, safe deploys, and operational readiness.</p>
+          <h2 id="about">About this Book</h2>
+          <p>This curriculum is for software engineers who have completed a <em>Beginner System Design</em> course. It emphasizes practical design decisions—how to translate constraints into architectures, quantify reliability, and iterate safely from prototype to production.</p>
+          <p><strong>Outcome:</strong> Confidently design and explain systems with measurable SLAs/SLOs, clear consistency choices, robust failure strategies, and cost-aware performance plans.</p>
         </div>
         <div class="card">
-          <h2>What you will build</h2>
-          <p>A deployable, observable prototype for a domain you choose (e.g., e‑commerce catalog, metrics pipeline, or chat). You will define NFRs, implement CI/CD, ship to a realistic runtime (managed Kubernetes or serverless), run a chaos experiment, and publish a postmortem.</p>
+          <h2 id="usage">How to Use</h2>
+          <ul>
+            <li><strong>Sequence:</strong> Read Chapters 1→8 in order, then complete Chapter 9 (Capstone) and Chapter 10 (Pitfalls & Next Steps).</li>
+            <li><strong>Depth markers:</strong> Each chapter includes worked examples, comparisons, and exercises (“Checkpoints”).</li>
+            <li><strong>Artifacts:</strong> Maintain a living design doc; update SLOs, capacity estimates, and diagrams each chapter.</li>
+            <li><strong>Glossary:</strong> First uses of terms are linked; refer to the <a href="chapters/glossary.html">Glossary</a> as needed.</li>
+          </ul>
         </div>
       </div>
     </section>
 
-    <section class="section" id="usage-notes">
-      <h2>How to use this book</h2>
-      <ul>
-        <li><strong>Cadence:</strong> Suggested <em>12–16 weeks</em>. Each week: read one section, do one applied exercise, and capture decisions in a design log.</li>
-        <li><strong>Paired learning:</strong> Every design choice is followed by a small implementation task to solidify trade‑offs.</li>
-        <li><strong>Reviews:</strong> Schedule three design reviews (after Chapters 3, 5, and 8) and a final capstone review.</li>
-        <li><strong>Evidence:</strong> Maintain SLO dashboards, runbooks, and postmortems. Treat this as a miniature production program.</li>
-      </ul>
-      <div class="callout info"><strong>Tip:</strong> Keep a shared <em>Design Log</em> (decisions, alternatives, risks). It powers faster incident response and better postmortems later.</div>
+    <!-- Quick Start / Checklist -->
+    <section class="section">
+      <div class="callout info">
+        <h2 id="quick-start">Quick Start</h2>
+        <ul class="mt-1">
+          <li>Skim Chapter 1 to align on goals, metrics, and a design workflow.</li>
+          <li>Pick a capstone track (video streaming, marketplace, or social feed) to carry through the book.</li>
+          <li>Create a one-page “Design Ledger” (assumptions, constraints, risks, open questions). Update it every chapter.</li>
+        </ul>
+      </div>
     </section>
 
-    <section class="section" id="timeline">
-      <h2>Course roadmap & timeframe</h2>
-      <p>Plan for 12–16 weeks. Milestones (align with Chapter 9 rubric):</p>
-      <ol>
-        <li><strong>Week 0:</strong> Choose capstone domain; define baseline NFRs and initial SLOs.</li>
-        <li><strong>Weeks 1–3:</strong> Components, data model, and API contracts.</li>
-        <li><strong>Weeks 3–6:</strong> Core services implemented; CI/CD green.</li>
-        <li><strong>Weeks 6–9:</strong> Deploy; add observability; run load/chaos tests.</li>
-        <li><strong>Weeks 9–12:</strong> Finalize dashboards, runbooks, postmortem, and architecture review.</li>
+    <!-- Progression Map -->
+    <section class="section">
+      <h2 id="progression">Progression Map</h2>
+      <p>The book positions you in the <em>Intermediate</em> stage and prepares you for <em>Advanced</em> topics like distributed consensus, multi-region replication, and performance modeling.</p>
+      <table>
+        <thead>
+          <tr><th>Level</th><th>Focus</th><th>End Goal</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Beginner</td><td>Core principles & vocabulary</td><td>Understand foundational terminology and simple architectures</td></tr>
+          <tr><td><strong>Intermediate</strong></td><td>Applied design & trade-offs</td><td>Design scalable, reliable systems with measurable metrics</td></tr>
+          <tr><td>Advanced</td><td>Optimization & global scale</td><td>Architect and critique complex systems with research-level depth</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Table of Contents -->
+    <section class="section">
+      <h2 id="toc">Table of Contents</h2>
+      <ol class="toc-list">
+        <li>
+          <a href="chapters/ch01.html#ch01-hero">1. Bridging Fundamentals to Applied Design</a>
+          <small class="meta">Connect SLAs/SLOs to real systems; design workflows; trade-off thinking.</small>
+        </li>
+        <li>
+          <a href="chapters/ch02.html#ch02-hero">2. Designing Scalable Architectures</a>
+          <small class="meta">Horizontal vs vertical scaling; load balancing; sharding; elasticity.</small>
+        </li>
+        <li>
+          <a href="chapters/ch03.html#ch03-hero">3. Data Management and Storage Strategies</a>
+          <small class="meta">SQL/NoSQL decisions; replication & consistency; indexing; lifecycle.</small>
+        </li>
+        <li>
+          <a href="chapters/ch04.html#ch04-hero">4. Communication, Coordination, and Consistency</a>
+          <small class="meta">Service-to-service communication; messaging; coordination; idempotency.</small>
+        </li>
+        <li>
+          <a href="chapters/ch05.html#ch05-hero">5. Reliability, Fault Tolerance, and Observability</a>
+          <small class="meta">Fault domains; redundancy; monitoring; incidents; multi-region plans.</small>
+        </li>
+        <li>
+          <a href="chapters/ch06.html#ch06-hero">6. Caching, Performance, and Cost Optimization</a>
+          <small class="meta">CDN & Redis; profiling; right-sizing; load testing; latency goals.</small>
+        </li>
+        <li>
+          <a href="chapters/ch07.html#ch07-hero">7. Security and Compliance in Distributed Systems</a>
+          <small class="meta">Identity, authz, encryption; zero trust; SOC2, GDPR, PCI DSS.</small>
+        </li>
+        <li>
+          <a href="chapters/ch08.html#ch08-hero">8. Designing for Evolution and Extensibility</a>
+          <small class="meta">API & schema evolution; toggles; refactoring at scale; tech debt.</small>
+        </li>
+        <li>
+          <a href="chapters/ch09.html#ch09-hero">9. Capstone Project — Architecting a Scalable System</a>
+          <small class="meta">Choose: streaming, marketplace, or social feed. Full design deliverables.</small>
+        </li>
+        <li>
+          <a href="chapters/ch10.html#ch10-hero">10. Common Pitfalls and Next Steps</a>
+          <small class="meta">Anti-patterns; observability gaps; sizing mistakes; path to advanced.</small>
+        </li>
       </ol>
     </section>
 
-    <section class="section" id="resources">
-      <h2>Primary references & modern resources</h2>
+    <!-- Capstone Guidance -->
+    <section class="section">
+      <div class="practice">
+        <div class="title">Capstone Tracks <span class="badge">Chapter 9</span></div>
+        <p>Pick one project and carry it across chapters. At each step, apply the chapter’s focus to refine your design:</p>
+        <ul>
+          <li><strong>Video Streaming Platform:</strong> Focus on write-once, read-many patterns, CDN strategy, and multi-region storage.</li>
+          <li><strong>E-commerce Marketplace:</strong> Partitioning, consistency choices (orders vs inventory), and idempotent workflows.</li>
+          <li><strong>Social Media Feed:</strong> Fan-out on write vs read, ranking pipelines, and hot-key mitigation.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Study Rhythm -->
+    <section class="section">
+      <h2 id="rhythm">Study Rhythm</h2>
+      <ul>
+        <li><strong>Weekly cadence:</strong> 1–2 chapters + checkpoint exercise.</li>
+        <li><strong>Artifacts:</strong> Design doc, capacity sheet (QPS, P95/99 latency targets), reliability plan (SLO + error budget), cost notes.</li>
+        <li><strong>Peer review:</strong> Present trade-offs; defend choices with SLIs and back-of-envelope capacity math.</li>
+      </ul>
+    </section>
+
+    <!-- Resource Pointers (Global) -->
+    <section class="section">
+      <h2 id="global-resources">Global Resources</h2>
       <div class="resource-list">
         <div class="item">
           <div>
-            <a class="external" href="https://martin.kleppmann.com/ddia/" target="_blank">Designing Data‑Intensive Applications — Martin Kleppmann</a>
-            <div class="meta">Core trade‑offs for data systems and consistency models.</div>
+            <a class="external" target="_blank" href="https://github.com/donnemartin/system-design-primer">System Design Primer (GitHub)</a>
+            <div class="meta">Survey of common design problems and patterns; good for quick refreshers.</div>
           </div>
-          <div class="meta">Book / Author site</div>
+          <span class="badge">Free</span>
         </div>
         <div class="item">
           <div>
-            <a class="external" href="https://martinfowler.com/microservices/" target="_blank">Martin Fowler — Microservices Resource Guide</a>
-            <div class="meta">Service boundaries, testing, and evolutionary architectural practices.</div>
+            <a class="external" target="_blank" href="https://dataintensive.net">Designing Data-Intensive Applications — Kleppmann</a>
+            <div class="meta">Authoritative deep dive into data systems; we reference Chapters 1–2 early.</div>
           </div>
-          <div class="meta">Guide</div>
+          <span class="badge">Book</span>
         </div>
         <div class="item">
           <div>
-            <a class="external" href="https://sre.google/" target="_blank">Google SRE Site & Book</a>
-            <div class="meta">SLOs, error budgets, incident response, and operational culture.</div>
+            <a class="external" target="_blank" href="https://sre.google/books/">Google SRE Book</a>
+            <div class="meta">Reliability mindset, SLOs, error budgets, and organizational practices.</div>
           </div>
-          <div class="meta">Docs/Book</div>
-        </div>
-        <div class="item">
-          <div>
-            <a class="external" href="https://aws.amazon.com/architecture/well-architected/" target="_blank">AWS Well‑Architected Framework</a>
-            <div class="meta">Decision lenses for reliability, performance, cost, and operations.</div>
-          </div>
-          <div class="meta">Framework</div>
-        </div>
-        <div class="item">
-          <div>
-            <a class="external" href="https://kubernetes.io/docs/" target="_blank">Kubernetes Documentation</a>
-            <div class="meta">Orchestration fundamentals; components, controllers, and patterns.</div>
-          </div>
-          <div class="meta">Docs</div>
+          <span class="badge">Free</span>
         </div>
       </div>
     </section>
 
-    <section class="section" id="toc">
-      <h2>Table of Contents</h2>
-      <ol class="toc-list">
-        <li>
-          <a href="chapters/ch01.html#1-hero"><strong>Chapter 1 — Introduction &amp; How this Builds on Beginner End Goals</strong></a>
-          <small class="muted">Scope, milestones, choosing a capstone, and learning strategy.</small>
-        </li>
-        <li>
-          <a href="chapters/ch02.html#2-hero"><strong>Chapter 2 — System Building Blocks — Scalable Components</strong></a>
-          <small class="muted">Compute, networking, caching, messaging, and background work.</small>
-        </li>
-        <li>
-          <a href="chapters/ch03.html#3-hero"><strong>Chapter 3 — Data &amp; Storage Patterns for Scale</strong></a>
-          <small class="muted">Storage types, sharding, indexing, and streaming vs batch.</small>
-        </li>
-        <li>
-          <a href="chapters/ch04.html#4-hero"><strong>Chapter 4 — Microservices, Boundaries &amp; Integration</strong></a>
-          <small class="muted">Bounded contexts, contracts, versioning, and migrations.</small>
-        </li>
-        <li>
-          <a href="chapters/ch05.html#5-hero"><strong>Chapter 5 — Reliability, SLOs &amp; SRE Practices</strong></a>
-          <small class="muted">SLIs/SLOs, error budgets, incidents, and chaos testing.</small>
-        </li>
-        <li>
-          <a href="chapters/ch06.html#6-hero"><strong>Chapter 6 — Consistency, Partitioning &amp; Concurrency</strong></a>
-          <small class="muted">Consistency models, concurrency control, and reconciliation.</small>
-        </li>
-        <li>
-          <a href="chapters/ch07.html#7-hero"><strong>Chapter 7 — Operational Practices: CI/CD, Observability &amp; Security</strong></a>
-          <small class="muted">Safe deploys, rollbacks, metrics/logs/traces, and security patterns.</small>
-        </li>
-        <li>
-          <a href="chapters/ch08.html#8-hero"><strong>Chapter 8 — Patterns, Trade‑offs &amp; Architecture Anti‑Patterns</strong></a>
-          <small class="muted">CQRS, event sourcing, sagas, bulkheads; avoiding distributed monoliths.</small>
-        </li>
-        <li>
-          <a href="chapters/ch09.html#9-hero"><strong>Chapter 9 — Capstone Project — Full System Design &amp; Implementation</strong></a>
-          <small class="muted">Deliverables, milestones, rubric, and example scenarios.</small>
-        </li>
-        <li>
-          <a href="chapters/ch10.html#10-hero"><strong>Chapter 10 — Pitfalls, Next Steps &amp; Optional Advanced Topics</strong></a>
-          <small class="muted">Common mistakes, next‑step topics, and research skills.</small>
-        </li>
-      </ol>
-    </section>
-
-    <section class="section" id="appendices">
-      <h2>Appendices</h2>
-      <div class="grid two">
-        <div class="card">
-          <h3>Appendix A — Coverage Checklist</h3>
-          <ul>
-            <li>Core concepts &amp; fundamentals (Ch. 2–3)</li>
-            <li>Applied tools &amp; practices (Ch. 4, 7)</li>
-            <li>Patterns &amp; trade‑offs (Ch. 6, 8)</li>
-            <li>Capstone with milestones &amp; rubric (Ch. 9)</li>
-            <li>Reliability &amp; SRE (Ch. 5)</li>
-            <li>Observability, CI/CD, Security (Ch. 7)</li>
-            <li>Pitfalls &amp; next steps (Ch. 10)</li>
-            <li>Authoritative, up‑to‑date references</li>
-          </ul>
-          <p><a href="chapters/appendix.html#coverage-checklist">Open Appendix</a></p>
-        </div>
-        <div class="card">
-          <h3>Appendix B — Progression Map</h3>
-          <p>Beginner → Intermediate (this book) → Advanced. Bridge tasks include multi‑region replication, cost/performance benchmarking, and a platform‑engineering mini‑project.</p>
-          <p><a href="chapters/appendix.html#progression-map">Open Appendix</a></p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="checklist">
-      <h2>Reader checklist</h2>
+    <!-- What You’ll Need -->
+    <section class="section">
+      <h2 id="requirements">What You’ll Need</h2>
       <ul>
-        <li>✅ I can explain how my chosen capstone maps requirements to <em>NFRs</em> and initial <em>SLOs</em>.</li>
-        <li>✅ I captured design decisions and alternatives in a shared log.</li>
-        <li>✅ I scheduled three design reviews and the final capstone review.</li>
-        <li>✅ I defined <em>rollback</em> and <em>operational</em> plans alongside features.</li>
+        <li><strong>Prerequisite:</strong> Beginner System Design knowledge (terminology, simple architectures).</li>
+        <li><strong>Tools:</strong> Diagramming tool of choice, spreadsheet for capacity & cost, and a markdown editor.</li>
+        <li><strong>Mindset:</strong> Be explicit about assumptions; always state the metric you’re optimizing.</li>
       </ul>
     </section>
 
+    <!-- Footer note -->
     <footer class="site-footer">
-      <div class="container">
-        <p class="muted">© 2025 BookBuilder. Dark theme, accessible, and printer‑friendly. Built with vanilla HTML/CSS/JS.</p>
-      </div>
+      <p class="muted">© 2025 — System Design — Intermediate Level. Built with a dark, accessible theme. No frameworks; just HTML, CSS, and a small JS helper.</p>
     </footer>
   </main>
 
-  <!--
-  CHECKLIST (for index.html)
-  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
-  - [x] Canonical nav (Home / Appendix / Glossary only)
-  - [x] Pager not applicable to index
-  - [x] Order: Hero → Overview/Usage → Timeline → Resources → ToC → Appendices → Reader checklist
-  - [x] Head/meta complete; no TODOs
-  - [x] Images: none on index (no audit required)
-  -->
-
   <!--LINK-MAP:[
     {"path":"index.html","title":"Home"},
-    {"path":"styles/theme.css","title":"Theme CSS"},
-    {"path":"scripts/app.js","title":"App JS"},
-    {"path":"chapters/ch01.html","title":"Chapter 1 — Introduction & How this Builds on Beginner End Goals"},
-    {"path":"chapters/ch02.html","title":"Chapter 2 — System Building Blocks — Scalable Components"},
-    {"path":"chapters/ch03.html","title":"Chapter 3 — Data & Storage Patterns for Scale"},
-    {"path":"chapters/ch04.html","title":"Chapter 4 — Microservices, Boundaries & Integration"},
-    {"path":"chapters/ch05.html","title":"Chapter 5 — Reliability, SLOs & SRE Practices"},
-    {"path":"chapters/ch06.html","title":"Chapter 6 — Consistency, Partitioning & Concurrency"},
-    {"path":"chapters/ch07.html","title":"Chapter 7 — Operational Practices: CI/CD, Observability & Security"},
-    {"path":"chapters/ch08.html","title":"Chapter 8 — Patterns, Trade-offs & Architecture Anti-Patterns"},
-    {"path":"chapters/ch09.html","title":"Chapter 9 — Capstone Project — Full System Design & Implementation"},
-    {"path":"chapters/ch10.html","title":"Chapter 10 — Pitfalls, Next Steps & Optional Advanced Topics"},
-    {"path":"chapters/appendix.html","title":"Appendix"},
+    {"path":"styles/theme.css","title":"Theme (do not edit)"},
+    {"path":"scripts/app.js","title":"App JS (do not edit)"},
+    {"path":"chapters/ch01.html","title":"Chapter 1 — Bridging Fundamentals to Applied Design"},
+    {"path":"chapters/ch02.html","title":"Chapter 2 — Designing Scalable Architectures"},
+    {"path":"chapters/ch03.html","title":"Chapter 3 — Data Management and Storage Strategies"},
+    {"path":"chapters/ch04.html","title":"Chapter 4 — Communication, Coordination, and Consistency"},
+    {"path":"chapters/ch05.html","title":"Chapter 5 — Reliability, Fault Tolerance, and Observability"},
+    {"path":"chapters/ch06.html","title":"Chapter 6 — Caching, Performance, and Cost Optimization"},
+    {"path":"chapters/ch07.html","title":"Chapter 7 — Security and Compliance in Distributed Systems"},
+    {"path":"chapters/ch08.html","title":"Chapter 8 — Designing for Evolution and Extensibility"},
+    {"path":"chapters/ch09.html","title":"Chapter 9 — Capstone Project — Architecting a Scalable System"},
+    {"path":"chapters/ch10.html","title":"Chapter 10 — Common Pitfalls and Next Steps"},
+    {"path":"chapters/appendix.html","title":"Appendix — Pitfalls, Review, Progression"},
     {"path":"chapters/glossary.html","title":"Glossary"}
   ]-->
+
+  <!--
+  CHECKLIST
+  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+  - [x] Canonical nav (Home / Appendix / Glossary only)
+  - [x] ToC numbering matches planned chapters (1–10)
+  - [x] Order: Hero → Overview/Usage → Progression → ToC → Capstone → Rhythm → Resources → Requirements
+  - [x] No images on index (image audit N/A)
+  - [x] Head/meta complete; no TODOs
+  -->
 </body>
 </html>

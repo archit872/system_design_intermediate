@@ -2,251 +2,288 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 08 — Patterns, Trade-offs & Architecture Anti-Patterns</title>
-  <meta name="description" content="Recognize and apply scalable patterns (CQRS, event sourcing, bulkheads, circuit breakers), select integration and consistency patterns (Sagas, materialized views, caching), and avoid anti-patterns (distributed monolith, premature microservices) while weighing cost-performance trade-offs.">
-  <meta property="og:title" content="Chapter 08 — Patterns, Trade-offs & Architecture Anti-Patterns">
-  <meta property="og:description" content="Practical patterns and pitfalls for real systems: when to use CQRS, event sourcing, bulkheads, throttling; how to run Sagas and read models; how to escape a distributed monolith; and how to manage cost/perf trade-offs.">
-  <meta property="og:type" content="article">
   <base href="../">
-  <link rel="stylesheet" href="styles/theme.css">
-  <script src="scripts/app.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 08 — Designing for Evolution and Extensibility</title>
+  <meta name="description" content="Strategies to evolve systems safely: feature flags and rollouts, backward compatibility and schema evolution, refactoring at scale with the Strangler pattern, and pragmatic tech-debt management.">
+  <meta property="og:title" content="Chapter 08 — Designing for Evolution and Extensibility">
+  <meta property="og:description" content="Plan and execute change without breaking users: toggles, migrations, API and schema versioning, domain boundaries, and debt metrics with a monolith→microservices checkpoint.">
+  <meta property="og:type" content="article">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="stylesheet" href="../styles/theme.css">
+  <script src="../scripts/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
 
-  <header class="app-nav">
+  <!-- Canonical Top Navigation (copy verbatim to all pages) -->
+  <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">Intermediate System Design</div>
-      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
-      <nav id="top-menu" class="menu" aria-label="Primary">
+      <div class="brand">System Design — Intermediate</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
+      <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </nav>
+      </div>
+    </div>
+  </nav>
+
+  <header class="page-hero" id="ch08-hero">
+    <div class="container">
+      <div class="meta">
+        <span class="badge badge-primary">Chapter 08</span>
+        <span class="badge">Evolution &amp; Extensibility</span>
+      </div>
+      <h1>Designing for Evolution and Extensibility</h1>
+      <p class="abstract">Change is the only constant. Systems that thrive over years are built to evolve safely: they hide new code behind flags, preserve backward compatibility through deliberate contracts, migrate data and APIs without surprises, and carve clear domain boundaries so refactors don’t ripple everywhere. In this chapter you will plan safe rollouts, version APIs and schemas, apply the Strangler pattern to decompose a monolith, and measure technical debt so it doesn’t quietly eat your roadmap.</p>
     </div>
   </header>
 
-  <main id="main" class="container fade-in">
-    <section class="page-hero" id="8-hero">
-      <div class="meta"><span class="badge badge-primary">Chapter 08</span></div>
-      <h1>Patterns, Trade-offs &amp; Architecture Anti-Patterns</h1>
-      <p class="abstract">Patterns are named solutions to recurring problems. They are useful <em>only</em> when you know the problem you have, the properties you need, and the costs you are willing to pay. This chapter equips you to deploy a small set of production-grade patterns—CQRS, event sourcing, bulkheads, circuit breakers, throttling, Sagas, and read models—while recognizing and refactoring anti-patterns like the distributed monolith and premature microservices. We close with cost-performance trade‑offs so you can justify choices in the language of both reliability and budget.</p>
-    </section>
+  <main id="main" class="container">
+    <!-- 08.1 -->
+    <section class="section" id="ch08-1">
+      <h2>08.1 System Evolution</h2>
+      <p id="ch08-1-why">Why it matters: Every feature and fix introduces risk. Evolution techniques let you change behavior in production while limiting blast radius and collecting evidence that you are safe to proceed.</p>
 
-    <section class="section" id="8-1-common-patterns">
-      <h2>8.1 Common scalable patterns</h2>
-      <p><strong>Why it matters.</strong> Patterns reduce accidental complexity by encoding prior experience. But every pattern introduces new risks. Knowing <em>when not</em> to use a pattern is as important as knowing how it works.</p>
+      <h3 id="ch08-1-1">08.1.1 Feature Toggles and Progressive Delivery</h3>
+      <p><strong>Plain:</strong> A feature toggle (flag) is a conditional that allows you to turn a behavior on or off at runtime without redeploying. Progressive delivery gradually increases exposure: from internal users, to 1% of customers, to everyone.</p>
+      <p><strong>Formal:</strong> A <em>flag</em> evaluates a targeting rule (by user, tenant, region, device) to produce a treatment (<code>on</code>/<code>off</code>/<code>variant</code>). Progressive rollout uses staged policies: <em>beta</em> (employees), <em>canary</em> (1–5%), <em>ramp</em> (10→25→50→100%), with automatic rollback based on SLIs (error rate, latency, conversion). Flags must be <em>server-evaluated</em> for sensitive logic and cached locally with a <em>TTL</em> to reduce request-time overhead. Always attach <em>kill switches</em> for quick disable.</p>
+      <p><strong>Pitfall:</strong> “Flag forever.” Long-lived toggles become hidden complexity and divergent code paths. Set an <em>expiry date</em> for each flag and track owners; delete toggles once a feature is fully rolled out.</p>
 
-      <h3 id="8-1-1-cqrs-event-sourcing">8.1.1 CQRS and event sourcing: where they help and costs</h3>
-      <p><strong>Plain.</strong> <em>CQRS</em> (Command Query Responsibility Segregation) means you separate the models and paths for writes (commands) and reads (queries). <em>Event sourcing</em> stores the sequence of domain events as the system of record and rebuilds read models from those events. <strong>Formal.</strong> In CQRS, the write model enforces invariants; read models are projections optimized for queries and may be eventually consistent. Event sourcing requires an append-only event log, deterministic projection functions, and versioned event schemas. <strong>Pitfall.</strong> Using event sourcing when you only need auditing—or using CQRS when a well-indexed relational schema and a couple of materialized views would suffice—adds cognitive load, on-call surface area, and migration complexity.</p>
+      <figure>
+        <img src="https://docs.aws.amazon.com/images/codedeploy/latest/userguide/images/deployment-architecture-blue-green.png" alt="Blue/green deployment architecture with two parallel environments and traffic switching" loading="lazy" decoding="async" width="864" height="480" referrerpolicy="no-referrer">
+        <figcaption>Blue/green keeps old and new code in parallel so traffic can be shifted safely (AWS CodeDeploy Docs, 2024–2025).</figcaption>
+      </figure>
 
-      <p>Compare: <strong>When to use CQRS vs event sourcing</strong></p>
-      <table class="table">
-        <thead><tr><th>Need</th><th>CQRS</th><th>Event sourcing</th><th>Notes</th></tr></thead>
-        <tbody>
-          <tr><td>Low-latency reads tailored per UI</td><td>Excellent (custom read models)</td><td>Also good (via projections)</td><td>CQRS without ES keeps writes simple</td></tr>
-          <tr><td>Full audit and replay</td><td>Possible but partial</td><td>Native strength</td><td>ES shines when history is a feature</td></tr>
-          <tr><td>Simple CRUD app</td><td>Overkill</td><td>Overkill</td><td>Use RDBMS with indexes/materialized views</td></tr>
-          <tr><td>Complex invariants on write</td><td>Good (focused domain model)</td><td>Good but harder (idempotent events)</td><td>Beware multi-aggregate transactions</td></tr>
-        </tbody>
-      </table>
-
-      <p><strong>Worked example A — Orders with CQRS, no event sourcing.</strong> Write side: transactional RDBMS enforces stock reservation and payment invariants. Read side: <em>order_view</em> table denormalized for customer queries. Updates flow from write DB to the view via CDC. <em>Trade‑off:</em> simplicity on writes; eventual consistency on reads is OK because order summaries can lag by seconds.</p>
-      <p><strong>Worked example B — Ledger with event sourcing.</strong> Each <code>credit</code> and <code>debit</code> is an immutable event. The authoritative balance is the sum of events. Read models project running balances per account and time window. <em>Trade‑offs:</em> expensive backfills if event schema changes; stronger tooling needed for idempotency and replay. <em>Benefit:</em> perfect audit and the ability to reconstruct balances at any point in time.</p>
-
-      <h3 id="8-1-2-circuit-bulkhead-throttle">8.1.2 Circuit breakers, bulkheads, throttling</h3>
-      <p><strong>Plain.</strong> <em>Circuit breakers</em> fail fast when a dependency is unhealthy. <em>Bulkheads</em> isolate resources so one noisy neighbor can’t sink the ship. <em>Throttling</em> limits the rate of work to protect capacity. <strong>Formal.</strong> A circuit moves between <em>closed</em> (pass), <em>open</em> (block), and <em>half‑open</em> (probe) based on error rate/latency windows; bulkheads allocate connection pools/queues per tenant or endpoint; throttling uses token buckets/leaky buckets to bound concurrency and rate. <strong>Pitfall.</strong> Breakers that trip on <em>client errors</em> (4xx) or misconfigured probe windows that flap; global connection pools that allow a surge from one route to starve others.</p>
-
-      <p>Compare: <strong>Isolation and protection patterns</strong></p>
-      <table class="table">
-        <thead><tr><th>Pattern</th><th>Protects against</th><th>How</th><th>When to use</th><th>Gotchas</th></tr></thead>
-        <tbody>
-          <tr><td>Circuit breaker</td><td>Cascading retries</td><td>Open on failure/latency; half‑open probes</td><td>Remote dependencies</td><td>Tune windows; exempt idempotent 4xx</td></tr>
-          <tr><td>Bulkhead</td><td>Noisy routes/tenants</td><td>Per‑route pools/queues</td><td>Multi‑tenant, mixed QPS</td><td>Requires capacity planning per pool</td></tr>
-          <tr><td>Throttling</td><td>Overload from clients</td><td>Token bucket on ingress</td><td>APIs with spikes</td><td>Return Retry‑After; protect critical paths</td></tr>
-        </tbody>
-      </table>
-
-      <pre data-lang="pseudo"><code>// Token bucket throttle (simplified)
-if (bucket.tokens &gt; 0) {
-  bucket.tokens--;
-  handle();
-} else {
-  respond 429 with Retry-After
-}
-// Refill tokens every interval up to capacity
-</code></pre>
-
-      <p><strong>Analogy.</strong> Think of bulkheads like compartmentalized ship hulls: a breach floods one compartment, not the whole vessel. Circuit breakers are the watertight doors that slam shut when sensors detect trouble. Throttling is the harbor master limiting how many boats can enter at once.</p>
-    </section>
-
-    <section class="section" id="8-2-integration-consistency">
-      <h2>8.2 Integration and data consistency patterns</h2>
-      <p><strong>Why it matters.</strong> Distributed transactions across services are fragile and slow. Integration patterns provide <em>compositional</em> ways to coordinate state without global locks.</p>
-
-      <h3 id="8-2-1-saga">8.2.1 Saga pattern for long‑running transactions</h3>
-      <p><strong>Plain.</strong> A <em>Saga</em> splits a long transaction into a sequence of steps with <em>compensating</em> actions to undo partial work if later steps fail. <strong>Formal.</strong> Two styles: <em>orchestrated</em> (a central coordinator issues commands and awaits replies) and <em>choreographed</em> (services publish events and react). <strong>Pitfall.</strong> Partial failure handling is often an afterthought; Sagas require explicit compensation design and idempotency for every step.</p>
-
-      <p>Compare: <strong>Orchestrated vs choreographed Sagas</strong></p>
-      <table class="table">
-        <thead><tr><th>Aspect</th><th>Orchestrated</th><th>Choreographed</th><th>Guidance</th></tr></thead>
-        <tbody>
-          <tr><td>Control flow</td><td>Central brain</td><td>Decentralized via events</td><td>Start orchestrated for clarity; move side‑effects to events</td></tr>
-          <tr><td>Observability</td><td>Easier (single trace)</td><td>Harder (many services)</td><td>Propagate correlation IDs; add a saga log</td></tr>
-          <tr><td>Coupling</td><td>Higher</td><td>Lower</td><td>Keep orchestration slim; avoid god‑service</td></tr>
-          <tr><td>Failure handling</td><td>Centralized</td><td>Distributed</td><td>Document compensation per step either way</td></tr>
-        </tbody>
-      </table>
-
-      <pre data-lang="json"><code>{
-  "saga": "checkout",
-  "steps": [
-    { "try": "reserve_stock", "compensate": "release_stock" },
-    { "try": "charge_card",   "compensate": "refund_charge" },
-    { "try": "create_shipment", "compensate": "cancel_shipment" }
-  ],
-  "timeoutMs": 30000,
-  "idempotencyKey": "order-123"
-}</code></pre>
-
-      <p><strong>Worked example C — Travel booking.</strong> Flights, hotel, and car must all succeed. Orchestrator performs steps in reliability order (most scarce first). If hotel fails, car is cancelled and flight is refunded. <em>Trade‑off:</em> stale holds and refunds cost money; add time‑boxed reservations and periodic reconciliation to clear stale holds.</p>
-
-      <h3 id="8-2-2-materialized-views-caching">8.2.2 Materialized views and caching strategies</h3>
-      <p><strong>Plain.</strong> Read models and caches make queries fast by precomputing or storing recent results. <strong>Formal.</strong> A materialized view is a precomputed table or index; a cache is a limited store with eviction. Both trade write amplification for read speed, and both risk serving stale data. <strong>Pitfall.</strong> Relying on TTL alone for coherence—bursts of invalidations can stampede origins; write‑back caches can lose data without durable journals.</p>
-
+      <h3 id="ch08-1-2">08.1.2 Rollout Strategies</h3>
+      <p><strong>Plain:</strong> Don’t flip a giant switch. Choose a rollout that matches risk.</p>
       <ul>
-        <li><strong>Coherency:</strong> use <em>cache tags</em>/surrogate keys to invalidate related items (e.g., all products for a seller).</li>
-        <li><strong>Stampede control:</strong> request coalescing; jittered TTLs; background refresh for hot keys.</li>
-        <li><strong>Freshness SLIs:</strong> define max age by page/feature; expose last‑updated to the UI; revalidate at critical boundaries (e.g., checkout).</li>
-        <li><strong>Backfill/rebuild:</strong> store the log (CDC/events) so views can be rebuilt after incidents.</li>
+        <li><strong>Blue/Green:</strong> Run two identical environments; shift traffic from blue (old) to green (new). Fast rollback by switching back.</li>
+        <li><strong>Canary:</strong> Send a small percentage to the new version first; watch SLIs and expand if healthy.</li>
+        <li><strong>Rolling:</strong> Incrementally replace instances; good default when risk is moderate and per-instance state is low.</li>
       </ul>
 
-      <p><strong>Worked example D — Search facet counts.</strong> Precompute facet counts hourly into a view for fast filters; on index updates, send change events to update coarse aggregates more frequently. <em>Trade‑off:</em> counts may lag; mitigate by marking facets “≈” when staleness exceeds a threshold.</p>
-    </section>
+      <figure>
+        <img src="https://docs.aws.amazon.com/images/codedeploy/latest/userguide/images/deployment-architecture-rolling.png" alt="Rolling deployment replacing instances in batches with health checks" loading="lazy" decoding="async" width="864" height="480" referrerpolicy="no-referrer">
+        <figcaption>Rolling deployment replaces instances in batches with health checks to limit blast radius (AWS CodeDeploy Docs, 2024–2025).</figcaption>
+      </figure>
 
-    <section class="section" id="8-3-anti-patterns">
-      <h2>8.3 Anti‑patterns &amp; how to refactor them</h2>
-      <p><strong>Why it matters.</strong> Many systems fail not because of a missing pattern but because of an unexamined anti‑pattern. Spotting the smell early saves months of thrash.</p>
-
-      <h3 id="8-3-1-distributed-monolith">8.3.1 Distributed monolith and tight coupling</h3>
-      <p><strong>Plain.</strong> A distributed monolith is a set of services that must deploy together, share databases, or chat synchronously for every user request. <strong>Formal.</strong> Operational coupling shows up as correlated deploys, cross‑service transactions, and shared tables. <strong>Pitfall.</strong> Extracting services by CRUD tables instead of cohesive capabilities; adding an API gateway stuffed with business logic that everyone must release with.</p>
-
-      <p>Compare: <strong>Monolith → Healthy services (refactor path)</strong></p>
-      <table class="table">
-        <thead><tr><th>Smell</th><th>Why harmful</th><th>Refactor step</th><th>Success metric</th></tr></thead>
+      <p><em>Compare: Rollout Methods</em></p>
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Risk</th><th>Rollback speed</th><th>Cost</th><th>Best for</th></tr>
+        </thead>
         <tbody>
-          <tr><td>Shared DB writes</td><td>Breaks ownership</td><td>Introduce service‑owned write APIs; move non‑owners to read models</td><td>No non‑owner writes in audit logs</td></tr>
-          <tr><td>Lock‑step deploys</td><td>Slow, fragile</td><td>Version‑tolerant contracts; CDC tests</td><td>Independent deploys without breakage</td></tr>
-          <tr><td>Chatty calls on hot path</td><td>Latency & failure propagation</td><td>Aggregate in a gateway <em>adapter</em> or create a read model</td><td>≤ 2 service hops per user request</td></tr>
-          <tr><td>Implicit invariants</td><td>Data races</td><td>Make invariants explicit in owning service; publish events</td><td>Invariants expressed as tests/alerts</td></tr>
+          <tr><td>Blue/Green</td><td>Low</td><td>Instant switch</td><td>Higher (double capacity)</td><td>High-risk releases, schema changes</td></tr>
+          <tr><td>Canary</td><td>Low–Medium</td><td>Fast (reduce %)</td><td>Low–Medium</td><td>Most feature releases</td></tr>
+          <tr><td>Rolling</td><td>Medium</td><td>Medium</td><td>Low</td><td>Routine deploys</td></tr>
         </tbody>
       </table>
 
-      <p><strong>Refactor playbook.</strong> (1) Map dependencies and request flows; (2) pick one capability to isolate; (3) create a thin anti‑corruption layer; (4) route just that capability via gateway rules; (5) backfill read models; (6) deprecate shared table writes; (7) measure hop count and deploy independence.</p>
+      <h3 id="ch08-1-3">08.1.3 Observability for Evolution</h3>
+      <p><strong>Plain:</strong> You can’t safely expand a rollout if you can’t see its impact.</p>
+      <p><strong>Formal:</strong> Attach <em>experiment keys</em> (flag name, variant) and <em>build metadata</em> (commit, version) to logs and traces. Segment your SLIs by variant and tenant. Use burn-rate alerts keyed to the canary slice so a small failure pages quickly without hiding in the global average.</p>
 
-      <h3 id="8-3-2-premature-microservices">8.3.2 Over‑engineering: premature microservices</h3>
-      <p><strong>Plain.</strong> Splitting into many services before the domain and team boundaries are clear increases overhead, slows delivery, and magnifies outages. <strong>Formal.</strong> Microservices add network, deployment, testing, and on‑call costs. <strong>Pitfall.</strong> Believing that “more services = more scale” without evidence; ignoring per‑service fixed costs (pipelines, dashboards, runbooks, on‑call).</p>
+      <p class="summary">Takeaway: Treat every change as an experiment. Use flags and staged rollouts, watch user-facing SLIs, and make rollback a button, not a project.</p>
+    </section>
 
+    <!-- 08.2 -->
+    <section class="section" id="ch08-2">
+      <h2>08.2 Backward Compatibility</h2>
+      <p id="ch08-2-why">Why it matters: Users and services depend on you. Breaking changes cascade through teams and customers. Backward compatibility lets you deploy independently and evolve quickly without forcing lockstep upgrades.</p>
+
+      <h3 id="ch08-2-1">08.2.1 API Versioning &amp; Compatibility Contracts</h3>
+      <p><strong>Plain:</strong> When you change an API, you either keep old clients working or you give them a predictable way to move.</p>
+      <p><strong>Formal:</strong> Compatibility hinges on a clear contract. Common patterns:</p>
       <ul>
-        <li><strong>Consolidation strategy:</strong> if two services always change together or chat synchronously, merge them. Keep the API boundary but collapse the deployable until evidence suggests splitting again.</li>
-        <li><strong>Team fit:</strong> a service is healthy when a small team can own code + on‑call + data + roadmap. If ownership is split, either consolidate or redraw boundaries.</li>
-        <li><strong>Measure debt:</strong> count flags, pipelines, dashboards, alerts. If counts scale with services but user value does not, you’re paying a microservice tax.</li>
+        <li><strong>Semantic Versioning (SemVer):</strong> <code>MAJOR.MINOR.PATCH</code>. Backward-compatible additions bump <em>MINOR</em>; breaking changes bump <em>MAJOR</em>. Libraries and SDKs often use this.</li>
+        <li><strong>Resource Versioning:</strong> Version field or media type: <code>Accept: application/vnd.api+json;version=2</code>, or path-based <code>/v2/</code>. Keep <em>two adjacent versions</em> live during migration, deprecate with dates.</li>
+        <li><strong>Schema Evolution (Protobuf/Avro):</strong> Additive changes (new optional fields) are backward compatible; never reuse or repurpose field numbers; reserve removed fields.</li>
       </ul>
+      <p><strong>Pitfall:</strong> “Silent” breaking changes—renaming fields, changing types, or tightening validation without bumping a version. Bake compatibility checks into CI with contract tests and schema diffs.</p>
 
-      <p><strong>Worked example E — From 14 services to 5.</strong> A startup decomposed by nouns (user, profile, preferences, notifications…). Latency suffered; on‑call was noisy. The refactor merged UI‑coupled services into a single <em>Identity</em> service and collapsed low‑QPS side‑effects behind async jobs. Result: 40% latency reduction and 60% fewer incidents; future splits will follow change cadence, not nouns.</p>
-    </section>
-
-    <section class="section" id="8-4-cost-tradeoffs">
-      <h2>8.4 Cost‑performance trade‑offs</h2>
-      <p><strong>Why it matters.</strong> Architecture is economics with APIs. Costs—cloud, people, complexity—must be balanced against latency, availability, and delivery speed. Explicit trade‑offs prevent “boil the ocean” designs.</p>
-
-      <h3 id="8-4-1-operational-cost-dev-speed">8.4.1 Operational cost vs development speed</h3>
-      <p><strong>Plain.</strong> The cheapest runtime often increases developer time; the fastest developer path may waste compute. <strong>Formal.</strong> Minimize <em>total cost of ownership</em> (TCO): cloud + licenses + toil + incident cost + delay cost. <strong>Pitfall.</strong> Focusing on per‑request compute without noticing that on‑call toil or slow iteration dwarfs infra savings.</p>
-
-      <p>Compare: <strong>Platform choice impact on TCO</strong></p>
-      <table class="table">
-        <thead><tr><th>Choice</th><th>Dev speed</th><th>Run cost</th><th>Ops load</th><th>Risk</th><th>Use when</th></tr></thead>
-        <tbody>
-          <tr><td>Managed serverless</td><td>High</td><td>Low at low QPS</td><td>Low</td><td>Latency jitter; limits</td><td>Spiky/seasonal or small apps</td></tr>
-          <tr><td>Managed K8s</td><td>Medium</td><td>Medium</td><td>Medium</td><td>Cluster complexity</td><td>Steady multi‑service backends</td></tr>
-          <tr><td>Self‑managed VMs</td><td>Low</td><td>Potentially low</td><td>High</td><td>Patching toil; drift</td><td>Custom kernels; legacy constraints</td></tr>
-        </tbody>
-      </table>
-
-      <p><strong>Worked example F — Messaging service spend.</strong> You run 10k msgs/s steady, burst to 50k. Option 1: hosted broker with per‑message pricing; Option 2: self‑managed cluster on K8s. Calculate: hosted costs ₹X/month (per million messages), minimal ops; self‑managed cuts direct cost 30% but adds 20 hours/month SRE time and higher incident risk. If your team is feature‑constrained, the hosted option may win despite higher invoice.</p>
-
-      <h3 id="8-4-2-observability-retention">8.4.2 Observability vs data retention costs</h3>
-      <p><strong>Plain.</strong> Telemetry that explains production issues is invaluable—but storage and indexing are not free. <strong>Formal.</strong> Choose a <em>tiered retention</em> policy: hot (hours–days) for fast queries, warm (days–weeks) for recent hunts, cold (months) in cheap storage. <strong>Pitfall.</strong> Indexing every field for every log or storing full‑fidelity traces for months; costs explode silently.</p>
-
-      <ul>
-        <li><strong>Sampling:</strong> head‑based for steady savings; tail‑based to keep interesting/slow traces. Keep exemplars for linking metrics → traces.</li>
-        <li><strong>Cardinality discipline:</strong> restrict labels on metrics; high‑cardinality details go into logs/traces.</li>
-        <li><strong>Budget alerts:</strong> treat telemetry as a product with a budget; alert when ingestion or index size deviates from plan.</li>
-      </ul>
-
-      <p><strong>Worked example G — Log cost cap.</strong> A team capped daily log ingest at 150 GB. They adopted structured JSON, reduced noise by 60% with sampling and log levels, and pushed rare debug details to on‑demand trace events. Post‑incident analysis time dropped because the remaining logs were higher signal.</p>
-    </section>
-
-    <section class="section" id="8-5-applied-scenarios">
-      <h2>8.5 Applied scenarios</h2>
-      <p><strong>Scenario H — CQRS adoption checklist.</strong> Before adopting CQRS, answer: (1) Which queries are slow, and will a projection fix them? (2) What freshness SLI will we expose? (3) How will we rebuild projections after incidents? (4) What is the migration path to keep legacy endpoints working during the switch? If you cannot answer all four, start with materialized views, not a full CQRS split.</p>
-      <p><strong>Scenario I — Circuit breaker tuning.</strong> A downstream has P95=120 ms, P99=300 ms. Start with breaker open when <em>error_rate ≥ 2%</em> or <em>latency &gt; 500 ms for 3 windows</em>; half‑open probes every 5 s with 1 request; close after 5 consecutive successes. Exclude 4xx from error rate; mark only idempotent methods as retryable.</p>
-      <p><strong>Scenario J — Saga failure drill.</strong> In checkout, deliberately fail payment at 2% rate in staging: verify refund and stock release compensations occur, DLQ depth stays bounded, and user sees actionable status. Track time‑to‑consistency from failure to compensation.</p>
-      <p><strong>Scenario K — Distributed monolith escape.</strong> Choose one invariant (“price at purchase time”). Move ownership to a single service; expose a <em>quote</em> API. Replace cross‑service DB writes with events. Success is measured by independent deploys and fewer cross‑service incidents.</p>
-    </section>
-
-    <section class="section" id="8-6-mini-exercises">
-      <h2>8.6 Mini‑exercises</h2>
+      <h3 id="ch08-2-2">08.2.2 Database Schema Evolution</h3>
+      <p><strong>Plain:</strong> Most outages during change involve the database. Evolve schemas with <em>expand/contract</em> patterns so app and DB changes can ship independently.</p>
+      <p><strong>Formal:</strong> Use a two-phase dance:</p>
       <ol>
-        <li><strong>Pattern fit matrix.</strong> For your capstone, create a matrix mapping each endpoint to patterns you plan to use (none/CQRS/materialized view/event sourcing/saga/bulkhead/breaker). Justify each choice in one sentence.</li>
-        <li><strong>Circuit & bulkhead plan.</strong> Pick two high‑QPS routes. Define breaker thresholds, half‑open probes, and per‑route connection pools. Add <em>Retry‑After</em> and an error banner plan for the UI.</li>
-        <li><strong>Saga compensation inventory.</strong> List try/compensate pairs for one long‑running flow (e.g., order → payment → shipment). Note idempotency keys and DLQ policy.</li>
-        <li><strong>Cost guardrails.</strong> Draft a one‑page telemetry budget: retention tiers, sampling policy, and monthly GB limits with alerts. Include who approves changes.</li>
+        <li><strong>Expand:</strong> Add new columns/tables that the new code needs. Make them nullable or defaulted. Double-write if necessary (old &amp; new).</li>
+        <li><strong>Migrate:</strong> Backfill data in small batches with throttling; verify parity via checksums or sample queries.</li>
+        <li><strong>Cutover:</strong> Flip reads to the new schema/column (behind a flag), monitor, then stop writing old paths.</li>
+        <li><strong>Contract:</strong> Remove old columns/indexes in a separate deploy after a cooldown window.</li>
+      </ol>
+      <p><strong>Pitfall:</strong> Locking and long-running migrations. For large tables, prefer <em>online schema change</em> tools (e.g., shadow copy + triggers) and partitioned backfills instead of <code>ALTER TABLE</code> that blocks writes.</p>
+
+      <h3 id="ch08-2-3">08.2.3 Idempotency and Tolerant Readers</h3>
+      <p><strong>Plain:</strong> New producers and old consumers will coexist. <em>Tolerant readers</em> ignore unknown fields; <em>idempotent writers</em> allow safe retries during cutovers.</p>
+      <p><strong>Formal:</strong> For JSON, require consumers to ignore extra properties and default missing ones. For Protobuf/Avro, unknown fields are already ignored if you don’t reuse tags. For side-effecting operations during migration, require idempotency keys or natural idempotence (upserts with unique constraints).</p>
+
+      <p class="summary">Takeaway: Make compatibility a product feature. Use explicit versioning, schema-safe evolutions, tolerant readers, and idempotent writes so you can ship changes continuously.</p>
+    </section>
+
+    <!-- 08.3 -->
+    <section class="section" id="ch08-3">
+      <h2>08.3 Refactoring at Scale</h2>
+      <p id="ch08-3-why">Why it matters: Systems accrete complexity. Refactoring reduces accidental complexity <em>without</em> changing behavior so you can move faster on purpose. At scale, refactors must be safe, staged, and reversible.</p>
+
+      <h3 id="ch08-3-1">08.3.1 Domain Boundaries and Contracts</h3>
+      <p><strong>Plain:</strong> If your system has fuzzy boundaries, every change is risky. Clear domains reduce coupling and make refactors local.</p>
+      <p><strong>Formal:</strong> Use <em>bounded contexts</em> (Domain-Driven Design) to define responsibility and language for each domain (e.g., <em>Identity</em>, <em>Catalog</em>, <em>Orders</em>). Contracts between contexts are thin and explicit: an API, an event schema, or a replicated read model. Avoid sharing database tables across contexts.</p>
+      <p><strong>Pitfall:</strong> “Microservices” that are just a distributed monolith—many services still sharing a database and deployment timeline.</p>
+
+      <h3 id="ch08-3-2">08.3.2 The Strangler Pattern</h3>
+      <p><strong>Plain:</strong> Replace a monolith piece by piece. Route a small subset of flows to a new service, then grow it until the old piece dies—like a strangler fig around a tree (hence the name).</p>
+      <p><strong>Formal:</strong> Put a <em>routing seam</em> in front of the monolith (proxy/gateway). For the first capability you carve out, duplicate data flows: the new service handles reads/writes for just that capability; an <em>anti-corruption layer</em> translates between old and new models. When the new service is stable and the old code is unused, you delete the old code path and repeat.</p>
+
+      <figure>
+        <img src="https://martinfowler.com/bliki/images/strangler/stranglerFig.png" alt="Strangler Fig pattern metaphor: a new system grows around the legacy and gradually replaces it" loading="lazy" decoding="async" width="352" height="542" referrerpolicy="no-referrer">
+        <figcaption>The Strangler pattern replaces legacy functionality incrementally (Martin Fowler, 2004–2020).</figcaption>
+      </figure>
+
+      <h3 id="ch08-3-3">08.3.3 Safety Nets: Tests, Shadow Traffic, and Replay</h3>
+      <p><strong>Plain:</strong> Big refactors fail when they rely on heroics. Use automated checks and production signals.</p>
+      <ul>
+        <li><strong>Contract tests:</strong> Validate that your service honors API/event contracts from both sides (provider &amp; consumer).</li>
+        <li><strong>Shadow traffic:</strong> Mirror a slice of production requests to the new service (responses discarded) to measure correctness and performance before switching.</li>
+        <li><strong>Replay harness:</strong> Reproduce recent traffic from logs/queues against the new service with idempotency to verify results quickly.</li>
+      </ul>
+      <p><strong>Pitfall:</strong> “Big bang” rewrites that never ship. Prefer vertical slices you can route within weeks.</p>
+
+      <h3 id="ch08-3-4">08.3.4 When Not to Split</h3>
+      <p><strong>Plain:</strong> Splitting a service adds costs: latency between services, more deployments, more monitoring. If you don’t gain independent scaling or ownership, don’t split.</p>
+      <p><strong>Formal:</strong> Evaluate against three axes: <em>independence</em> (can a team own and ship it alone?), <em>scalability</em> (does it have distinct load patterns?), and <em>risk isolation</em> (does it reduce blast radius?). If “no” on all three, refactor <em>inside</em> the service instead (modules, packages, clear interfaces).</p>
+
+      <p class="summary">Takeaway: Carve along domain seams, route gradually with a proxy, and use shadowing/replay to de-risk. Split services only when benefits beat the permanent costs.</p>
+    </section>
+
+    <!-- 08.4 -->
+    <section class="section" id="ch08-4">
+      <h2>08.4 Tech Debt Management</h2>
+      <p id="ch08-4-why">Why it matters: Debt trades speed now for cost later. Without measurement and disciplined paydown, the interest crowds out new features and reliability.</p>
+
+      <h3 id="ch08-4-1">08.4.1 Defining and Sizing Debt</h3>
+      <p><strong>Plain:</strong> Tech debt is code, design, or operational shortcuts you keep paying for. Not all debt is bad; some is a smart bet if you repay it.</p>
+      <p><strong>Formal:</strong> Use a simple <em>principal × interest</em> model. <em>Principal</em> is the one-time cost to fix (e.g., 5 engineer-days). <em>Interest</em> is the recurring cost (e.g., 2 hours/week in incidents or workarounds). Prioritize items with high interest, especially those that hit SLIs or delivery velocity. Add <em>risk</em> as a multiplier when a debt can cause severe outages (e.g., a single-tenant hotspot).</p>
+
+      <h3 id="ch08-4-2">08.4.2 Metrics That Matter</h3>
+      <ul>
+        <li><strong>Change failure rate:</strong> % of deploys causing incidents or rollbacks.</li>
+        <li><strong>Lead time for changes:</strong> Idea → production. Rising times indicate friction.</li>
+        <li><strong>MTTR:</strong> Mean time to recover; a proxy for how understandable and operable the system is.</li>
+        <li><strong>Cycle time by domain:</strong> If one domain’s changes consistently lag, the architecture may be fighting you.</li>
+      </ul>
+      <p><strong>Pitfall:</strong> Counting only code smells. Architectural and data debts (shared databases, “god” tables, missing indexes) usually dominate impact.</p>
+
+      <h3 id="ch08-4-3">08.4.3 Governance &amp; Paydown Cadence</h3>
+      <p><strong>Plain:</strong> If paying debt is “extra,” it never happens. Bake it into planning.</p>
+      <p><strong>Formal:</strong> Set a policy like “allocate 15–20% of capacity to reliability and debt every sprint.” Maintain a <em>debt register</em> with owner, principal, interest, and risk. Tie items to measurable outcomes (e.g., reduce MTTR by 20%). Make debt reduction a first-class goal in quarterly plans, not ad-hoc favors.</p>
+
+      <h3 id="ch08-4-4">08.4.4 Communication: Debt as Strategy</h3>
+      <p><strong>Plain:</strong> Non-technical stakeholders fund what they understand. Tell the story in outcomes.</p>
+      <p><strong>Formal:</strong> Express debt in unit economics: “This refactor reduces checkout latency P95 by 80 ms, worth +₹X/month revenue, and halves incident minutes.” Use dashboards to show trend lines before/after.</p>
+
+      <p class="summary">Takeaway: Measure principal and interest, prioritize by impact on reliability and speed, and schedule paydown as a habit. Communicate outcomes, not just refactor plans.</p>
+    </section>
+
+    <!-- 08.5 -->
+    <section class="section" id="ch08-5">
+      <h2>08.5 Checkpoints — Monolith → Microservices Migration</h2>
+      <p id="ch08-5-why">Why it matters: Many teams start with a monolith for good reasons. When growth forces change, a disciplined migration avoids the “distributed big ball of mud.”</p>
+
+      <h3 id="ch08-5-1">08.5.1 Scenario &amp; Constraints</h3>
+      <ul>
+        <li>Monolith handles <em>Catalog</em>, <em>Orders</em>, <em>Billing</em>, <em>Identity</em>. Peak: 3k RPS API; background jobs for emails and exports.</li>
+        <li>Pain points: slow deploys (45 minutes), shared database schema, incidents bleed across features, P95 checkout latency 600&nbsp;ms.</li>
+        <li>Constraints: one quarter, two squads, budget-conscious. SLOs must not worsen during migration.</li>
+      </ul>
+
+      <h3 id="ch08-5-2">08.5.2 8-Step Migration Plan</h3>
+      <ol>
+        <li><strong>Draw boundaries:</strong> Choose first domain with strong ROI and clear seams—<em>Identity</em> or <em>Catalog</em> are common. Write domain docs and API/event contracts.</li>
+        <li><strong>Put a routing seam:</strong> Deploy an API gateway in front. All traffic goes through it so you can route per-endpoint to monolith or new services.</li>
+        <li><strong>Clone data paths:</strong> Introduce an event log or CDC to publish changes out of the monolith database (e.g., <code>UserCreated</code>, <code>ProductUpdated</code>). New services subscribe to build their own stores.</li>
+        <li><strong>Build the first service:</strong> Implement <em>Catalog</em> as a separate service with its own DB. Provide read models for the monolith temporarily so UI/API don’t change yet.</li>
+        <li><strong>Shadow &amp; replay:</strong> Mirror 5–10% of production requests to the new service. Fix gaps discovered under real traffic.</li>
+        <li><strong>Route progressively:</strong> Canary actual traffic (1%→10%→50%→100%) behind a feature flag. Keep rollback switch ready.</li>
+        <li><strong>Cut old code:</strong> Remove monolith catalog code once the new path is stable; delete shared tables; enforce boundaries.</li>
+        <li><strong>Repeat:</strong> Move to the next domain (<em>Orders</em>). Reuse the playbook, refine with lessons learned.</li>
+      </ol>
+
+      <h3 id="ch08-5-3">08.5.3 Risks &amp; Mitigations</h3>
+      <ul>
+        <li><strong>Dual writes inconsistency:</strong> Use outbox pattern to atomically publish events with writes; reconcile via periodic checks.</li>
+        <li><strong>Latency regressions:</strong> Co-locate services and databases; use bulk endpoints and caching; measure P95/P99 per route during rollout.</li>
+        <li><strong>Ownership confusion:</strong> Each new service must have a clear team owner, on-call, and roadmap; avoid “orphan” services.</li>
+        <li><strong>Schema drift:</strong> Freeze shared DB writes early; derive read models instead of sharing tables.</li>
+      </ul>
+
+      <h3 id="ch08-5-4">08.5.4 Success Criteria</h3>
+      <ul>
+        <li>Checkout P95 ≤ 300&nbsp;ms; change failure rate ≤ 10%; MTTR ≤ 30 minutes.</li>
+        <li>Independent deploys for two domains with &lt; 10 minutes pipeline time.</li>
+        <li>Zero user-visible downtime during cutovers; <em>replay</em> &amp; <em>shadow</em> coverage ≥ 80% of hot endpoints.</li>
+      </ul>
+
+      <p class="summary">Deliverables: a migration diagram (gateway seam, topics, new service DBs), a rollout runbook with flags and canaries, a compatibility matrix (old vs new contracts), and an SLO dashboard segmented by route.</p>
+    </section>
+
+    <!-- Resources -->
+    <section class="section" id="ch08-resources">
+      <h2>Resources</h2>
+      <ul class="resource-list">
+        <li><strong>Martin Fowler — Strangler Fig &amp; Evolutionary Architecture</strong> — Canonical guidance on incremental replacement and fitness functions (Fowler, 2004–2020). <span class="badge">Free</span></li>
+        <li><strong>ThoughtWorks Technology Radar</strong> — Pragmatic positions on flags, progressive delivery, and architectural practices (ThoughtWorks, 2024–2025). <span class="badge">Free</span></li>
+        <li><strong>Protobuf/Avro Schema Evolution</strong> — Official docs on compatible changes and field numbering (Google/Apache, ongoing). <span class="badge">Free</span></li>
+        <li><strong>AWS CodeDeploy Docs</strong> — Blue/green, canary, and rolling strategies with concrete runbooks (AWS, 2024–2025). <span class="badge">Free</span></li>
+        <li><strong>Domain-Driven Design References</strong> — Bounded contexts and anti-corruption layers to carve seams (Evans/Community). <span class="badge">Paid/Free</span></li>
+      </ul>
+      <p class="muted">Rationales: These sources remain current for rollout mechanics, schema compatibility rules, and incremental migration patterns that align with this chapter’s techniques.</p>
+    </section>
+
+    <!-- Recap -->
+    <section class="section" id="ch08-recap">
+      <h2>Recap &amp; Next Steps</h2>
+      <ul>
+        <li>Use <em>flags</em> and <em>progressive delivery</em> to de-risk change and make rollback instant.</li>
+        <li>Preserve <em>backward compatibility</em> with explicit versioning, tolerant readers, and expand/contract schema changes.</li>
+        <li>Refactor along <em>domain boundaries</em>; apply the <em>Strangler</em> pattern with shadow traffic and replay harnesses.</li>
+        <li>Manage <em>tech debt</em> with principal/interest/risk; reserve capacity every sprint to keep velocity and reliability healthy.</li>
+      </ul>
+      <p><strong>Next Steps:</strong></p>
+      <ol>
+        <li>Pick one domain in your capstone and sketch a strangler plan: gateway rules, events to publish, read models to build, and the first cutover milestone.</li>
+        <li>Write an API compatibility policy (versioning, deprecation windows, supported ranges) and add contract tests to CI.</li>
+        <li>Start a debt register with top 10 items, estimating principal and interest; allocate 15–20% team capacity for paydown next sprint.</li>
       </ol>
     </section>
 
-    <section class="section" id="8-7-resources">
-      <h2>Resources</h2>
-      <ul>
-        <li><strong>Architecture blogs (Fowler et al.)</strong> — pragmatic discussions of CQRS, Sagas, and anti‑patterns. <em>Why:</em> helps you choose patterns only when they fit. <em>(Free)</em></li>
-        <li><strong>AWS Well‑Architected</strong> — decision lenses for reliability and cost. <em>Why:</em> frames trade‑offs and risk. <em>(Free)</em></li>
-        <li><strong>Google SRE resources</strong> — error budgets and operational techniques that interact with patterns (circuit breakers, bulkheads). <em>Why:</em> align patterns with SLOs. <em>(Free)</em></li>
-        <li><strong>Designing Data‑Intensive Applications</strong> — deep dives on events, logs, and read models. <em>Why:</em> rigorous background for CQRS/ES decisions. <em>(Paid)</em></li>
-      </ul>
-    </section>
-
-    <section class="section" id="8-8-recap-next">
-      <h2>Recap &amp; Next Steps</h2>
-      <ul>
-        <li>You can now deploy patterns deliberately—CQRS, event sourcing, Sagas, bulkheads, breakers, throttling—knowing exactly which user promises they uphold and which costs they incur.</li>
-        <li>You can recognize a distributed monolith early and refactor using ownership, projections, and contract evolution rather than adding more services.</li>
-        <li>You can articulate cost‑performance trade‑offs and set telemetry budgets that keep observability sustainable.</li>
-      </ul>
-      <p><strong>Next:</strong> Head to <a href="chapters/ch09.html#9-hero">Chapter 9 — Capstone Project — Full System Design &amp; Implementation</a>, where you will apply the patterns to design, implement, and evaluate a production‑grade prototype.</p>
-    </section>
-
+    <!-- Pager -->
     <nav class="next-prev">
-      <a class="btn" rel="prev" href="chapters/ch07.html">← Previous</a>
-      <a class="btn btn-primary" rel="next" href="chapters/ch09.html">Next →</a>
+      <a class="prev" rel="prev" href="chapters/ch07.html"><span class="muted">Prev</span><span>← Chapter 07 — Security and Compliance in Distributed Systems</span></a>
+      <a class="next" rel="next" href="chapters/ch09.html"><span class="muted">Next</span><span>Chapter 09 — Capstone Project: Architecting a Scalable System →</span></a>
     </nav>
 
-    <footer class="site-footer">
-      <div class="container">
-        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
-      </div>
-    </footer>
-  </main>
+    <!-- Image Link Audit -->
+    <section class="section" id="ch08-image-audit">
+      <h2>Image Link Audit</h2>
+      <ul class="resource-list">
+        <li>https://docs.aws.amazon.com/images/codedeploy/latest/userguide/images/deployment-architecture-blue-green.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>https://docs.aws.amazon.com/images/codedeploy/latest/userguide/images/deployment-architecture-rolling.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>https://martinfowler.com/bliki/images/strangler/stranglerFig.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+      </ul>
+      <p class="muted">Only HTTPS, non-SVG images with 200 OK and image/* MIME types are included.</p>
+    </section>
 
-  <!--
-  CHECKLIST (Chapter 08)
-  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
-  - [x] Canonical nav (Home / Appendix / Glossary only)
-  - [x] Pager prev → ch07, next → ch09; ToC numbering matches
-  - [x] Order: Hero → Numbered Sections → Resources → Recap
-  - [x] ≥1,800 words of prose (body text)
-  - [x] Images: none (no audit required)
-  - [x] Head/meta complete; no TODOs
-  -->
+    <!--
+    CHECKLIST
+    - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+    - [x] Canonical nav (Home / Appendix / Glossary only)
+    - [x] Pager prev/next valid; ToC numbering matches
+    - [x] Order: Hero → Numbered Sections → Resources → Recap
+    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
+    - [x] Images: HTTPS, non-SVG, validated 200 OK image/*; captions + attribution included
+    - [x] Head/meta complete; no TODOs
+    -->
+  </main>
 </body>
 </html>

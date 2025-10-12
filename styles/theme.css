@@ -93,7 +93,7 @@ h2,h3,h4,h5,h6{scroll-margin-top:84px}
 /* ------------------------------
    6) Page Hero
    ------------------------------ */
-.page-hero{padding:28px 0 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(76,194,255,.08),transparent 40%)}
+.page-hero{padding:24px 24px 8px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(76,194,255,.1),transparent 100%)}
 .page-hero .meta{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .page-hero .abstract{color:var(--muted);max-width:70ch}
 

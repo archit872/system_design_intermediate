@@ -2,256 +2,258 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 06 — Consistency, Partitioning & Concurrency</title>
-  <meta name="description" content="Explain consistency models, choose patterns that match application semantics, design for concurrency control and conflict resolution in distributed data, and handle partition edge cases with quorum strategies.">
-  <meta property="og:title" content="Chapter 06 — Consistency, Partitioning & Concurrency">
-  <meta property="og:description" content="Strong vs eventual consistency, CAP in practice, optimistic vs pessimistic locking, MVCC, CRDTs and reconciliation pipelines, and surviving partitions with quorum tactics.">
-  <meta property="og:type" content="article">
   <base href="../">
-  <link rel="stylesheet" href="styles/theme.css">
-  <script src="scripts/app.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 06 — Caching, Performance, and Cost Optimization</title>
+  <meta name="description" content="Apply caching strategies, profile latency and throughput, and optimize cost without harming reliability. Learn HTTP/edge caching, Redis patterns, performance analysis, right-sizing, and benchmark methodology.">
+  <meta property="og:title" content="Chapter 06 — Caching, Performance, and Cost Optimization">
+  <meta property="og:description" content="CDN and Redis caching, latency profiling and tail control, right-sizing and autoscaling, and load-testing practices with a hands-on optimization checkpoint.">
+  <meta property="og:type" content="article">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="stylesheet" href="../styles/theme.css">
+  <script src="../scripts/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
 
-  <header class="app-nav">
+  <!-- Canonical Top Navigation (copy verbatim to all pages) -->
+  <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">Intermediate System Design</div>
-      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
-      <nav id="top-menu" class="menu" aria-label="Primary">
+      <div class="brand">System Design — Intermediate</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
+      <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </nav>
+      </div>
+    </div>
+  </nav>
+
+  <header class="page-hero" id="ch06-hero">
+    <div class="container">
+      <div class="meta">
+        <span class="badge badge-primary">Chapter 06</span>
+        <span class="badge">Latency &amp; Efficiency</span>
+      </div>
+      <h1>Caching, Performance, and Cost Optimization</h1>
+      <p class="abstract">Caching is the cheapest performance feature you can add—until it isn’t. This chapter teaches you where to cache (browser, CDN, service, database), how to make caches safe and observable, and how to profile latency so you optimize the right thing. You’ll also learn cost-aware design: right-sizing, autoscaling policies, storage tiers, and when to trade milliseconds for money without breaking SLOs.</p>
     </div>
   </header>
 
-  <main id="main" class="container fade-in">
-    <section class="page-hero" id="6-hero">
-      <div class="meta"><span class="badge badge-primary">Chapter 06</span></div>
-      <h1>Consistency, Partitioning & Concurrency</h1>
-      <p class="abstract">Correctness in distributed systems is a moving target shaped by time, failure, and competing writes. In this chapter you will learn how to select the right consistency model for your user experience, design concurrency control that matches your workload, and handle conflicts—either by avoiding them with sound boundaries or by resolving them deterministically. We close with practical guidance for surviving partitions (split‑brain) using quorum reads/writes, fencing tokens, and fallbacks that keep user trust intact.</p>
-    </section>
+  <main id="main" class="container">
+    <!-- 06.1 -->
+    <section class="section" id="ch06-1">
+      <h2>06.1 Caching Layers</h2>
+      <p id="ch06-1-why">Why it matters: Most traffic is read-heavy and skewed. Caching exploits repetition to collapse latency and cost. The trick is doing it deliberately—so you don’t serve lies or melt during invalidation.</p>
 
-    <section class="section" id="6-1-consistency-models">
-      <h2>6.1 Consistency models</h2>
-      <p><strong>Why it matters.</strong> Users experience <em>consistency</em> as “did my change stick and do others see the same world I do?” Picking a stricter model than needed wastes latency and availability; picking a weaker model without UX guardrails creates confusion and data loss.</p>
+      <h3 id="ch06-1-1">06.1.1 The Four Places to Cache</h3>
+      <p><strong>Plain:</strong> You can cache in the <em>browser</em>, at the <em>edge/CDN</em>, in your <em>service/app tier</em> (e.g., Redis), or in the <em>database</em> (query caches, materialized results). Each layer sees different keys and lifetimes.</p>
+      <p><strong>Formal:</strong> The closer the cache to the user, the more it reduces network latency and egress. Browser and CDN caches use HTTP semantics; service caches hold computed or fetched objects; database caches (or denormalized projections) avoid heavy joins and disk I/O. Proper layering reduces origin requests by 80–99% for hot paths, shifting spend from CPU/IO to memory and a small control-plane for invalidation.</p>
+      <p><strong>Pitfall:</strong> Duplicate caches with incoherent invalidation. A “fast” result that is wrong is slower than a miss—because it creates user support and reconciliation cost.</p>
 
-      <h3 id="6-1-1-strong-eventual">6.1.1 Strong vs eventual consistency and user‑facing trade‑offs</h3>
-      <p><strong>Plain.</strong> <em>Strong consistency</em> means that once a write is acknowledged, every subsequent read sees it. <em>Eventual consistency</em> means replicas converge over time; readers may see older values temporarily. <strong>Formal.</strong> A system is linearizable if operations appear to happen atomically in real time; eventual consistency offers only convergence, not real‑time ordering. <strong>Pitfall.</strong> Teams often toggle consistency without changing <em>UX</em>. If you allow stale reads, surface staleness or use write‑through caches for critical fields.</p>
-
-      <p>Compare: <strong>Choosing a consistency model</strong></p>
-      <table class="table">
-        <thead><tr><th>Use case</th><th>Required user property</th><th>Recommended model</th><th>Why</th><th>UX safeguards</th></tr></thead>
+      <p><em>Compare: Caching Layers</em></p>
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>Scope</th><th>Strengths</th><th>Weaknesses</th><th>Best for</th></tr>
+        </thead>
         <tbody>
-          <tr><td>Payments & order finalization</td><td>Authoritative truth now</td><td>Strong / linearizable</td><td>Prevent double‑spend, legal record</td><td>Block until committed; display authoritative status</td></tr>
-          <tr><td>Product catalog price display</td><td>Close enough; bounded staleness</td><td>Eventual with freshness SLI</td><td>Cheaper/faster at scale</td><td>Show last‑updated; revalidate on checkout</td></tr>
-          <tr><td>Chat typing indicator</td><td>Timeliness over perfection</td><td>Eventual</td><td>Drop events; tolerate loss</td><td>Auto‑expire; no persistence guarantee</td></tr>
-          <tr><td>User profile edits</td><td>Read your writes</td><td>Session (read‑my‑writes)</td><td>Only the editor must see change immediately</td><td>Sticky reads; invalidate client cache</td></tr>
+          <tr><td>Browser</td><td>Per user/UA</td><td>Zero infra cost; fastest</td><td>Per-device; hard to purge</td><td>Static assets, public GETs</td></tr>
+          <tr><td>CDN/Edge</td><td>Global PoPs</td><td>Huge offload; TLS/HTTP2</td><td>Authorization &amp; PII tricky</td><td>Images, APIs with public cache</td></tr>
+          <tr><td>Service (Redis)</td><td>Per cluster</td><td>Flexible keys; microsecond access</td><td>Inval logic; memory pressure</td><td>Hot objects, session/state</td></tr>
+          <tr><td>DB/Derived</td><td>Per dataset</td><td>Stable semantics</td><td>Write amplification</td><td>Materialized views, rollups</td></tr>
         </tbody>
       </table>
 
-      <p><strong>Worked example — Read‑my‑writes via routing.</strong> After updating a profile, send the user’s subsequent reads to the same leader or to a replica that has caught up. Implementation options: (a) a short‑lived <em>session affinity</em> cookie; (b) include the last write’s log index in the read request and wait for replicas to apply up to that index before serving.</p>
+      <h3 id="ch06-1-2">06.1.2 HTTP Caching Fundamentals</h3>
+      <p><strong>Plain:</strong> If your endpoint is cacheable, you can get “free” performance from browsers and CDNs using headers only.</p>
+      <p><strong>Formal:</strong> Use <code>Cache-Control</code> to control freshness (<code>max-age</code>, <code>s-maxage</code>), <code>ETag</code>/<code>If-None-Match</code> for validation, and <code>Vary</code> to separate variants (e.g., <code>Accept-Language</code>). <code>stale-while-revalidate</code> serves stale for a short window while fetching fresh, smoothing thundering herds. Private data should send <code>Cache-Control: private, no-store</code> and rely on authenticated, non-cacheable endpoints.</p>
+      <p><strong>Pitfall:</strong> Missing <code>Vary: Authorization</code> (or using authorization on cacheable routes). You’ll leak personalized responses. Prefer token-bound keys at the edge or move personalization to a separate uncacheable call.</p>
 
-      <h3 id="6-1-2-cap">6.1.2 CAP theorem & practical implications</h3>
-      <p><strong>Plain.</strong> In the presence of a network partition, a system must choose between full consistency (every node agrees) and full availability (every request gets a response). <strong>Formal.</strong> CAP frames behavior only <em>during partitions</em>. Outside partitions, you can often have both. <strong>Pitfall.</strong> Treating CAP as a menu (“pick any two”) obscures design space like <em>bounded staleness</em> and <em>sticky clients</em>.</p>
+      <h3 id="ch06-1-3">06.1.3 Redis Patterns That Actually Ship</h3>
+      <p><strong>Plain:</strong> Use Redis to store what is expensive to re-compute or fetch, not everything.</p>
+      <p><strong>Formal:</strong> Use <em>read-through</em> (clients fetch from Redis, compute/fetch on miss and store), <em>write-through</em> (writes hit cache and DB synchronously), or <em>write-behind</em> (queue DB writes). Protect against stampedes with <em>singleflight</em>/request coalescing and <em>lock with timeout</em>. Keys should include a <em>version</em> or <em>content hash</em> to avoid hard-to-time invalidations.</p>
+      <p><strong>Pitfall:</strong> Huge values and unbounded TTLs. Large blobs reduce hit ratio under memory pressure; use compression and size limits. TTL-less caches become data stores with none of the safety.</p>
+
+      <h3 id="ch06-1-4">06.1.4 Invalidation Strategies</h3>
+      <p><strong>Plain:</strong> There are only two hard things in Computer Science… and cache invalidation is both of them when you have multiple layers and tenants.</p>
+      <p><strong>Formal:</strong> Three pragmatic approaches:</p>
       <ul>
-        <li><strong>AP‑leaning designs</strong> (available under partition) favor local writes and reconcile later. Use for feeds, counters, presence. Require conflict handling.</li>
-        <li><strong>CP‑leaning designs</strong> (consistent under partition) choose unavailability for conflicting operations. Use for money movement or invariants that must not break.</li>
-        <li><strong>Hybrid:</strong> many systems are CP for a narrow core (placing an order) and AP for surrounding features (recommendations, activity).</li>
+        <li><strong>Time-based TTL:</strong> Choose a TTL that balances freshness vs traffic; combine with <em>stale-while-revalidate</em> to hide refresh latency.</li>
+        <li><strong>Event-driven:</strong> Emit change events (outbox/CDC) to a small invalidation service that deletes or updates keys (e.g., <code>product:123:v2</code>).</li>
+        <li><strong>Versioned keys:</strong> Encode schema/data version; a data change bumps the version so misses naturally pick up fresh data while old keys expire.</li>
       </ul>
-      <p><em>Takeaway:</em> Explicitly mark which paths are CP and which are AP, and design UX/fallbacks accordingly.</p>
+      <p><strong>Analogy:</strong> TTL is like labeling milk “use within 7 days.” Event-driven invalidation is like getting a message from the dairy when a batch is recalled. Versioned keys are like a new carton design that makes old cartons obviously outdated.</p>
+
+      <p class="summary">Takeaway: Cache publicly when you can (HTTP semantics), locally when you must (Redis), and invalidate simply (TTL + versioning) before inventing elaborate purges.</p>
     </section>
 
-    <section class="section" id="6-2-concurrency-control">
-      <h2>6.2 Concurrency control</h2>
-      <p><strong>Why it matters.</strong> Concurrent writes compete for truth. The wrong approach yields lost updates, deadlocks, or unacceptable latency. The right approach depends on contention level and the cost of “try again.”</p>
+    <!-- 06.2 -->
+    <section class="section" id="ch06-2">
+      <h2>06.2 Performance Profiling</h2>
+      <p id="ch06-2-why">Why it matters: Optimization without measurement is rumor-driven development. Profiling shows where time and contention live so you fix causes, not symptoms.</p>
 
-      <h3 id="6-2-1-optimistic-pessimistic">6.2.1 Optimistic vs pessimistic locking</h3>
-      <p><strong>Plain.</strong> <em>Optimistic</em> concurrency assumes conflicts are rare: write with a version and reject if the version changed. <em>Pessimistic</em> concurrency uses locks to serialize access. <strong>Formal.</strong> Optimistic = <em>compare‑and‑set</em> (CAS) with retries; Pessimistic = <em>two‑phase locking</em> (2PL) or advisory locks. <strong>Pitfall.</strong> Optimistic updates on hot rows can starve progress; pessimistic locks can deadlock or destroy throughput if held too long.</p>
+      <h3 id="ch06-2-1">06.2.1 Percentiles, Not Averages</h3>
+      <p><strong>Plain:</strong> Averages hide pain. Users feel tail latency, not the mean. Design to P95/P99.</p>
+      <p><strong>Formal:</strong> Track <em>distribution</em> with histograms (e.g., Prometheus buckets) and compute P50, P90, P95, P99. Tail latency often grows with fan-out width and queueing. A small 1% of slow requests can dominate perceived performance if those requests are user-critical (search results, checkout).</p>
+      <p><strong>Pitfall:</strong> Optimizing the 50th percentile. Shaving 20 ms off P50 rarely matters if P99 is blowing your budget due to GC pauses or cold starts.</p>
 
-      <p>Compare: <strong>Optimistic vs pessimistic control</strong></p>
-      <table class="table">
-        <thead><tr><th>Dimension</th><th>Optimistic</th><th>Pessimistic</th><th>Guidance</th></tr></thead>
-        <tbody>
-          <tr><td>Contention</td><td>Low</td><td>High</td><td>Switch strategy as hotspots emerge</td></tr>
-          <tr><td>Latency</td><td>Low average; retries on conflict</td><td>Higher; waits on lock</td><td>Budget for tail retries vs blocking</td></tr>
-          <tr><td>Complexity</td><td>App‑level version checks</td><td>DB locks / lease managers</td><td>Prefer simple unless proven necessary</td></tr>
-          <tr><td>Failure modes</td><td>Starvation, livelock</td><td>Deadlock, convoy effects</td><td>Detect & mitigate with timeouts</td></tr>
-        </tbody>
-      </table>
+      <h3 id="ch06-2-2">06.2.2 Latency Breakdown and Critical Path</h3>
+      <p><strong>Plain:</strong> Break your request into segments: network, CPU, lock/queue, storage, and dependencies. The <em>critical path</em> is the longest chain of dependent segments.</p>
+      <p><strong>Formal:</strong> Distributed tracing reveals spans; rank endpoints by “latency × traffic.” For each hot endpoint, compute: (1) percent time in your code vs dependencies, (2) queueing vs service time, (3) cache hit ratio contribution, and (4) fan-out width. Optimize the largest term on the critical path first, not whichever is fashionable.</p>
+      <p><strong>Pitfall:</strong> Misattributing time waiting on TCP retransmits, TLS handshakes, or Nagle’s algorithm to “slow DB.” Always corroborate with dependency metrics.</p>
 
-      <pre data-lang="http"><code>PUT /cart/123
-If-Match: "v7"   # optimistic ETag precondition
-{
-  "add": { "sku": "S-42", "qty": 1 }
-}
--->
-409 Conflict  // version mismatch; client refetches and retries</code></pre>
+      <h3 id="ch06-2-3">06.2.3 CPU vs I/O vs Lock Contention</h3>
+      <p><strong>Plain:</strong> Different bottlenecks look similar in dashboards but require opposite fixes.</p>
+      <p><strong>Formal:</strong> <em>CPU-bound</em>: high CPU, low IO wait; fix by algorithmic improvements, concurrency limits, or more cores. <em>I/O-bound</em>: high disk/network wait; fix by batching, caching, or async I/O. <em>Lock-bound</em>: normal CPU but high tail latency and thread contention; fix by reducing shared critical sections, using lock-free data structures, or sharding state.</p>
+      <p><strong>Analogy:</strong> If your kitchen is the bottleneck (CPU), hiring more waiters (threads) doesn’t help. If deliveries are slow (I/O), a faster chef (JIT) won’t fix it.</p>
 
-      <p><strong>Worked example — Pessimistic lease with fencing token.</strong> For a single‑writer job (e.g., nightly aggregation), obtain a <em>monotonic lease</em> from a coordinator that issues <em>fencing tokens</em> (1, 2, 3, …). Downstream writes include the token; stores reject writes with tokens lower than the last accepted value. If a slow old worker resumes, its token is stale and its writes are ignored.</p>
+      <h3 id="ch06-2-4">06.2.4 The “Three Knobs” for Tail Control</h3>
+      <p><strong>Plain:</strong> You generally control tail latency by: (1) avoiding work (cache), (2) parallelizing safely (hedged requests), and (3) bounding waits (timeouts/backpressure).</p>
+      <p><strong>Formal:</strong> <em>Hedging</em> duplicates long-waiting requests to another replica after a threshold (e.g., the P95 of recent samples) and uses the first success, capped to a budget. <em>Priority queues</em> ensure low-latency work isn’t stuck behind heavy jobs. <em>Adaptive timeouts</em> and <em>server-side backpressure</em> prevent queues from exploding.</p>
+      <p><strong>Pitfall:</strong> Global hedging without budgets creates positive feedback: you double load during spikes. Scope hedges to small percentages and avoid for non-idempotent operations.</p>
 
-      <h3 id="6-2-2-mvcc">6.2.2 Multi‑version concurrency control (MVCC) basics</h3>
-      <p><strong>Plain.</strong> MVCC keeps multiple versions of a row so readers don’t block writers. Each transaction sees a snapshot. <strong>Formal.</strong> At <em>snapshot isolation</em>, reads see a consistent snapshot and writes conflict only if two concurrent transactions update the same row. <strong>Pitfall.</strong> Long‑running transactions bloat version storage and increase conflict probability; “phantoms” (new rows matching a predicate) appear unless you use predicate locks or serializable isolation.</p>
-
-      <p>Compare: <strong>Isolation levels (typical RDBMS)</strong></p>
-      <table class="table">
-        <thead><tr><th>Level</th><th>Prevents</th><th>Allows</th><th>Use when</th></tr></thead>
-        <tbody>
-          <tr><td>Read committed</td><td>Dirty reads</td><td>Non‑repeatable reads, phantoms</td><td>Low contention, short transactions</td></tr>
-          <tr><td>Repeatable read</td><td>Dirty & non‑repeatable reads</td><td>Phantoms (DB‑specific)</td><td>Stable views with some concurrency</td></tr>
-          <tr><td>Serializable</td><td>All anomalies</td><td>—</td><td>Critical invariants, low concurrency</td></tr>
-        </tbody>
-      </table>
-
-      <pre data-lang="sql"><code>-- Example: optimistic update with a version column
-UPDATE inventory
-   SET qty = qty - 1, version = version + 1
- WHERE sku = 'S-42' AND version = 7;
--- Check affected rows; if 0, someone else updated first → retry with new version</code></pre>
-
-      <p><em>Takeaway:</em> Use optimistic control for user‑scoped records and UI‑driven retries; consider pessimistic locks or queues for high‑contention resources (counters, scarce inventory).</p>
+      <p class="summary">Takeaway: Measure percentiles, decompose the critical path, and pull the three knobs—cache, parallelize carefully, and bound waits—based on what your traces show.</p>
     </section>
 
-    <section class="section" id="6-3-conflict-reconciliation">
-      <h2>6.3 Conflict resolution & reconciliation</h2>
-      <p><strong>Why it matters.</strong> In partitioned or offline‑capable systems, concurrent updates arrive out of order. You must either design <em>conflict‑free</em> data types or build reconciliation pipelines that restore a coherent state.</p>
+    <!-- 06.3 -->
+    <section class="section" id="ch06-3">
+      <h2>06.3 Cost Optimization</h2>
+      <p id="ch06-3-why">Why it matters: Performance that ignores cost will be rolled back. Cost that ignores performance will be abandoned by users. You need both.</p>
 
-      <h3 id="6-3-1-crdts">6.3.1 CRDTs and conflict‑free designs</h3>
-      <p><strong>Plain.</strong> A <em>CRDT</em> (Conflict‑free Replicated Data Type) is a data structure that can be merged without coordination and still converge. <strong>Formal.</strong> The merge function is associative, commutative, and idempotent; replicas that process the same set of updates (in any order) reach the same state. <strong>Pitfall.</strong> CRDTs don’t solve <em>all</em> problems; they’re ideal for counters, sets, maps, and grow‑only registers—not for transactions demanding invariants across objects.</p>
+      <h3 id="ch06-3-1">06.3.1 Right-Sizing and Utilization Targets</h3>
+      <p><strong>Plain:</strong> Big instances feel safe but waste money and amplify blast radius. Start smaller, scale out.</p>
+      <p><strong>Formal:</strong> Targets that work in practice: 50–70% steady-state CPU for stateless APIs, 60–75% memory for JVM services (to keep GC breathing room), and sustained queue depth &lt; 1× per worker for latency-sensitive paths. Re-run sizing when traffic patterns or code changes shift bottlenecks.</p>
+      <p><strong>Pitfall:</strong> “Rightsize once” thinking. Optimizations and feature growth invalidate old assumptions; institutionalize monthly reviews.</p>
 
-      <p>Compare: <strong>Common CRDTs</strong></p>
-      <table class="table">
-        <thead><tr><th>CRDT</th><th>What it models</th><th>How merge works</th><th>When to use</th></tr></thead>
-        <tbody>
-          <tr><td>G‑Counter</td><td>Monotonic counter</td><td>Per‑replica counts summed</td><td>Likes/favorites, coarse metrics</td></tr>
-          <tr><td>PN‑Counter</td><td>Increment & decrement</td><td>Two G‑Counters (pos/neg)</td><td>Inventory deltas (non‑authoritative)</td></tr>
-          <tr><td>G‑Set / 2P‑Set</td><td>Add‑only / add‑then‑remove</td><td>Union / adds minus removes</td><td>Tagging, membership lists</td></tr>
-          <tr><td>LWW‑Register</td><td>Last write wins</td><td>Max by timestamp/vector</td><td>Profile fields where recency wins</td></tr>
-          <tr><td>OR‑Set</td><td>Set with remove by tag</td><td>Unique IDs for adds; remove by ID</td><td>Collaborative lists with deletions</td></tr>
-        </tbody>
-      </table>
+      <h3 id="ch06-3-2">06.3.2 Autoscaling &amp; Schedules</h3>
+      <p><strong>Plain:</strong> The cheapest capacity is the pod you don’t run. Combine predictive schedules for known peaks with reactive target tracking.</p>
+      <p><strong>Formal:</strong> Use cron-based scale-outs before events (marketing emails, local commute hours), then let HPA/ASGs trim to demand. Stabilize aggressive scale-down with windows (e.g., 5–10 minutes) to avoid flapping during partial lulls.</p>
+      <p><strong>Pitfall:</strong> Scaling purely on CPU for I/O-bound systems; add signals like <em>inflight per replica</em>, <em>queue lag</em>, or <em>P95 latency</em>.</p>
 
-      <pre data-lang="pseudo"><code>// G-Counter sketch
-struct GCounter { map&lt;replicaId,int64&gt; counts }
-function increment(id): counts[id]++
-function value(): return sum(counts.values())
-function merge(a, b):
-  for each key in union(keys(a), keys(b)):
-    a.counts[key] = max(a.counts[key], b.counts[key])  // idempotent
-  return a</code></pre>
+      <h3 id="ch06-3-3">06.3.3 Storage and Egress</h3>
+      <p><strong>Plain:</strong> Storage and network dominate cost more often than developers expect. Caching and tiering reduce both.</p>
+      <p><strong>Formal:</strong> Put cold data in object storage and compress. Serve static assets and public GET APIs through a CDN to reduce regional egress. Co-locate compute with data to minimize cross-zone/region charges. For logs, keep high-detail for days and aggregate beyond.</p>
+      <p><strong>Pitfall:</strong> Chatty microservices across zones/regions; every hop is latency and egress cost. Prefer locality and batched RPCs.</p>
 
-      <p><strong>Analogy.</strong> CRDTs are like travel expense envelopes for each teammate: everyone adds receipts independently; when you merge envelopes, you take the maximum receipt count per person so duplicates don’t inflate totals.</p>
+      <h3 id="ch06-3-4">06.3.4 Spot/Preemptible and Multi-Cluster Trade-offs</h3>
+      <p><strong>Plain:</strong> Discount capacity is great for elastic batch, risky for user-facing latency unless you design for preemption.</p>
+      <p><strong>Formal:</strong> Use spot/preemptible for asynchronous workers, background indexers, and analytics. Checkpoint work, implement idempotency, and keep a minimum of on-demand nodes to catch spills. Multi-cluster (per region or tenant) cuts blast radius and lets you scale more granularly—but increases operational overhead.</p>
 
-      <h3 id="6-3-2-reconciliation-pipelines">6.3.2 Reconciliation pipelines and compensating transactions</h3>
-      <p><strong>Plain.</strong> When you cannot avoid conflicts, reconcile them: detect divergence, compute the winner, and apply compensations for losers. <strong>Formal.</strong> A reconciliation pipeline pulls from change logs, groups updates per entity, resolves by a policy (timestamp, vector clock, domain rule), and writes back a canonical state while emitting <em>compensating events</em> for downstreams. <strong>Pitfall.</strong> Silent conflicts are the worst; always measure <em>conflict rate</em> and <em>time‑to‑convergence</em>.</p>
+      <h3 id="ch06-3-5">06.3.5 Cost Guardrails</h3>
+      <p><strong>Plain:</strong> You need a speedometer and a seatbelt for spend.</p>
+      <p><strong>Formal:</strong> Tag resources, set budgets/alerts, and track <em>unit cost</em> (₹ per 1k requests, ₹ per checkout, ₹ per GB processed). Connect unit cost to business KPIs so trade-offs are explicit. Add admission control for “nice-to-have” features when spend exceeds budget (e.g., disable heavy enrichers).</p>
 
+      <p class="summary">Takeaway: Treat cost as a first-class SLO alongside latency. Use rightsizing, scheduled scale-outs, caching/CDNs, and unit economics to stay efficient without cutting reliability.</p>
+    </section>
+
+    <!-- 06.4 -->
+    <section class="section" id="ch06-4">
+      <h2>06.4 Performance Benchmarks &amp; Load Testing</h2>
+      <p id="ch06-4-why">Why it matters: Without disciplined testing, “optimizations” are anecdotes. Benchmarks reveal the knee of the curve where your system saturates.</p>
+
+      <h3 id="ch06-4-1">06.4.1 Methodology Over Tools</h3>
+      <p><strong>Plain:</strong> Tools don’t guarantee good tests; good tests have clear goals, realistic data, and reproducible results.</p>
+      <p><strong>Formal:</strong> Define the SLO target (e.g., P95 ≤ 200&nbsp;ms @ 8k RPS). Prepare representative payloads and warm caches as they would be in production. Run step-load (increasing RPS) to find the saturation knee; then run soak tests (hours) to catch leaks and GC pathologies.</p>
+      <p><strong>Pitfall:</strong> Testing only with empty caches or only with full caches. Report both <em>cold</em> and <em>warm</em> start results and the time-to-warm.</p>
+
+      <h3 id="ch06-4-2">06.4.2 Throughput–Latency Curves</h3>
+      <p><strong>Plain:</strong> As QPS rises, latency stays flat until queues form; then P95 shoots up. That inflection is your safe operating ceiling.</p>
+      <p><strong>Formal:</strong> Plot latency percentiles against offered load. Identify the pre-saturation region (flat), the knee (rapid rise), and the collapse region. Choose production targets 20–40% below the knee to absorb variance and failures.</p>
+      <p><strong>Pitfall:</strong> Reporting only P50; the knee often appears first in P99.</p>
+
+      <h3 id="ch06-4-3">06.4.3 Data Management for Tests</h3>
+      <p><strong>Plain:</strong> Production-like data shapes performance. Tests against toy datasets mislead.</p>
+      <p><strong>Formal:</strong> Use synthetic data with realistic key skew (Zipfian) and payload size distributions. Seed caches with a priming run. For privacy, generate anonymized data or build synthetic datasets that approximate join depth, cardinality, and hot-key distribution.</p>
+      <p><strong>Pitfall:</strong> Monotonic IDs in tests that eliminate hot partitions you’ll see in production. Use salted or hashed keys for realism.</p>
+
+      <h3 id="ch06-4-4">06.4.4 What to Report</h3>
+      <p><strong>Plain:</strong> Make your results decision-friendly.</p>
+      <p><strong>Formal:</strong> Include: test version/config, data scale, warm/cold indicators, P50/95/99 latency vs load, error rate, saturation markers (CPU, queue depth), cache hit ratios, and unit cost estimates at target load. Summarize “safe throughput at SLO” and “bottleneck identified.”</p>
+      <p class="summary">Takeaway: Benchmarks are experiments. Declare a hypothesis (SLO at X RPS), run controlled tests, report tails and costs, and capture the knee for capacity planning.</p>
+    </section>
+
+    <!-- 06.5 -->
+    <section class="section" id="ch06-5">
+      <h2>06.5 Checkpoints — Optimization Exercise: API Latency Reduction</h2>
+      <p id="ch06-5-why">Why it matters: Real systems rarely have a single silver bullet. This exercise forces you to combine caching, profiling, and cost thinking to achieve a concrete SLO.</p>
+
+      <h3 id="ch06-5-1">06.5.1 Scenario &amp; Targets</h3>
       <ul>
-        <li><strong>Detect:</strong> compare per‑entity versions or vector clocks across replicas; flag gaps.</li>
-        <li><strong>Resolve:</strong> apply policy: LWW, max, domain rule (e.g., “highest bid wins”). For critical paths, prefer <em>user choice</em> (“we saw two edits—pick one”).</li>
-        <li><strong>Compensate:</strong> emit events to undo/adjust dependent actions (refunds, restocking) and update read models.</li>
-        <li><strong>Prove:</strong> store audit trails: who wrote, from where, and what policy chose the winner.</li>
-      </ul>
-
-      <p><strong>Worked example — Offline profile edits.</strong> Mobile clients edit a profile offline. Two devices change the display name. Policy: LWW by server time. Reconciler chooses the later timestamp and emits <code>profile_reconciled</code> with the losing value; UI shows a non‑blocking toast: “We updated your name; tap to review previous version.”</p>
-
-      <p><em>Takeaway:</em> If conflicts are expected, make them safe, visible, and reversible.</p>
-    </section>
-
-    <section class="section" id="6-4-partitions">
-      <h2>6.4 Partitioning edge cases</h2>
-      <p><strong>Why it matters.</strong> Network partitions and clock skews are rare but inevitable at scale. Your design should constrain damage when replicas disagree or clocks drift.</p>
-
-      <h3 id="6-4-1-partitions-quorums">6.4.1 Network partitions, split‑brain, and quorum strategies</h3>
-      <p><strong>Plain.</strong> A <em>quorum</em> is a majority subset of replicas whose agreement is enough to proceed. <strong>Formal.</strong> In an <em>N</em>‑replica system, choose read quorum <em>R</em> and write quorum <em>W</em> such that <em>R + W &gt; N</em> to ensure overlap; then a read always sees at least one replica that participated in the latest write. <strong>Pitfall.</strong> Choosing <em>W = 1</em> for low latency without thinking about stale reads; choosing <em>R = 1, W = 1</em> makes the system AP with potentially divergent replicas.</p>
-
-      <p>Compare: <strong>Quorum configurations</strong></p>
-      <table class="table">
-        <thead><tr><th>N (replicas)</th><th>R</th><th>W</th><th>Behavior</th><th>Use when</th></tr></thead>
-        <tbody>
-          <tr><td>3</td><td>2</td><td>2</td><td>CP‑leaning; higher latency</td><td>Critical configs, money</td></tr>
-        <tr><td>3</td><td>1</td><td>2</td><td>Fresh writes; fast reads may be stale</td><td>Write‑heavy with tolerant reads</td></tr>
-        <tr><td>5</td><td>3</td><td>3</td><td>CP‑leaning; survives 2 failures</td><td>Core metadata</td></tr>
-          <tr><td>5</td><td>2</td><td>3</td><td>Faster reads; still overlap</td><td>Mixed workloads</td></tr>
-        </tbody>
-      </table>
-
-      <p><strong>Split‑brain protection.</strong> Use <em>fencing tokens</em> with leases; prefer leader election with majority quorum; on minority partitions, <em>degrade</em> gracefully (read‑only mode) rather than attempt writes. For caches or session stores, tolerate divergence but add fast rejoin procedures and staleness caps.</p>
-
-      <p><strong>Clock discipline.</strong> Use NTP/chrony and design for clock skew tolerance: avoid LWW by wall‑clock where correctness matters; prefer logical clocks (Lamport, vector) or server‑assigned timestamps.</p>
-
-      <h3 id="6-4-2-client-fallbacks">6.4.2 Client fallbacks and UX under uncertainty</h3>
-      <p><strong>Plain.</strong> In partial failures, the client can help. <strong>Formal.</strong> Provide <em>idempotency keys</em>, <em>retry‑after</em> hints, and <em>circuit‑breaker feedback</em> so the UI degrades predictably. <strong>Pitfall.</strong> Silent retries amplify load and duplicate writes.</p>
-      <ul>
-        <li><strong>Write buffering at the edge:</strong> when the origin is down, buffer idempotent writes client‑side with a visible “syncing” state.</li>
-        <li><strong>Explicit offline modes:</strong> design small subsets of features to work offline with CRDTs or queued commands.</li>
-        <li><strong>Conflict prompts:</strong> when user‑visible conflicts occur, prefer guided resolution (“keep mine”, “use server”, “merge”).</li>
+        <li>Endpoint: <code>GET /products/{id}</code> for details.</li>
+        <li>Traffic: 2.5k RPS peak, Zipfian key distribution (top 1% IDs receive 25% of traffic).</li>
+        <li>Current: P95 420&nbsp;ms warm, 620&nbsp;ms cold; cache hit 55%; DB P95 150&nbsp;ms.</li>
+        <li>Goal: P95 ≤ 200&nbsp;ms warm, ≤ 350&nbsp;ms cold, success ≥ 99.95%.</li>
       </ul>
 
-      <p><em>Takeaway:</em> Reliability is a full‑stack property: backends define semantics; clients communicate uncertainty.
-      </p>
-    </section>
-
-    <section class="section" id="6-5-applied-scenarios">
-      <h2>6.5 Applied scenarios</h2>
-      <p><strong>Scenario A — Presence service at scale (AP core, CP edges).</strong> Presence updates are frequent and lossy; model online/offline as a CRDT (LWW register with conservative expiry). For correctness at boundaries (e.g., “can only send message if recipient allows DMs”), maintain a CP gate backed by a strongly consistent store. <em>Lesson:</em> split requirements by consistency need.</p>
-      <p><strong>Scenario B — Inventory reservation (CP with queues).</strong> Scarce inventory can’t oversell. Accept requests into a queue; a single reservation service updates stock under a pessimistic lock or serializable transaction; return a reservation token with expiry. <em>Lesson:</em> serialize scarce resources; let everything else be parallel.</p>
-      <p><strong>Scenario C — Metrics pipeline (AP with reconciliation).</strong> Producers write to local partitions during cross‑region outages; consumers read with <em>R=1</em>. On heal, a reconciler merges partitions by offset; duplicates removed via idempotent keys. <em>Lesson:</em> availability first, then converge.</p>
-      <p><strong>Scenario D — Collaborative document (CRDT).</strong> Use an operation‑based CRDT (e.g., OR‑Set for sections + LWW for formatting). On reconnect, clients merge operations; conflicts produce deterministic results; the UI highlights recent merges. <em>Lesson:</em> choose data types that make conflicts harmless.</p>
-    </section>
-
-    <section class="section" id="6-6-mini-exercises">
-      <h2>6.6 Mini‑exercises</h2>
+      <h3 id="ch06-5-2">06.5.2 Plan (7 Steps)</h3>
       <ol>
-        <li><strong>Label CP vs AP:</strong> For your capstone, mark which user journeys must be CP (reject under partition) and which can be AP (accept & reconcile). Write the UX behavior for each.</li>
-        <li><strong>Pick a concurrency strategy:</strong> Identify a hot record (e.g., counter, scarce SKU). Decide optimistic vs pessimistic and justify with expected contention and retry cost.</li>
-        <li><strong>Design a reconciler:</strong> Sketch a pipeline that detects and resolves conflicts for one entity. Define the merge policy, metrics (conflict rate, time‑to‑converge), and compensations.</li>
-        <li><strong>Quorum tuning:</strong> Choose N, R, W for one store; simulate two failure cases and explain read/write behavior and staleness exposure.</li>
+        <li><strong>Clarify:</strong> Response is public for anonymous users (no PII) → eligible for CDN caching. Personalization modules (recommendations) are separate calls.</li>
+        <li><strong>Quantify:</strong> With 55% cache hit, origin sees ~1,125 RPS. CPU at 65%, DB at 70% P95 150&nbsp;ms suggests room at origin.</li>
+        <li><strong>Baseline:</strong> Introduce HTTP headers: <code>Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=30</code>, strong <code>ETag</code>, and <code>Vary: Accept-Encoding</code>.</li>
+        <li><strong>Place data:</strong> Redis read-through for product blobs (<code>product:{id}:v3</code>) TTL 5 minutes; size cap 64&nbsp;KB; compress if &gt; 8&nbsp;KB.</li>
+        <li><strong>Route:</strong> Enable CDN for anonymous GETs; service returns <code>304 Not Modified</code> on <code>If-None-Match</code>. Coalesce misses in the app layer to stop stampedes (singleflight).</li>
+        <li><strong>Design for failure:</strong> When DB slows, serve stale (Redis/CDN) within TTL+<em>stale-while-revalidate</em>; instrument a “served stale” metric.</li>
+        <li><strong>Observe:</strong> Track P95/99, hit ratios (browser/CDN/Redis), origin QPS, bytes egress, and unit cost (₹ per 1k requests). Alert on error budget burn and cache stampede rate.</li>
+      </ol>
+
+      <h3 id="ch06-5-3">06.5.3 Expected Results &amp; Follow-ups</h3>
+      <ul>
+        <li><strong>Hit Ratio:</strong> CDN hit → 80–90% for hot IDs; Redis hit → 85% of remaining; origin falls to &lt; 300 RPS.</li>
+        <li><strong>Latency:</strong> Warm P95 drops towards edge latency (tens of ms); cold P95 bounded by Redis miss + DB (~200–300&nbsp;ms).</li>
+        <li><strong>Cost:</strong> Egress shifts to CDN (cheaper), origin compute shrinks by 40–60%. Track absolute vs unit cost.</li>
+        <li><strong>Next:</strong> Introduce partial responses and prioritization to keep critical fields fast; background hydrate top 1% products.</li>
+      </ul>
+
+      <p class="summary">Deliverables: A before/after dashboard screenshot, updated headers and Redis key policy, and a one-page note quantifying latency and cost wins with caveats.</p>
+    </section>
+
+    <!-- Resources -->
+    <section class="section" id="ch06-resources">
+      <h2>Resources</h2>
+      <ul class="resource-list">
+        <li><strong>Redis Documentation</strong> — Patterns for caching, eviction policies, and memory management. <span class="badge">Free</span></li>
+        <li><strong>Google SRE Book — “The Tail at Scale”/Latency Chapters</strong> — Tail control, retries, and budgets. <span class="badge">Free</span></li>
+        <li><strong>Cloud CDN/Edge Providers Docs</strong> — HTTP caching headers, <code>stale-while-revalidate</code>, and purge APIs. <span class="badge">Free</span></li>
+        <li><strong>k6 &amp; JMeter Docs</strong> — Load testing scripting and best practices. <span class="badge">Free</span></li>
+        <li><strong>Cloud Cost Optimization Guides (AWS/GCP/Azure)</strong> — Rightsizing, autoscaling, storage tiers, and egress strategies. <span class="badge">Free</span></li>
+      </ul>
+      <p class="muted">Rationales: These cover evolving caching and edge behaviors, reliable tail-latency playbooks, benchmarking technique, and practical cost levers.</p>
+    </section>
+
+    <!-- Recap -->
+    <section class="section" id="ch06-recap">
+      <h2>Recap &amp; Next Steps</h2>
+      <ul>
+        <li>Place caches deliberately: browser/CDN for public GETs, Redis for hot objects, and derived tables for heavy joins.</li>
+        <li>Favor simple invalidation (TTL + versioned keys) and use outbox/CDC for targeted purges where necessary.</li>
+        <li>Profile with percentiles and traces; optimize the critical path, not the average.</li>
+        <li>Make cost a first-class SLO: right-size, autoscale by SLI-correlated metrics, and reduce egress/storage with CDNs and tiering.</li>
+        <li>Benchmark with method: step-load to find the knee, soak to catch leaks, and report tails plus unit cost.</li>
+      </ul>
+      <p><strong>Next Steps:</strong></p>
+      <ol>
+        <li>For your capstone, design a caching plan (headers, keys, TTLs, invalidation) for the top two read endpoints. Define success metrics and safe fallbacks.</li>
+        <li>Run a step-load test and publish a throughput–latency plot. Choose a safe operating point 20–40% below the knee.</li>
+        <li>Produce a one-page cost brief with current unit cost and a list of three levers to reduce it without hurting SLOs.</li>
       </ol>
     </section>
 
-    <section class="section" id="6-7-resources">
-      <h2>Resources</h2>
-      <ul>
-        <li><strong>Designing Data‑Intensive Applications</strong> — comprehensive coverage of consistency, replication, and transactions. <em>Why:</em> rigorous mental models for CAP, MVCC, and CRDT‑like patterns. <em>(Paid)</em></li>
-        <li><strong>Microservices essays</strong> — practical guidance on data ownership and integration contracts that reduce cross‑service transactions. <em>Why:</em> boundary hygiene reduces conflicts. <em>(Free)</em></li>
-        <li><strong>SRE sources</strong> — incident patterns around split‑brain, fencing, and error budgets during partitions. <em>Why:</em> operational tactics when theory meets outages. <em>(Free)</em></li>
-      </ul>
-    </section>
-
-    <section class="section" id="6-8-recap-next">
-      <h2>Recap & Next Steps</h2>
-      <ul>
-        <li>You can choose consistency deliberately (strong, eventual, session) and design UX to communicate freshness and uncertainty.</li>
-        <li>You can select concurrency control (optimistic, pessimistic, MVCC) based on contention and retry costs, and implement fences for single writers.</li>
-        <li>You can avoid conflicts with CRDTs where appropriate, or reconcile deterministically with auditable pipelines and compensations.</li>
-        <li>You can plan quorum configurations and fallbacks that constrain damage during partitions and guide clients safely.</li>
-      </ul>
-      <p><strong>Next:</strong> Continue to <a href="chapters/ch07.html#7-hero">Chapter 7 — Operational Practices: CI/CD, Observability &amp; Security</a>, where we connect releases, telemetry, and security into a sustainable delivery system.</p>
-    </section>
-
+    <!-- Pager -->
     <nav class="next-prev">
-      <a class="btn" rel="prev" href="chapters/ch05.html">← Previous</a>
-      <a class="btn btn-primary" rel="next" href="chapters/ch07.html">Next →</a>
+      <a class="prev" rel="prev" href="chapters/ch05.html"><span class="muted">Prev</span><span>← Chapter 05 — Reliability, Fault Tolerance, and Observability</span></a>
+      <a class="next" rel="next" href="chapters/ch07.html"><span class="muted">Next</span><span>Chapter 07 — Security and Compliance in Distributed Systems →</span></a>
     </nav>
 
-    <footer class="site-footer">
-      <div class="container">
-        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
-      </div>
-    </footer>
+    <!--
+    CHECKLIST
+    - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+    - [x] Canonical nav (Home / Appendix / Glossary only)
+    - [x] Pager prev/next valid; ToC numbering matches
+    - [x] Order: Hero → Numbered Sections → Resources → Recap
+    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
+    - [x] No images in this chapter (image audit N/A)
+    - [x] Head/meta complete; no TODOs
+    -->
   </main>
-
-  <!--
-  CHECKLIST (Chapter 06)
-  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
-  - [x] Canonical nav (Home / Appendix / Glossary only)
-  - [x] Pager prev → ch05, next → ch07; ToC numbering matches
-  - [x] Order: Hero → Numbered Sections → Resources → Recap
-  - [x] ≥1,800 words of prose (body text)
-  - [x] Images: none in this chapter (no audit required)
-  - [x] Head/meta complete; no TODOs
-  -->
 </body>
 </html>

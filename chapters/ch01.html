@@ -2,249 +2,265 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 01 — Introduction & How this Builds on Beginner End Goals</title>
-  <meta name="description" content="Chapter 1 sets expectations, connects to beginner outcomes, defines milestones and evaluation, and helps you pick a capstone domain with baseline NFRs and SLOs.">
-  <meta property="og:title" content="Chapter 01 — Introduction & How this Builds on Beginner End Goals">
-  <meta property="og:description" content="From vocabulary to production: pick a capstone, define NFRs and SLOs, and set up a 12–16 week roadmap with reviews, dashboards, and postmortems.">
-  <meta property="og:type" content="article">
   <base href="../">
-  <link rel="stylesheet" href="styles/theme.css">
-  <script src="scripts/app.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chapter 01 — Bridging Fundamentals to Applied Design</title>
+  <meta name="description" content="Chapter 1 connects beginner concepts—availability, scalability, latency—to production-grade system design with frameworks, trade-off analysis, and a guided mini-exercise.">
+  <meta property="og:title" content="Chapter 01 — Bridging Fundamentals to Applied Design">
+  <meta property="og:description" content="From concepts to practice: SLAs/SLOs/SLIs, scoping constraints, CAP in practice, and a structured lifecycle from prototype to production.">
+  <meta property="og:type" content="article">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="stylesheet" href="../styles/theme.css">
+  <script src="../scripts/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
 
-  <header class="app-nav">
+  <!-- Canonical Top Navigation (copy verbatim to all pages) -->
+  <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">Intermediate System Design</div>
-      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="top-menu">☰ Menu</button>
-      <nav id="top-menu" class="menu" aria-label="Primary">
+      <div class="brand">System Design — Intermediate</div>
+      <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
+      <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
         <a href="chapters/appendix.html">Appendix</a>
         <a href="chapters/glossary.html">Glossary</a>
-      </nav>
+      </div>
+    </div>
+  </nav>
+
+  <header class="page-hero" id="ch01-hero">
+    <div class="container">
+      <div class="meta">
+        <span class="badge badge-primary">Chapter 01</span>
+        <span class="badge">Foundations → Practice</span>
+      </div>
+      <h1>Bridging Fundamentals to Applied Design</h1>
+      <p class="abstract">You know the vocabulary—availability, latency, throughput, consistency. This chapter turns those terms into a practical workflow you can apply to interviews and real production systems. You’ll translate product needs into measurable objectives, select patterns with explicit trade-offs, and adopt a lifecycle that safely evolves a prototype into a dependable service.</p>
     </div>
   </header>
 
-  <main id="main" class="container fade-in">
-    <section class="page-hero" id="1-hero">
-      <div class="meta"><span class="badge badge-primary">Chapter 01</span></div>
-      <h1>Introduction & How this Builds on Beginner End Goals</h1>
-      <p class="abstract">Beginner‑level system design gives you names for parts and a way to sketch a single request path. This chapter turns that vocabulary into a plan for building production‑grade systems. You will choose a capstone domain, translate features into non‑functional requirements (NFRs), set concrete SLO/SLI targets, and adopt a realistic 12–16 week cadence with design reviews, dashboards, and a final postmortem.</p>
+  <main id="main" class="container">
+    <!-- 01.1 -->
+    <section class="section" id="ch01-1">
+      <h2>01.1 From Concepts to Practice</h2>
+      <p id="ch01-1-why">Why it matters: Teams don’t ship “availability” or “latency” in the abstract; they ship products that meet user expectations under cost and time constraints. Turning concepts into numbers and guardrails avoids endless debates and aligns engineering with outcomes.</p>
+
+      <h3 id="ch01-1-1">01.1.1 SLAs, SLOs, and SLIs</h3>
+      <p><strong>Plain:</strong> Think of an online store promising “we’re fast and up most of the time.” That promise must become numbers everyone can check. We define what we observe (<em>SLIs</em>), what we aim for (<em>SLOs</em>), and what we contractually promise (<em>SLAs</em>).</p>
+      <p><strong>Formal:</strong> A <em>Service Level Indicator</em> (SLI) is a quantitative measure (e.g., fraction of HTTP 2xx responses within 300&nbsp;ms). A <em>Service Level Objective</em> (SLO) sets a target for that indicator (e.g., P95 latency ≤ 300&nbsp;ms over 28 days). A <em>Service Level Agreement</em> (SLA) is an external commitment with penalties (e.g., 99.9% monthly availability with credits if breached).</p>
+      <p><strong>Pitfall:</strong> Setting SLOs you cannot measure (“snappy experience”) or that fight each other (ultra-low latency and ultra-strict consistency without budget to pay for it).</p>
+      <p><strong>Example:</strong> For a checkout API, measure success rate (2xx), P95 latency, and <em>end-to-end</em> completion rate. SLOs might be: 99.95% success, P95 ≤ 250&nbsp;ms, and ≥ 99.9% order completion within 5 minutes.</p>
+
+      <h3 id="ch01-1-2">01.1.2 Translating Requirements to Technical Specs</h3>
+      <p><strong>Plain:</strong> Start from user jobs—what must happen within what time—and convert those into capacities, latencies, and budgets.</p>
+      <p><strong>Formal:</strong> Given user demand <em>λ</em> (requests/sec), workload distribution (read/write mix), and SLOs, derive required concurrency, queueing targets (Little’s Law), and headroom (typically 30–50%) to survive variance and failures.</p>
+      <p><strong>Pitfall:</strong> Copying another company’s architecture without your own numbers. Good SLOs for search results are not identical to SLOs for money movement.</p>
+      <p><strong>Worked Example A — Back-of-Envelope Capacity:</strong> Your feature flag service must serve 15k RPS reads and 1k RPS writes with P95 ≤ 50&nbsp;ms. Assume each read is 1.5&nbsp;KB and each write is 2&nbsp;KB. A single node sustains ~4k RPS reads at P95 35&nbsp;ms and 400 RPS writes. <em>Sizing:</em> Reads: 15k / 4k ≈ 3.75 → 4 nodes. Writes: 1k / 400 = 2.5 → 3 nodes. With 50% headroom for failover and traffic spikes, plan 6–8 nodes (N=8 if you want one-node maintenance windows).</p>
+      <p><strong>Worked Example B — SLO to Alert:</strong> SLO is P95 ≤ 50&nbsp;ms. Define alert as “burn rate &gt; 4× for 15 minutes,” meaning you’d spend a week’s error budget in &lt; 2 hours if nothing changes. This reduces noise compared to alerting on single samples.</p>
+      <p><strong>Analogy:</strong> SLIs/SLOs are like speed limits and fuel gauges. You don’t stare at the odometer (total users); you watch current speed (latency percentile) and fuel (error budget) to decide whether to accelerate features or refuel reliability.</p>
+
+      <p class="summary">Takeaway: Make the abstract observable. Once SLIs and SLOs exist, every later design choice (datastore, caching, retries) can be judged by how it affects the indicators.</p>
     </section>
 
-    <figure>
-      <img src="https://www.oreilly.com/covers/urn%3Aorm%3Abook%3A9781491903063/400w/" alt="Cover of Designing Data‑Intensive Applications by Martin Kleppmann" loading="lazy" decoding="async" width="400" height="525" referrerpolicy="no-referrer">
-      <figcaption>Core reference: <em>Designing Data‑Intensive Applications</em> (O'Reilly Media, 2017) — for data trade‑offs and consistency models.</figcaption>
-    </figure>
+    <!-- 01.2 -->
+    <section class="section" id="ch01-2">
+      <h2>01.2 Design Frameworks</h2>
+      <p id="ch01-2-why">Why it matters: Pressure and ambiguity lead to ad-hoc choices. A consistent framework speeds decisions, reveals risks early, and produces artifacts others can review.</p>
 
-    <section class="section" id="1-1-course-roadmap">
-      <h2>1.1 Course roadmap & timeframe</h2>
-      <p><strong>Why it matters.</strong> Without a shared pace and checkpoints, teams drift toward feature‑first delivery and postpone operational work. A roadmap aligns design, implementation, and reliability milestones so that every architectural choice is exercised under load and observed in production‑like environments (Google SRE, 2016; AWS Well‑Architected, 2024).</p>
-      <p><strong>Plain.</strong> We will spend about three months moving from concepts to a working prototype that you can deploy, measure, and break safely. <strong>Formal.</strong> The program is a staged plan with deliverables (NFRs, SLOs, runbooks, dashboards, and a postmortem) and acceptance criteria tied to a rubric. <strong>Pitfall.</strong> Many learners leave SLOs and rollback plans until the end; this chapter makes them first‑class milestones. <strong>Example.</strong> In week 2 you’ll pick a data store with written trade‑offs; by week 6 your CI/CD pipeline will ship a service behind a feature flag with an automated rollback.</p>
+      <h3 id="ch01-2-1">01.2.1 Clarifying Scope and Constraints</h3>
+      <p><strong>Plain:</strong> Before drawing boxes, lock down what you’re solving, for whom, and under what limits.</p>
+      <p><strong>Formal:</strong> Define <em>scope</em> (features included/excluded), <em>constraints</em> (SLOs, compliance, budgets), and <em>assumptions</em> (traffic models, data freshness). Record <em>non-goals</em> to prevent scope creep.</p>
+      <p><strong>Pitfall:</strong> Premature optimization (e.g., multi-region write consistency) when the product needs only regional low-latency reads.</p>
+      <p><strong>Example:</strong> Notification service v1: In-app and email only (SMS out of scope). Target 10k RPS fan-out peak, ≤ 1&nbsp;s end-to-end 95% of time, GDPR compliant, budget of two engineers/month for ops.</p>
 
-      <h3 id="1-1-1-timeline">1.1.1 Timeline & weekly cadence (12–16 weeks)</h3>
-      <ul>
-        <li><strong>Week 0:</strong> Choose a capstone domain; draft NFRs (<em>availability, latency, cost, privacy</em>) and initial SLIs/SLOs.</li>
-        <li><strong>Weeks 1–3:</strong> Component design, data model, API contracts; write two alternatives for any key decision (e.g., "RDBMS vs document store").</li>
-        <li><strong>Weeks 3–6:</strong> Implement core services; stand up CI/CD with basic tests; enable traces and metrics; publish a design log.</li>
-        <li><strong>Weeks 6–9:</strong> Deploy to a managed runtime (Kubernetes/serverless); add dashboards and two alerting rules; run a baseline load test.</li>
-        <li><strong>Weeks 9–12:</strong> Fault injection experiment; blameless postmortem; polish docs and demo.</li>
-      </ul>
-      <p><strong>Trade‑offs.</strong> A shorter 8–10 week path increases focus but reduces time for iteration and refactoring; a 16‑week path allows deeper experiments (e.g., alternative messaging backbones) but requires firmer scope control.</p>
+      <h3 id="ch01-2-2">01.2.2 Establishing Metrics for Success</h3>
+      <p><strong>Plain:</strong> Decide what “done” looks like in numbers.</p>
+      <p><strong>Formal:</strong> Couple <em>leading</em> indicators (queue depth, cache hit ratio) with <em>lagging</em> indicators (user-visible latency, errors). Use targets with windows (e.g., 30-day rolling) and define error budgets for feature velocity.</p>
+      <p><strong>Pitfall:</strong> Choosing only infrastructure metrics (CPU %) without user SLIs; you might “optimize” and still fail users.</p>
+      <p><strong>Example (KPI set):</strong> P95 latency ≤ 200&nbsp;ms, P99 ≤ 450&nbsp;ms; success ≥ 99.95%; cache hit ≥ 85%; tail amplification factor ≤ 3× (P99 vs P50); cost ≤ ₹0.04 per 1k requests.</p>
 
-      <h3 id="1-1-2-checkpoints">1.1.2 Checkpoints and milestone deliverables</h3>
-      <p><strong>Plain.</strong> Checkpoints are safety rails. <strong>Formal.</strong> Each checkpoint has artifacts that demonstrate learning outcomes and de‑risk later stages. <strong>Pitfall.</strong> Skipping a checkpoint often produces surprises during load tests (e.g., unbounded fan‑out or hot partitions). <strong>Example.</strong> A “definition of done” for Milestone 2 is “CI/CD deploys to a staging environment, feature flags are enabled, and error rates are visible on a dashboard.”</p>
+      <h3 id="ch01-2-3">01.2.3 A 7-Step Design Flow</h3>
       <ol>
-        <li><strong>Checkpoint A — NFRs & SLOs drafted.</strong> Target users, expected concurrency, 95th percentile latency budgets, and an <em>error budget</em> (Google SRE, 2016).</li>
-        <li><strong>Checkpoint B — Architecture doc & data model.</strong> Sequence diagrams plus read/write paths; documented backpressure and caching strategies.</li>
-        <li><strong>Checkpoint C — CI/CD & Observability baseline.</strong> Automated tests, deployment strategy (blue/green or canary), metrics/logs/traces (OpenTelemetry‑style), and two alert rules.</li>
-        <li><strong>Checkpoint D — Fault Injection & Postmortem.</strong> One chaos experiment (e.g., dependency latency spike) and a blameless postmortem with corrective actions prioritized.</li>
+        <li><strong>Clarify</strong> use cases and constraints; capture non-goals.</li>
+        <li><strong>Quantify</strong> demand; estimate RPS, storage growth, and tail latencies.</li>
+        <li><strong>Choose</strong> a baseline architecture that could pass the SLOs (don’t gold-plate).</li>
+        <li><strong>Place data</strong> (persistence model, partitioning, consistency choice).</li>
+        <li><strong>Route traffic</strong> (LB, caching, backpressure, retries with budgets).</li>
+        <li><strong>Design for failure</strong> (timeouts, circuit breakers, idempotency, DR).</li>
+        <li><strong>Observe</strong> (SLIs wired, red/black deploys, rollback, cost guardrails).</li>
       </ol>
-      <p><em>Takeaway:</em> Checkpoints force you to prove reliability early instead of hoping it emerges at the end.</p>
-      <h3 id="1-1-3-scope">1.1.3 Timeboxing & scope control</h3>
-      <p><strong>Plain.</strong> The fastest way to fail a system design capstone is to keep adding scope. <strong>Formal.</strong> Define a <em>Minimum Viable Slice (MVS)</em>: a thin vertical feature that crosses UI → API → storage → observability → rollback. Ship the MVS by week 4 and iterate. <strong>Pitfall.</strong> Horizontal slices ("build the whole storage layer first") defer end‑to‑end learning and hide coupling issues until late. <strong>Example.</strong> For chat, choose one conversation view with five users, not the entire workspace model; for metrics, ship one event type with one consumer.</p>
-      <ul>
-        <li><strong>Timebox unknowns:</strong> Allocate 1–2 days to spike alternatives (e.g., gRPC vs REST) and decide with an ADR. Revisit only if measurements break assumptions.</li>
-        <li><strong>Budget iteration:</strong> Reserve 20–30% of each week for refactoring, documentation, and stabilizing tests.</li>
-        <li><strong>Exit criteria:</strong> Each timebox ends with a yes/no decision and a short note on trade‑offs and risks carried forward.</li>
-      </ul>
-      <p><em>Takeaway:</em> Ship a narrow end‑to‑end slice early; prefer decisions with a trial plan over indefinite research.</p>
+
+      <p class="summary">Takeaway: A repeatable flow makes designs comparable and teachable. We’ll use this 7-step template throughout the book.</p>
     </section>
 
-    <section class="section" id="1-2-choosing-capstone">
-      <h2>1.2 Choosing a capstone domain</h2>
-      <p><strong>Why it matters.</strong> The domain determines your <em>dominant constraints</em>. A chat service stresses bidirectional low‑latency streams and presence; an e‑commerce catalog stresses indexing and cache coherency; a metrics pipeline stresses ingestion throughput and time‑series storage. Good domains are simple to explain but rich in trade‑offs.</p>
+    <!-- 01.3 -->
+    <section class="section" id="ch01-3">
+      <h2>01.3 Evaluating Trade-offs</h2>
+      <p id="ch01-3-why">Why it matters: Most “best practices” are context-dependent. Knowing the levers—consistency, cost, complexity—prevents cargo-culting architectures.</p>
 
-      <h3 id="1-2-1-example-domains">1.2.1 Example domains</h3>
-      <p>Pick one of the following or propose your own. Each comes with characteristic loads and common bottlenecks.</p>
-      <ul>
-        <li><strong>E‑commerce catalog.</strong> Millions of read‑heavy requests; write bursts during imports; strong need for <em>cache‑aside</em> and search indexing; eventual consistency acceptable for non‑critical metadata.</li>
-        <li><strong>Metrics pipeline.</strong> High‑frequency writes (10k–100k events/s); append‑only log (Kafka‑like) feeding stream processors; OLAP queries over columnar storage; strict ordering within partitions.</li>
-        <li><strong>Chat service.</strong> Persistent connections (WebSocket/gRPC), fan‑out to subscribers, presence and typing indicators; tolerance for short delays in history sync; abuse protection and rate limiting required.</li>
-      </ul>
+      <h3 id="ch01-3-1">01.3.1 CAP in Practice</h3>
+      <p><strong>Plain:</strong> In a network partition, you can keep answering requests (availability) or keep answers perfectly in sync (consistency), but not both.</p>
+      <p><strong>Formal:</strong> The CAP theorem states that in the presence of network partitions, a distributed store cannot simultaneously provide strong consistency and availability. Systems pick a default: CP (consistent, partition-tolerant) or AP (available, partition-tolerant), often with tunable reads/writes.</p>
+      <p><strong>Pitfall:</strong> Equating “eventual consistency” with “sloppy.” Eventual consistency can be engineered with tight bounds, idempotency, and reconciliation.</p>
+      <p><strong>Example:</strong> A cart service can accept writes locally (AP) and reconcile later; a payment ledger prefers CP to avoid double-spends.</p>
 
-      <p><strong>Analogy.</strong> Choosing a domain is like picking a sport: the rules shape the training. A marathoner (metrics pipeline) optimizes sustained throughput; a sprinter (chat) optimizes latency; a decathlete (e‑commerce) balances diverse events with transitions (search, browse, checkout).</p>
+      <h3 id="ch01-3-2">01.3.2 Cost vs Performance vs Complexity</h3>
+      <p><strong>Plain:</strong> Faster and more reliable usually means more moving parts and higher bills. The art is finding “enough” for the current stage.</p>
+      <p><strong>Formal:</strong> Model marginal benefit (ΔSLO, Δconversion) versus marginal cost (infra + people). Complexity cost includes longer MTTR, slower onboarding, and higher change failure rate.</p>
+      <p><strong>Pitfall:</strong> Mistaking cloud credits for free scalability; operational complexity still accrues interest.</p>
 
-      <p>Compare: <strong>Capstone domain characteristics</strong></p>
-      <table class="table">
-        <thead><tr><th>Domain</th><th>Dominant workload</th><th>Primary data store</th><th>Latency target (P95)</th><th>Scaling risk</th></tr></thead>
+      <p><em>Compare: Common Storage Choices</em></p>
+      <table>
+        <thead>
+          <tr><th>Option</th><th>Strengths</th><th>Weaknesses</th><th>Typical Fit</th></tr>
+        </thead>
         <tbody>
-          <tr><td>E‑commerce catalog</td><td>Read‑heavy, bursty writes</td><td>RDBMS + cache + search index</td><td>80–150 ms item page</td><td>Cache coherency; index lag</td></tr>
-          <tr><td>Metrics pipeline</td><td>Write‑heavy, streaming</td><td>Partitioned log + columnar/time‑series</td><td>&lt; 500 ms ingest</td><td>Hot partitions; backpressure</td></tr>
-          <tr><td>Chat service</td><td>Bidirectional, fan‑out</td><td>KV for sessions + message log</td><td>&lt; 150 ms message fan‑out</td><td>Presence scale; thundering herd</td></tr>
+          <tr><td>Single-region SQL</td><td>Transactions, mature tooling</td><td>Latency for distant users, vertical scaling ceiling</td><td>Monoliths, early stage backends</td></tr>
+          <tr><td>Sharded SQL</td><td>Scale reads/writes, predictable semantics</td><td>Complex routing, cross-shard joins hard</td><td>Marketplaces, high-QPS OLTP</td></tr>
+          <tr><td>KV Store</td><td>Low latency, horizontal scale</td><td>Limited queries, modeling overhead</td><td>Caching, session/state, feature flags</td></tr>
+          <tr><td>Document DB</td><td>Flexible schema, nested data</td><td>Hot-partition risk, indexing trade-offs</td><td>Content, catalogs, event payloads</td></tr>
         </tbody>
       </table>
 
-      <h3 id="1-2-2-nfr-translation">1.2.2 Translating feature requirements into NFRs</h3>
-      <p><strong>Plain.</strong> Turn user stories into measurable constraints. <strong>Formal.</strong> For each critical path, define <em>SLIs</em> (what you measure) and <em>SLOs</em> (the promise), then derive <em>error budgets</em> (allowed non‑compliance) to balance reliability with feature delivery (Google SRE, 2016). <strong>Pitfall.</strong> Teams define SLOs that don’t reflect the user’s experience (e.g., measuring queue depth instead of message delivery time). <strong>Example.</strong> “Messages sent should appear to all recipients within 150 ms for 95% of sends, measured end‑to‑end at the client” is better than “broker latency under 50 ms.”</p>
+      <h3 id="ch01-3-3">01.3.3 Worked Example — Reads vs Writes Budget</h3>
+      <p>You run an article service with 95:5 read:write. Edge cache hit is 80%. Origin sees 20% of reads. With 30k RPS external, origin reads are 0.2 × 0.95 × 30k = 5,700 RPS; writes are 0.05 × 30k = 1,500 RPS. A single DB node handles 3,000 reads and 300 writes at target latency. To meet SLO with N+1 redundancy and 50% headroom:</p>
+      <ul>
+        <li>Reads: need 5,700 / 3,000 ≈ 1.9 → 2 nodes; with headroom ×1.5 → 3; with N+1 → 4 reader nodes.</li>
+        <li>Writes: need 1,500 / 300 = 5; headroom ×1.5 → 7.5 → 8; N+1 → 9 primary-capable nodes (or 3 partitions × 3 replicas).</li>
+      </ul>
+      <p><em>Trade-off:</em> Edge caching reduced read pressure drastically; writes still dominate. Consider write batching, queueing, or a CQRS split to separate read replicas from write paths.</p>
 
-      <p><strong>Worked example A — E‑commerce item page.</strong> Feature: “Show item details with availability and price.” Derived NFRs: P95 latency ≤ 120 ms from CDN edge; availability ≥ 99.9% monthly; price freshness ≤ 2 min; cost target ≤ $2 per 1k item views. SLIs: <em>edge‑to‑DOMContentLoaded</em>, <em>origin 5xx rate</em>, <em>cache hit ratio</em>. SLOs: 120 ms P95 page render, &lt; 0.1% 5xx at origin, ≥ 85% cache hit ratio. Error budget: 43m 49s per month of SLO non‑compliance at 99.9% availability (Google SRE, 2016).</p>
-
-      <p><strong>Worked example B — Metrics ingestion.</strong> Feature: “Accept product events in real time.” Derived NFRs: sustained ingest 20k events/s with burst to 100k; P95 end‑to‑end ingest &lt; 500 ms; data loss &lt; 0.01% (at‑least‑once); cost ≤ $X/month. SLIs: <em>produce‑to‑commit latency</em>, <em>drop rate</em>, <em>consumer lag</em>. SLOs: 95% &lt; 500 ms; drop rate &lt; 0.01%; consumer lag &lt; 2 minutes. Error budget: you choose to spend it by letting lag grow under heavy load while keeping loss near zero — an explicit trade‑off (Kleppmann, 2017).</p>
-
-      <p><em>Takeaway:</em> If you cannot measure the user‑visible effect of a feature, you haven’t finished designing it.</p>
-      <h3 id="1-2-3-nfr-antipatterns">1.2.3 NFR anti‑patterns & how to fix them</h3>
-      <p><strong>Anti‑pattern 1 — Vagueness.</strong> “System should be fast.” <strong>Fix:</strong> Tie to a user journey and percentile: “P95 search results in 200 ms for signed‑in users at 100 RPS steady state.”</p>
-      <p><strong>Anti‑pattern 2 — Origin‑centric metrics.</strong> “DB CPU under 70%.” <strong>Fix:</strong> Use user‑visible <em>SLIs</em> (time‑to‑first‑byte, end‑to‑end latency) and treat host metrics as diagnostics, not objectives.</p>
-      <p><strong>Anti‑pattern 3 — One‑size‑fits‑all SLOs.</strong> Copy‑pasting "five nines" ignores cost and business value. <strong>Fix:</strong> Choose reliability levels by impact (e.g., checkout vs recommendations) and revisit based on error budget burn rate (Google SRE, 2016).</p>
-      <p><strong>Anti‑pattern 4 — Unmeasurable SLIs.</strong> If you cannot instrument the client or trace the path, the SLI is aspirational. <strong>Fix:</strong> Add request IDs end‑to‑end, expose client‑side timings, and validate with synthetic probes.</p>
-      <p><strong>Anti‑pattern 5 — Hidden freshness requirements.</strong> Many systems care about <em>how fresh</em> data is, not only latency. <strong>Fix:</strong> Add explicit freshness SLIs (e.g., catalog price age ≤ 2 minutes @ P99).</p>
-      <p><em>Takeaway:</em> A good NFR is precise, observable, and tied to user value; anything else is a risk you should make visible.</p>
+      <p class="summary">Takeaway: Choose consciously. State the SLO impact, the human complexity cost, and how the design responds to partitions.</p>
     </section>
 
-    <section class="section" id="1-3-how-to-use">
-      <h2>1.3 How to use this book / learning strategy</h2>
-      <p><strong>Why it matters.</strong> Architecture is a set of choices under uncertainty. To become effective, you must pair design with implementation, collect measurements, and revise your choices. This chapter equips you with a rhythm: design → implement → observe → critique → iterate.</p>
+    <!-- 01.4 -->
+    <section class="section" id="ch01-4">
+      <h2>01.4 Design Lifecycle</h2>
+      <p id="ch01-4-why">Why it matters: Many outages arrive from “good” designs shipped without guardrails. A lifecycle bakes in proof, feedback, and reversibility.</p>
 
-      <h3 id="1-3-1-paired-learning">1.3.1 Paired learning: design + implementation</h3>
-      <p><strong>Plain.</strong> Every concept comes with a small build task. <strong>Formal.</strong> We use <em>deliberate practice</em>: constrained exercises that isolate a capability (e.g., implementing idempotent retries with correlation IDs). <strong>Pitfall.</strong> Reading without building creates the illusion of knowledge; building without measurement creates confidence without evidence. <strong>Example.</strong> After reading about <em>cache‑aside</em> vs <em>write‑through</em>, you implement both on a tiny service, load test for 10 minutes, and document hit ratio versus write amplification.</p>
-      <ul>
-        <li><strong>Design task:</strong> Draw the critical path for your capstone and mark where you will measure SLIs (latency, availability, correctness).</li>
-        <li><strong>Build task:</strong> Instrument a single API endpoint with request tracing; export metrics, logs, and a span that carries a correlation ID end‑to‑end (OpenTelemetry style).</li>
-        <li><strong>Measure task:</strong> Run a synthetic test to validate your P95 target; record baseline numbers (<em>users, RPS, P95/P99</em>).</li>
-      </ul>
-
-      <p><strong>Compare:</strong> <em>Cache‑aside vs write‑through vs write‑back</em></p>
-      <table class="table">
-        <thead><tr><th>Pattern</th><th>Pros</th><th>Cons</th><th>When to use</th></tr></thead>
-        <tbody>
-          <tr><td>Cache‑aside</td><td>Simple; avoids stale writes; low write amplification</td><td>Cold‑start misses; potential thundering herd</td><td>Read‑heavy workloads; tolerate occasional stale reads</td></tr>
-          <tr><td>Write‑through</td><td>Cache always warm on write</td><td>Higher write latency; double write path</td><td>Read‑mostly where write latency budget allows</td></tr>
-          <tr><td>Write‑back</td><td>Low write latency; batch to origin</td><td>Risk of data loss; complex recovery</td><td>Non‑critical updates; tolerant of temporary inconsistency</td></tr>
-        </tbody>
-      </table>
-
-      <p><em>Takeaway:</em> You will prefer <em>cache‑aside</em> for the catalog, <em>at‑least‑once write‑through</em> in chat presence, and <em>write‑back</em> only with clear durability guarantees.</p>
-
-      <h3 id=\"1-3-2-reviews-and-postmortems\">1.3.2 Code‑reviews, design critiques, and postmortems</h3>
-      <p><strong>Plain.</strong> Reviews create shared ownership and reduce blind spots. <strong>Formal.</strong> We schedule three structured critiques: after data choices (Ch. 3), after reliability planning (Ch. 5), and after pattern selection (Ch. 8). Each ends with an <em>ADR</em> (architecture decision record). <strong>Pitfall.</strong> Treating postmortems as blame hunts discourages reporting; the <em>blameless</em> format (Google SRE) emphasizes learning and concrete follow‑ups.</p>
-      <ul>
-        <li><strong>Design critique checklist:</strong> Does each service own its data? Do SLOs reflect user perception? Is backpressure defined at <em>every</em> ingress?</li>
-        <li><strong>Postmortem minimums:</strong> incident timeline, impact, contributing factors, detection gaps, what went well, specific actions with owners and dates.</li>
-        <li><strong>Evidence rule:</strong> no adjectives without numbers; reference graphs or traces when claiming improvement.</li>
-        <li><strong>Runbook review:</strong> pick one likely failure per sprint; simulate it; update the runbook with missing steps and automation ideas.</li>
-        <li><strong>Decision hygiene:</strong> if a debate lasts over 30 minutes without new information, write an ADR with two options, risks, and a timeboxed experiment.</li>
-      </ul>
-      <p><em>Takeaway:</em> Critiques tighten the feedback loop; postmortems turn surprises into better runbooks and safer releases.</p>
-    </section>
-
-    <section class=\"section\" id=\"1-4-starter-slos\">
-      <h2>1.4 Starter SLOs & error budgets</h2>
-      <p><strong>Why it matters.</strong> SLOs are your contract with users and your guardrails for change. Error budgets quantify how much unreliability you can tolerate before slowing feature work (Google SRE, 2016).</p>
-      <p><strong>Plain.</strong> Choose SLIs that represent user experience (end‑to‑end latency, success rate, freshness). <strong>Formal.</strong> Define a target (e.g., “P95 message fan‑out &lt; 150 ms over 30 days”). The <em>error budget</em> is 1 − SLO (e.g., 0.1% of requests may exceed the target in the window). <strong>Pitfall.</strong> Picking a number without a business reason (e.g., “five nines” by default) increases toil and cost (AWS Well‑Architected, 2024). <strong>Example.</strong> If your checkout requires 99.9% success, that’s 43 minutes of error budget per month; you might choose to spend it during a risky migration behind a feature flag.</p>
-      <ul>
-        <li><strong>Chat SLO draft:</strong> 95% of messages delivered to all intended recipients within 150 ms over 30 days. <em>SLIs:</em> end‑to‑end send‑to‑receive latency, delivery failure rate, online presence accuracy.</li>
-        <li><strong>Catalog SLO draft:</strong> 95% of item page views render within 120 ms at the edge, with correctness for price and availability &gt; 99.99% over 30 days.</li>
-        <li><strong>Metrics SLO draft:</strong> 95% of events committed within 500 ms and query freshness &lt; 2 minutes for 99% of queries.</li>
-      </ul>
-      <p><strong>Worked example C — Chat presence accuracy.</strong> Presence appears simple, but race conditions abound. Define an SLI for <em>presence accuracy</em>: the percentage of users for whom the displayed presence matches server truth within 5 seconds. SLO: ≥ 99.5% over 30 days. <em>Pitfall:</em> measuring only backend heartbeats ignores client tab sleeps and mobile backgrounding. <em>Fix:</em> send periodic client pings with jitter; expire presence conservatively; expose a histogram of client‑side staleness.</p>
-      <p><em>Takeaway:</em> Keep SLOs few (2–4 per service), meaningful, and testable. Revisit targets after you have baseline measurements.</p>
-    </section>
-
-    <section class=\"section\" id=\"1-5-risks-assumptions\">
-      <h2>1.5 Risks, assumptions, and evidence</h2>
-      <p><strong>Why it matters.</strong> System design is a negotiation with risk. Making assumptions explicit lets you test them early (e.g., assumed cache hit ratio ≥ 85%). Evidence then updates your plan.</p>
-      <p><strong>Plain.</strong> Write down the 3–5 biggest risks and an experiment for each. <strong>Formal.</strong> Use <em>hypothesis → experiment → metric → success threshold</em>. <strong>Pitfall.</strong> Ignoring <em>unknown unknowns</em> — areas with little prior art (e.g., volume of cross‑region traffic). <strong>Example.</strong> “We believe a single Kafka topic with 48 partitions will sustain 20k events/s with P95 &lt; 500 ms; success if consumer lag stays &lt; 2 minutes under a 30‑minute spike.”</p>
-      <ul>
-        <li><strong>Backpressure drill:</strong> throttle producers when consumer lag &gt; threshold; verify retry jitter prevents synchrony.</li>
-        <li><strong>Cache stampede drill:</strong> seed randomized TTLs; enable request coalescing; measure miss storms during deploys.</li>
-        <li><strong>Dependency failure drill:</strong> add circuit breakers and timeouts; confirm graceful degradation UX.</li>
-      </ul>
-      <p><strong>Risk register template:</strong></p>
-      <table class=\"table\">
-        <thead><tr><th>Risk</th><th>Assumption</th><th>Experiment</th><th>Metric</th><th>Exit criteria</th></tr></thead>
-        <tbody>
-          <tr><td>Hot partition</td><td>Uniform key distribution</td><td>Replay 10× hottest key</td><td>P95 latency; CPU</td><td>P95 &lt; 2× baseline; CPU &lt; 75%</td></tr>
-          <tr><td>Cache stampede</td><td>Warmed cache</td><td>Invalidate 5% hot keys</td><td>Origin QPS; miss ratio</td><td>Origin QPS spike &lt; 1.5×; miss ratio recovers &lt; 60s</td></tr>
-          <tr><td>Downstream slowness</td><td>99% &lt; threshold</td><td>Inject +200 ms latency</td><td>Timeout rate; user SLI</td><td>Timeout &lt; 1%; SLI holds</td></tr>
-        </tbody>
-      </table>
-      <p><em>Takeaway:</em> Turn fears into tests; record outcomes in the design log and evolve your architecture.</p>
-    </section>
-
-    <section class=\"section\" id=\"1-6-mini-exercises\">
-      <h2>1.6 Applied mini‑exercises</h2>
+      <h3 id="ch01-4-1">01.4.1 From Prototype to Production</h3>
+      <p><strong>Plain:</strong> Build the smallest thing that can pass your SLOs, then harden it before feature fireworks.</p>
+      <p><strong>Formal:</strong> Phases:</p>
       <ol>
-        <li><strong>Service boundary sketch.</strong> Draw three candidate boundaries for your domain. For each, list one advantage and one risk (e.g., data ownership vs cross‑service transactions). Choose one and justify. <em>Acceptance:</em> a diagram, a paragraph per option, and an ADR documenting the decision and revisit trigger.</li>
-        <li><strong>First SLO draft.</strong> Define one latency SLI and one availability SLI for your core user journey. Explain why they reflect user experience. <em>Acceptance:</em> an SLI definition (units, percentile, window), a target, and how you’ll measure it in staging.</li>
-        <li><strong>Back‑of‑envelope capacity.</strong> Estimate peak QPS, bandwidth, and storage growth for 6 months. Document the margin (e.g., 30%) and the signal you’ll use to re‑estimate. <em>Acceptance:</em> a short table with inputs, assumptions, and a graph screenshot after a 10‑minute synthetic test.</li>
+        <li><em>Prototype:</em> Validate data model and core flows. Fake non-critical dependencies. Instrument basic SLIs.</li>
+        <li><em>Beta/Canary:</em> Real traffic for a subset of users or regions. Add timeouts, retries with budgets, and circuit breakers.</li>
+        <li><em>Production:</em> Automated rollouts/rollbacks, blue-green or red-black deploys, dashboards aligned to SLOs, paging only on user-impacting burn rates.</li>
       </ol>
-      <p><em>Takeaway:</em> Small designs plus small builds compound into confidence for the capstone.</p>
+      <p><strong>Pitfall:</strong> “Temporary” scripts becoming permanent; lack of runbooks; no owner for data migrations.</p>
+
+      <h3 id="ch01-4-2">01.4.2 Feedback Loops</h3>
+      <p><strong>Plain:</strong> Observe, compare to targets, adjust. Repeat.</p>
+      <p><strong>Formal:</strong> Create loops at these horizons: <em>request loop</em> (adaptive timeouts, backpressure), <em>daily loop</em> (SLO burn review, incident triage), <em>release loop</em> (post-deploy checks, feature flags), and <em>quarterly loop</em> (capacity re-estimation, cost audits).</p>
+      <p><strong>Pitfall:</strong> Shipping features faster than observability evolves; you end up blind at the edges.</p>
+      <p><strong>Example:</strong> A search service sets P99 < 800&nbsp;ms. After launch, P99 creeps to 1,100&nbsp;ms due to new ranking features. The quarterly loop reveals memory pressure; the fix is a memory-friendly index and a tuned cache TTL, restoring P99 without doubling hardware.</p>
+
+      <h3 id="ch01-4-3">01.4.3 Guardrails and Reversibility</h3>
+      <p><strong>Plain:</strong> Assume failures will happen—design easy ways to stop the bleeding.</p>
+      <p><strong>Formal:</strong> Implement kill-switches, feature flags, traffic shedding, static defaults on config failures, and idempotent operations to make retries safe. Prefer designs with low blast radius by default.</p>
+      <p><strong>Pitfall:</strong> Global config pushes without validation; retries amplifying an outage.</p>
+      <p><strong>Example Runbook Snippet:</strong></p>
+      <pre data-lang="yaml"><code>runbook:
+  symptom: "P95 latency &gt; budget for 15m, search timeouts &gt; 2%"
+  checks:
+    - "Is cache hit ratio &lt; 70%? Increase TTL by 2x via flag."
+    - "Is ES cluster red? Disable heavy ranking feature via toggle."
+    - "Burn rate &gt; 4x? Shed 10% tail traffic at gateway."
+  rollback:
+    - "Redeploy last green version (blue-green)."
+    - "Pin feature flags to safe defaults."</code></pre>
+
+      <p class="summary">Takeaway: A lifecycle plus guardrails turns “hope” into a plan. Your design is not complete until it can fail safely.</p>
     </section>
 
-    <section class="section" id="1-7-resources">
+    <!-- 01.5 -->
+    <section class="section" id="ch01-5">
+      <h2>01.5 Checkpoints — Mini Exercise</h2>
+      <p id="ch01-5-why">Why it matters: Re-evaluating a familiar system with SLOs and trade-offs reveals blind spots and cements the framework.</p>
+
+      <h3 id="ch01-5-1">01.5.1 URL Shortener: Re-evaluation</h3>
+      <p><strong>Scope & Constraints:</strong> Create/resolve short links. Exclude analytics beyond daily counts. SLOs: 99.95% success, P95 resolve ≤ 80&nbsp;ms, P99 ≤ 200&nbsp;ms; create ≤ 150&nbsp;ms P95. Target 20k RPS resolves peak, 200 RPS creates. Single region, CDN available, budget modest.</p>
+      <p><strong>Baseline:</strong> Edge-cache GET /{code} with TTL 60s on 2xx; origin is a KV store keyed by code → URL; writes go through a small API with rate limiting and id space management.</p>
+
+      <h3 id="ch01-5-2">01.5.2 Apply the 7-Step Flow</h3>
+      <ol>
+        <li><strong>Clarify:</strong> No per-click geolocation redirects; one code → one target URL; custom vanity codes allowed for paid tier (out of scope now).</li>
+        <li><strong>Quantify:</strong> With 90% cache hit, origin sees 2k RPS reads and 200 RPS writes. Data growth ~100M links/year at ~100&nbsp;B avg key, 200&nbsp;B value → ~30&nbsp;GB/year raw.</li>
+        <li><strong>Choose baseline:</strong> Anycast CDN, L7 LB, stateless API, managed KV (e.g., partitioned by code hash), background compaction for expired links.</li>
+        <li><strong>Place data:</strong> Partition by consistent hash of code; replicate 3×; use conditional put for unique codes; store small metadata (created_at, ttl).</li>
+        <li><strong>Route traffic:</strong> Retry reads only on <em>timeouts</em> with jitter; budgeted to 1 retry. No retries on 4xx. Writes are idempotent via client-supplied nonce or “put-if-absent”.</li>
+        <li><strong>Design for failure:</strong> If KV unavailable, serve stale from CDN for TTL window; if create path degrades, degrade gracefully (return 503 with retry-after).</li>
+        <li><strong>Observe:</strong> SLIs: success, P95/99 resolve latency, cache hit ratio, write conflicts. Burn rate alerts at 2× and 8× with 1h/5m windows respectively.</li>
+      </ol>
+
+      <h3 id="ch01-5-3">01.5.3 Trade-offs & Extensions</h3>
+      <ul>
+        <li><strong>Consistency:</strong> Strong on code creation (unique constraint); eventual on propagation to edges.</li>
+        <li><strong>Cost:</strong> CDN reduces origin egress; KV storage dominates long-tail links; implement TTL GC and cold storage for inactive links after 1 year.</li>
+        <li><strong>Complexity:</strong> Avoid multi-region writes until business needs them; start with geo-replicated read caches.</li>
+      </ul>
+
+      <p><em>Compare: ID Space Choices</em></p>
+      <table>
+        <thead>
+          <tr><th>Scheme</th><th>Pros</th><th>Cons</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Random base62</td><td>Uniform keys, avoids hot spots</td><td>No ordering</td><td>Good default; detect collisions</td></tr>
+          <tr><td>Snowflake-style</td><td>Time-ordered, shardable</td><td>Clock deps, skew risks</td><td>Useful for analytics joins</td></tr>
+          <tr><td>Hash(original)</td><td>Idempotent creates</td><td>Collision handling</td><td>Combine with salt to reduce abuse</td></tr>
+        </tbody>
+      </table>
+
+      <p class="summary">Takeaway: Even a “simple” system hides decisions on caching, idempotency, and error budgets. State them explicitly and align them to SLOs.</p>
+    </section>
+
+    <!-- Resources -->
+    <section class="section" id="ch01-resources">
       <h2>Resources</h2>
-      <ul>
-        <li><strong>Designing Data‑Intensive Applications</strong> — authoritative on data trade‑offs, consistency models, and streaming vs batch (O’Reilly, 2017/2025 update). <em>Why:</em> clarifies <em>when</em> to choose a tool (Kleppmann). <em>(Paid)</em></li>
-        <li><strong>Martin Fowler’s Microservices Guide</strong> — service boundaries, testing strategies, and evolutionary design. <em>Why:</em> avoids premature decomposition. <em>(Free)</em></li>
-        <li><strong>Google SRE Book & Site</strong> — SLIs/SLOs, error budgets, and incident practices. <em>Why:</em> ties reliability to user value with concrete methods. <em>(Free)</em></li>
-        <li><strong>AWS Well‑Architected Framework</strong> — decision lenses for reliability, performance, cost, and operations. <em>Why:</em> prompts you to ask the right questions before you build. <em>(Free)</em></li>
-        <li><strong>Kubernetes Documentation</strong> — orchestration fundamentals for Chapter 7. <em>Why:</em> helps you reason about cluster‑level trade‑offs. <em>(Free)</em></li>
+      <ul class="resource-list">
+        <li><strong>Google SRE Book (Ch. 3: Embracing Risk)</strong> — Grounding for SLOs, error budgets, and release velocity (Google, 2016/2020). <span class="badge">Free</span></li>
+        <li><strong>Designing Data-Intensive Applications (Ch. 1–2)</strong> — Clear treatment of data models, reliability, and scaling (O’Reilly, 2017). <span class="badge">Paid</span></li>
+        <li><strong>System Design Primer</strong> — Broad survey of design problems and trade-offs; good for brushing up patterns (GitHub, ongoing). <span class="badge">Free</span></li>
+        <li><strong>ACM Queue: “The Tail at Scale”</strong> — Practical tail-latency mitigation ideas informing SLOs and retries (ACM, 2013). <span class="badge">Free</span></li>
+        <li><strong>OpenTelemetry Docs</strong> — Instrumentation patterns for SLIs and tracing across services (CNCF, ongoing). <span class="badge">Free</span></li>
       </ul>
-      <p class="muted">Citations: (Kleppmann, O’Reilly), (Fowler, martinfowler.com), (Google SRE site & book), (AWS Docs, 2024), (Kubernetes Docs).</p>
+      <p class="muted">Rationales: These sources emphasize measuring what matters, designing for failure, and building observability into the lifecycle.</p>
     </section>
 
-    <section class="section" id="1-8-recap-next">
-      <h2>Recap & Next Steps</h2>
+    <!-- Recap -->
+    <section class="section" id="ch01-recap">
+      <h2>Recap &amp; Next Steps</h2>
       <ul>
-        <li>You set a realistic cadence and milestones, emphasizing observability and reliability alongside features.</li>
-        <li>You picked or narrowed down a capstone domain and translated features into measurable NFRs.</li>
-        <li>You drafted user‑centric SLOs and identified the first risk experiments to run.</li>
-        <li>You scheduled design critiques and understood how postmortems turn incidents into improvements.</li>
+        <li>Translate product promises into <em>SLIs</em>, pick ambitious but realistic <em>SLOs</em>, and reserve an <em>error budget</em> for learning.</li>
+        <li>Use a <em>repeatable 7-step flow</em> to scope, size, choose, place data, route traffic, plan for failure, and observe.</li>
+        <li>Evaluate <em>CAP</em> trade-offs explicitly; align consistency to domain risk (carts vs ledgers).</li>
+        <li>Model <em>cost vs performance vs complexity</em>; complexity debt is real and compounds.</li>
+        <li>Adopt a <em>lifecycle</em> that contains risk: canaries, rollbacks, runbooks, and feedback loops.</li>
       </ul>
-      <p><strong>Next:</strong> Proceed to <a href="chapters/ch02.html#2-hero">Chapter 2 — System Building Blocks</a>, where you’ll map requirements to scalable components and justify choices with trade‑offs.</p>
+      <p><strong>Next Steps:</strong></p>
+      <ol>
+        <li>Carry your chosen capstone idea into Chapter 2. Estimate baseline RPS, storage growth, and latency targets.</li>
+        <li>Draft SLOs and an initial dashboard outline (which SLIs, what windows, what alerts).</li>
+        <li>List three explicit non-goals for your system; defend why they’re out of scope today.</li>
+      </ol>
     </section>
 
-    <section class="section" id="image-audit">
-      <h2>Image Link Audit</h2>
-      <ul>
-        <li><code>https://www.oreilly.com/covers/urn%3Aorm%3Abook%3A9781491903063/400w/</code> — Status: 200 OK; Content‑Type: image/jpeg; Validation: <strong>PASS</strong>.</li>
-      </ul>
-    </section>
-
+    <!-- Pager -->
     <nav class="next-prev">
-      <a class="btn" rel="prev" aria-disabled="true" tabindex="-1">← Previous</a>
-      <a class="btn btn-primary" rel="next" href="chapters/ch02.html">Next →</a>
+      <a class="next" rel="next" href="chapters/ch02.html"><span class="muted">Next</span><span>Chapter 02 — Designing Scalable Architectures →</span></a>
     </nav>
 
-    <footer class="site-footer">
-      <div class="container">
-        <p class="muted">© 2025 BookBuilder. Built with vanilla HTML/CSS/JS. Dark theme.</p>
-      </div>
-    </footer>
+    <!--
+    CHECKLIST
+    - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
+    - [x] Canonical nav (Home / Appendix / Glossary only)
+    - [x] Pager next valid; first chapter has no prev
+    - [x] Order: Hero → Numbered Sections → Resources → Recap
+    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables included; code blocks excluded)
+    - [x] Head/meta complete; no TODOs
+    - [x] No images in this chapter (image audit N/A). Future chapters may include validated images.
+    -->
   </main>
-
-  <!--
-  CHECKLIST (Chapter 01)
-  - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
-  - [x] Canonical nav (Home / Appendix / Glossary only)
-  - [x] Pager prev/next valid (no prev; next → ch02.html)
-  - [x] Order: Hero → Numbered Sections → Resources → Recap
-  - [x] ≥1,800 words of prose (body text, including lists/tables/captions)
-  - [x] Head/meta complete; no TODOs
-  - [x] Images: HTTPS, non‑SVG, 200 OK, image/*, required attrs + caption + attribution
-  -->
 </body>
 </html>
