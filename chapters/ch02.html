@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 02 — Designing Scalable Architectures</title>
+  <title>Chapter 02 - Designing Scalable Architectures</title>
   <meta name="description" content="Chapter 2 develops practical patterns for horizontal scale: L4/L7 load balancing, sharding, partitioning, elasticity, and auto-scaling with concrete trade-offs and worked examples.">
-  <meta property="og:title" content="Chapter 02 — Designing Scalable Architectures">
+  <meta property="og:title" content="Chapter 02 - Designing Scalable Architectures">
   <meta property="og:description" content="Scalability models, load balancing, partitioning strategies, and Kubernetes HPA basics with design exercises.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -44,23 +44,23 @@
     <!-- 02.1 -->
     <section class="section" id="ch02-1">
       <h2>02.1 Scalability Models</h2>
-      <p id="ch02-1-why">Why it matters: “Just add servers” only works when the workload can be split across them and when shared state won’t serialize throughput. Knowing where state lives is the first step toward safe horizontal scale.</p>
+      <p id="ch02-1-why">Why it matters: "Just add servers" only works when the workload can be split across them and when shared state won't serialize throughput. Knowing where state lives is the first step toward safe horizontal scale.</p>
 
       <h3 id="ch02-1-1">02.1.1 Stateless vs. Stateful Systems</h3>
-      <p><strong>Plain:</strong> A stateless service can handle any request on any instance because it doesn’t remember past requests. A stateful service must remember things (sessions, queues, leader election), so each request may need a specific node or a shared store.</p>
-      <p><strong>Formal:</strong> Let <em>W</em> be work units per second and <em>μ</em> the service rate per instance. For a stateless tier with independent requests and no shared contention, capacity scales approximately as <em>N·μ</em>. For a stateful tier with a single shared critical section of fraction <em>s</em>, Amdahl’s law bounds speedup to <em>1 / (s + (1−s)/N)</em>. The more time spent on shared state, the lower the payoff from adding instances.</p>
-      <p><strong>Pitfall:</strong> Hidden state. “Stateless” code that retrieves a user profile on each request but serializes on a single database row is not stateless in practice; the database becomes the bottleneck.</p>
+      <p><strong>Plain:</strong> A stateless service can handle any request on any instance because it doesn't remember past requests. A stateful service must remember things (sessions, queues, leader election), so each request may need a specific node or a shared store.</p>
+      <p><strong>Formal:</strong> Let <em>W</em> be work units per second and <em>mu</em> the service rate per instance. For a stateless tier with independent requests and no shared contention, capacity scales approximately as <em>N*mu</em>. For a stateful tier with a single shared critical section of fraction <em>s</em>, Amdahl's law bounds speedup to <em>1 / (s + (1-s)/N)</em>. The more time spent on shared state, the lower the payoff from adding instances.</p>
+      <p><strong>Pitfall:</strong> Hidden state. "Stateless" code that retrieves a user profile on each request but serializes on a single database row is not stateless in practice; the database becomes the bottleneck.</p>
       <p><strong>Example:</strong> A read-only catalog API can be stateless behind a CDN and L7 load balancer; a chat room presence service is stateful, since it coordinates user online/offline events and room membership.</p>
 
       <h3 id="ch02-1-2">02.1.2 Horizontal Scaling Architectures</h3>
-      <p><strong>Plain:</strong> Horizontal scaling means adding more machines and spreading requests or shards across them. It’s usually cheaper and safer than buying one giant machine.</p>
+      <p><strong>Plain:</strong> Horizontal scaling means adding more machines and spreading requests or shards across them. It's usually cheaper and safer than buying one giant machine.</p>
       <p><strong>Formal:</strong> A horizontally scaled system uses partitioning to split request load and/or data sets across <em>k</em> partitions, ideally making per-partition throughput <em>W/k</em>. With independent partitions, tail latency improves if queues are kept short; with dependent partitions (e.g., fan-out queries), tail can worsen because the slowest-of-<em>k</em> dominates.</p>
       <p><strong>Pitfall:</strong> Fan-out amplification: a single user query that touches many partitions increases the chance that the slowest partition defines the overall latency. Without hedging, timeouts, or caching, P99 balloons.</p>
       <p><strong>Example (Analogy):</strong> Imagine a grocery store. Stateless checkouts are like multiple express lanes: any customer can go to any lane. Stateful services are like the bakery counter where your half-frosted cake must return to the same baker; more counters help, but coordination still limits speed.</p>
 
       <figure>
         <img src="https://cf-assets.www.cloudflare.com/zkvhlag99gkb/1653XjnZj666YAdzKgPcCN/d0146fc7d280e556ca4d36cfddbdd5ca/colo-4.png" alt="Conceptual L4/L7 load balancing across servers inside an edge data center" loading="lazy" decoding="async" width="430" height="566" referrerpolicy="no-referrer">
-        <figcaption>Load must be distributed across many servers; Cloudflare’s Unimog shows an L4 approach (Cloudflare, 2020).</figcaption>
+        <figcaption>Load must be distributed across many servers; Cloudflare's Unimog shows an L4 approach (Cloudflare, 2020).</figcaption>
       </figure>
 
       <p class="summary">Takeaway: Seek statelessness for request handling; isolate unavoidable state behind scalable, partitioned, and replicated data systems.</p>
@@ -74,7 +74,7 @@
       <h3 id="ch02-2-1">02.2.1 Layer 4 vs. Layer 7</h3>
       <p><strong>Plain:</strong> L4 load balancers route by connection metadata (IP/port) and are fast; L7 load balancers understand the protocol (HTTP path/headers) and enable smarter routing, but with more overhead.</p>
       <p><strong>Formal:</strong> L4 forwarding uses a flow hash over a 4- or 5-tuple to pick a backend, keeping all packets of a connection on the same target. L7 proxies terminate client connections and create backend connections, enabling features such as header-based routing, WAF, and TLS offload (AWS Docs, 2025; Cloudflare Engineering, 2020).</p>
-      <p><strong>Pitfall:</strong> Using L7 everywhere “just in case.” For simple TCP services, L7 adds latency and failure surface without benefit. Conversely, using L4 for HTTP microservices can block path-based routing, canarying, and auth at the edge.</p>
+      <p><strong>Pitfall:</strong> Using L7 everywhere "just in case." For simple TCP services, L7 adds latency and failure surface without benefit. Conversely, using L4 for HTTP microservices can block path-based routing, canarying, and auth at the edge.</p>
 
       <p><em>Compare: L4 vs L7 Load Balancing</em></p>
       <table>
@@ -91,7 +91,7 @@
       </table>
 
       <h3 id="ch02-2-2">02.2.2 Consistent Hashing and Sticky Sessions</h3>
-      <p><strong>Plain:</strong> Sticky sessions keep a user’s requests on the same server. Consistent hashing computes a deterministic bucket so the same client or key maps to the same backend without storing session state in the balancer.</p>
+      <p><strong>Plain:</strong> Sticky sessions keep a user's requests on the same server. Consistent hashing computes a deterministic bucket so the same client or key maps to the same backend without storing session state in the balancer.</p>
       <p><strong>Formal:</strong> Consistent hashing places servers and keys on a logical ring, mapping each key to the next server clockwise; adding/removing a server remaps only a fraction of keys proportional to <em>1/N</em>. Sticky sessions via cookies or IP affinity keep connection locality but can skew load when some users are heavy (Ably, 2022; Traefik Labs, 2022).</p>
       <p><strong>Pitfall:</strong> Sticky sessions with stateful app servers lock memory to specific nodes and complicate autoscaling and deployment. If you must use them, cap session TTLs and externalize state progressively (e.g., to Redis).</p>
 
@@ -120,12 +120,12 @@
         <figcaption>Cross-zone disabled: imbalance by AZ (25% vs 6.25%) if target counts differ (AWS Docs, 2025).</figcaption>
       </figure>
 
-      <h3 id="ch02-2-4">02.2.4 Worked Example — Picking a Balancer and Policy</h3>
+      <h3 id="ch02-2-4">02.2.4 Worked Example - Picking a Balancer and Policy</h3>
       <p><strong>Scenario:</strong> You run a public API at 30k RPS with WebSockets for 10% of traffic and standard HTTP for 90%. You need canary routing by header, and users span two AZs with a 3:7 target skew.</p>
       <ul>
         <li><strong>Choice:</strong> Put an L7 load balancer (header routing + WebSocket upgrade support), cross-zone <em>enabled</em> to smooth the AZ skew, and use round-robin at the target group layer.</li>
-        <li><strong>Sticky?</strong> Avoid for HTTP requests; for WebSockets, persistence is automatic at the connection level. If session affinity is required for a minority of endpoints, use cookie stickiness with short TTL (≤10 minutes) and rate-limit heavy users.</li>
-        <li><strong>Failure posture:</strong> Health checks at 2–5s intervals with 2–3 unhealthy thresholds. During deploys, drain connections (graceful termination) to protect long-lived sockets.</li>
+        <li><strong>Sticky?</strong> Avoid for HTTP requests; for WebSockets, persistence is automatic at the connection level. If session affinity is required for a minority of endpoints, use cookie stickiness with short TTL (<=10 minutes) and rate-limit heavy users.</li>
+        <li><strong>Failure posture:</strong> Health checks at 2-5s intervals with 2-3 unhealthy thresholds. During deploys, drain connections (graceful termination) to protect long-lived sockets.</li>
       </ul>
       <p class="summary">Takeaway: Pick the lowest layer that meets requirements, then deliberately enable/disable features (stickiness, cross-zone) based on measurable load shape and cost.</p>
     </section>
@@ -133,12 +133,12 @@
     <!-- 02.3 -->
     <section class="section" id="ch02-3">
       <h2>02.3 Sharding and Partitioning</h2>
-      <p id="ch02-3-why">Why it matters: Storage is the usual ceiling. Partitioning chooses how data is split; sharding distributes partitions over nodes. The shard key you pick today dictates tomorrow’s hotspots.</p>
+      <p id="ch02-3-why">Why it matters: Storage is the usual ceiling. Partitioning chooses how data is split; sharding distributes partitions over nodes. The shard key you pick today dictates tomorrow's hotspots.</p>
 
       <h3 id="ch02-3-1">02.3.1 Data Distribution Strategies</h3>
       <p><strong>Plain:</strong> You can split data by range (e.g., dates), by hash (e.g., user ID), or by lookup (a mapping table). Each changes which queries are fast and which rebalances are easy.</p>
-      <p><strong>Formal:</strong> A <em>partition</em> is a subset of rows determined by a key function <em>f(row)</em>; a <em>shard</em> is a partition’s physical placement on a node. Range keys preserve ordering; hash keys randomize placement; lookup indirection (virtual shards) decouples the logical key space from physical hosts (Microsoft Learn, 2023).</p>
-      <p><strong>Pitfall:</strong> Time-based ranges for write-heavy streams cause “newest shard” hot spots. Hashing fixes hot writes but breaks range queries unless paired with a secondary index or materialized views.</p>
+      <p><strong>Formal:</strong> A <em>partition</em> is a subset of rows determined by a key function <em>f(row)</em>; a <em>shard</em> is a partition's physical placement on a node. Range keys preserve ordering; hash keys randomize placement; lookup indirection (virtual shards) decouples the logical key space from physical hosts (Microsoft Learn, 2023).</p>
+      <p><strong>Pitfall:</strong> Time-based ranges for write-heavy streams cause "newest shard" hot spots. Hashing fixes hot writes but breaks range queries unless paired with a secondary index or materialized views.</p>
 
       <p><em>Compare: Sharding Key Choices</em></p>
       <table>
@@ -154,27 +154,27 @@
 
       <figure>
         <img src="https://learn.microsoft.com/en-us/azure/architecture/patterns/_images/sharding-tenant.png" alt="Sharding via tenant lookup: requests routed to tenant-specific shards" loading="lazy" decoding="async" width="780" height="464" referrerpolicy="no-referrer">
-        <figcaption>Lookup strategy using tenant→shard mapping improves flexibility for rebalancing (Microsoft Learn, 2023).</figcaption>
+        <figcaption>Lookup strategy using tenant->shard mapping improves flexibility for rebalancing (Microsoft Learn, 2023).</figcaption>
       </figure>
 
       <h3 id="ch02-3-2">02.3.2 Handling Hot Spots</h3>
       <p><strong>Plain:</strong> A popular user or key can overload a single partition. Split it before it melts your SLO.</p>
-      <p><strong>Formal:</strong> If requests to key <em>k</em> are a fraction <em>p</em> of total RPS, and a shard saturates at <em>μ</em> RPS, then you need at least <em>ceil(p·W / μ)</em> sub-partitions for <em>k</em>. Techniques include key salting (e.g., <code>k#00..k#FF</code>) and dynamic re-sharding with a directory.</p>
-      <p><strong>Pitfall:</strong> Salting without a read strategy: writes spread nicely, but reads need a scatter-gather across salts unless you maintain a small index to the “active” salt.</p>
+      <p><strong>Formal:</strong> If requests to key <em>k</em> are a fraction <em>p</em> of total RPS, and a shard saturates at <em>mu</em> RPS, then you need at least <em>ceil(p*W / mu)</em> sub-partitions for <em>k</em>. Techniques include key salting (e.g., <code>k#00..k#FF</code>) and dynamic re-sharding with a directory.</p>
+      <p><strong>Pitfall:</strong> Salting without a read strategy: writes spread nicely, but reads need a scatter-gather across salts unless you maintain a small index to the "active" salt.</p>
 
-      <h3 id="ch02-3-3">02.3.3 Worked Example — Designing a Shard Key</h3>
+      <h3 id="ch02-3-3">02.3.3 Worked Example - Designing a Shard Key</h3>
       <p><strong>Scenario:</strong> You run a social feed store. Writes are user posts; reads fetch recent posts by followed users, 95:5 read:write, 40k RPS peak. Top 1% users generate 20% of traffic.</p>
       <ol>
-        <li><strong>Candidate A (range by timestamp):</strong> Great for time-window reads, but newest range is a write hot spot. To mitigate, combine with writer-side buffering and batched ingest, yet the single “now” range still burns.</li>
+        <li><strong>Candidate A (range by timestamp):</strong> Great for time-window reads, but newest range is a write hot spot. To mitigate, combine with writer-side buffering and batched ingest, yet the single "now" range still burns.</li>
         <li><strong>Candidate B (hash of user_id):</strong> Spreads writes evenly. Reads for timelines require gathering many user_id partitions; use fan-out-on-write (precompute per-user home timelines) to avoid N-way reads.</li>
         <li><strong>Candidate C (lookup per tenant/celebrity tier):</strong> Place high-traffic users on dedicated logical shards via a directory. Start with hash across virtual shards; promote heavy users to their own set as they grow.</li>
       </ol>
-      <p><strong>Decision:</strong> Start with <em>hash(user_id)</em> into 4k virtual shards → physical shards. Maintain a directory that can pin “celebrity” users to isolated buckets. Reads use precomputed timelines with eventual consistency. This minimizes hot spots while keeping rebalancing tractable.</p>
+      <p><strong>Decision:</strong> Start with <em>hash(user_id)</em> into 4k virtual shards -> physical shards. Maintain a directory that can pin "celebrity" users to isolated buckets. Reads use precomputed timelines with eventual consistency. This minimizes hot spots while keeping rebalancing tractable.</p>
 
       <h3 id="ch02-3-4">02.3.4 Multi-Shard Operations</h3>
       <p><strong>Plain:</strong> Cross-shard joins and transactions are expensive. Prefer designs that keep hot paths single-shard.</p>
       <p><strong>Formal:</strong> Use <em>sagas</em> for coordinating multi-entity updates; for read paths, denormalize and use index tables. If global secondary indexes are needed, bound their freshness and isolate their write throughput (e.g., write-behind queues).</p>
-      <p><strong>Pitfall:</strong> Writing strong global counters across shards—your throughput collapses. Use sharded counters with periodic reconciliation to present approximate totals.</p>
+      <p><strong>Pitfall:</strong> Writing strong global counters across shards-your throughput collapses. Use sharded counters with periodic reconciliation to present approximate totals.</p>
 
       <p class="summary">Takeaway: Choose shard keys by access patterns, not only by cardinality. Prefer virtual shards and promotion paths for hot tenants.</p>
     </section>
@@ -191,16 +191,16 @@
 
       <h3 id="ch02-4-2">02.4.2 HPA Basics (Kubernetes)</h3>
       <p><strong>Plain:</strong> HPA sets the replica count of a Deployment/StatefulSet based on metrics like average CPU or custom metrics, with configurable scale-up/down behavior.</p>
-      <p><strong>Formal:</strong> The controller computes <code>desiredReplicas = ceil(currentReplicas × currentMetric / targetMetric)</code>, applies stabilization windows and tolerance, then updates the workload’s <code>.spec.replicas</code>. Metrics usually come from Metrics Server or adapters (K8s autoscaling/v2).</p>
-      <p><strong>Pitfall:</strong> No resource requests set → undefined CPU utilization → no scaling. Always set requests on containers that HPA tracks.</p>
+      <p><strong>Formal:</strong> The controller computes <code>desiredReplicas = ceil(currentReplicas x currentMetric / targetMetric)</code>, applies stabilization windows and tolerance, then updates the workload's <code>.spec.replicas</code>. Metrics usually come from Metrics Server or adapters (K8s autoscaling/v2).</p>
+      <p><strong>Pitfall:</strong> No resource requests set -> undefined CPU utilization -> no scaling. Always set requests on containers that HPA tracks.</p>
 
-      <h3 id="ch02-4-3">02.4.3 Worked Example — Policy Tuning</h3>
-      <p><strong>Scenario:</strong> An API with P95 ≤ 200&nbsp;ms target, average 12k RPS, spikes to 35k RPS at :00.</p>
+      <h3 id="ch02-4-3">02.4.3 Worked Example - Policy Tuning</h3>
+      <p><strong>Scenario:</strong> An API with P95 <= 200&nbsp;ms target, average 12k RPS, spikes to 35k RPS at :00.</p>
       <ol>
-        <li><strong>Signals:</strong> Track RPS, queue depth, P95 latency, and CPU. Use target tracking on queue depth (e.g., ≤ 50 inflight per pod).</li>
+        <li><strong>Signals:</strong> Track RPS, queue depth, P95 latency, and CPU. Use target tracking on queue depth (e.g., <= 50 inflight per pod).</li>
         <li><strong>Bounds:</strong> <em>minReplicas</em>=20 for baseline, <em>maxReplicas</em>=120 for spikes. Scale-up policies: add up to 50% replicas per minute; scale-down: 10% per minute with a 5-minute stabilization window to avoid flapping.</li>
-        <li><strong>Warmup:</strong> If pods take 40–60s to become ready, predictive scale by 20% five minutes before the known spike, then let reactive policies refine.</li>
-        <li><strong>Cost:</strong> Compare with over-provisioning: running 120 replicas all day is ~6× the baseline cost; a hybrid predictive+reactive policy cuts waste while keeping SLOs green (AWS/Cloud patterns, 2024–2025).</li>
+        <li><strong>Warmup:</strong> If pods take 40-60s to become ready, predictive scale by 20% five minutes before the known spike, then let reactive policies refine.</li>
+        <li><strong>Cost:</strong> Compare with over-provisioning: running 120 replicas all day is ~6x the baseline cost; a hybrid predictive+reactive policy cuts waste while keeping SLOs green (AWS/Cloud patterns, 2024-2025).</li>
       </ol>
 
       <h3 id="ch02-4-4">02.4.4 Backpressure, Timeouts, and SLO-Aware Retries</h3>
@@ -213,12 +213,12 @@
 
     <!-- 02.5 -->
     <section class="section" id="ch02-5">
-      <h2>02.5 Checkpoints — Design a Scalable Chat Backend</h2>
-      <p id="ch02-5-why">Why it matters: Chat mixes bursty fan-outs, long-lived connections, and stateful presence—perfect for practicing the full toolbox.</p>
+      <h2>02.5 Checkpoints - Design a Scalable Chat Backend</h2>
+      <p id="ch02-5-why">Why it matters: Chat mixes bursty fan-outs, long-lived connections, and stateful presence-perfect for practicing the full toolbox.</p>
 
       <h3 id="ch02-5-1">02.5.1 Requirements &amp; Constraints</h3>
       <ul>
-        <li>1M MAU; peak 60k concurrent connections per region; 2k room fan-outs/sec; message P95 ≤ 200&nbsp;ms; presence updates ≤ 1&nbsp;s 99%.</li>
+        <li>1M MAU; peak 60k concurrent connections per region; 2k room fan-outs/sec; message P95 <= 200&nbsp;ms; presence updates <= 1&nbsp;s 99%.</li>
         <li>Features: direct messages, rooms up to 5k members, typing indicators (optional for v1).</li>
         <li>Budget: modest; prefer managed messaging; multi-AZ high availability; single region for v1.</li>
       </ul>
@@ -228,8 +228,8 @@
         <li><strong>Clarify:</strong> No message search in v1; end-to-end encryption out of scope for now; analytics delayed processing OK.</li>
         <li><strong>Quantify:</strong> With 60k concurrent sockets and avg message 1&nbsp;KB, room fan-outs dominate egress. Expect 95:5 read:write; hot rooms create spikes.</li>
         <li><strong>Baseline:</strong> Anycast L7 for WebSockets + HTTP; cross-zone enabled. Stateless gateway; message broker for fan-out; presence service with partitioned state.</li>
-        <li><strong>Place data:</strong> Hash(user_id) for inbox storage; room_id → virtual shard mapping to isolate “stadium” rooms; maintain member lists in a KV with versioned writes.</li>
-        <li><strong>Route:</strong> Use consistent hashing at the gateway to pin a user’s socket to a connection node; backend services are stateless, relying on broker + KV.</li>
+        <li><strong>Place data:</strong> Hash(user_id) for inbox storage; room_id -> virtual shard mapping to isolate "stadium" rooms; maintain member lists in a KV with versioned writes.</li>
+        <li><strong>Route:</strong> Use consistent hashing at the gateway to pin a user's socket to a connection node; backend services are stateless, relying on broker + KV.</li>
         <li><strong>Design for failure:</strong> Backpressure on room broadcasts; drop typing indicators under load; retry with jitter for broker acks; idempotent message IDs.</li>
         <li><strong>Observe:</strong> SLIs: delivery success, P95/P99 end-to-end latency, connection churn, broker lag, and shard imbalance. Burn-rate alerts on SLOs.</li>
       </ol>
@@ -248,11 +248,11 @@
     <section class="section" id="ch02-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>AWS Architecture &amp; ELB Docs</strong> — Clear explanations of cross-zone behavior, routing algorithms, and best practices (AWS Docs, 2025). <span class="badge">Free</span></li>
-        <li><strong>Cloudflare Engineering Blog — Unimog</strong> — Practical, modern L4 load balancing design and trade-offs (Cloudflare, 2020). <span class="badge">Free</span></li>
-        <li><strong>Kubernetes Horizontal Pod Autoscaler</strong> — Official HPA walkthrough and algorithm details (Kubernetes Docs, 2025). <span class="badge">Free</span></li>
-        <li><strong>Azure Architecture Center — Sharding Pattern</strong> — Vendor-neutral guidance on strategies and rebalancing (Microsoft Learn, 2023). <span class="badge">Free</span></li>
-        <li><strong>Cloud &amp; Broker Docs (Kafka/Redis)</strong> — Patterns for partitioning topics, consumer scaling, and hot-key mitigation (various, ongoing). <span class="badge">Optional</span></li>
+        <li><strong>AWS Architecture &amp; ELB Docs</strong> - Clear explanations of cross-zone behavior, routing algorithms, and best practices (AWS Docs, 2025). <span class="badge">Free</span></li>
+        <li><strong>Cloudflare Engineering Blog - Unimog</strong> - Practical, modern L4 load balancing design and trade-offs (Cloudflare, 2020). <span class="badge">Free</span></li>
+        <li><strong>Kubernetes Horizontal Pod Autoscaler</strong> - Official HPA walkthrough and algorithm details (Kubernetes Docs, 2025). <span class="badge">Free</span></li>
+        <li><strong>Azure Architecture Center - Sharding Pattern</strong> - Vendor-neutral guidance on strategies and rebalancing (Microsoft Learn, 2023). <span class="badge">Free</span></li>
+        <li><strong>Cloud &amp; Broker Docs (Kafka/Redis)</strong> - Patterns for partitioning topics, consumer scaling, and hot-key mitigation (various, ongoing). <span class="badge">Optional</span></li>
       </ul>
       <p class="muted">Rationales: These sources cover the evolving practices (autoscaling, L4/L7, cross-zone behavior) with production-proven examples and diagrams.</p>
     </section>
@@ -268,7 +268,7 @@
       </ul>
       <p><strong>Next Steps:</strong></p>
       <ol>
-        <li>For your capstone idea, write a one-page “scalability plan” stating stateless/stateful boundaries and initial shard key.</li>
+        <li>For your capstone idea, write a one-page "scalability plan" stating stateless/stateful boundaries and initial shard key.</li>
         <li>Prototype a small HPA policy using a custom metric that correlates with user latency (queue depth or RPS per pod).</li>
         <li>Run a load test that creates a hot key; demonstrate mitigation via salting or promotion to a dedicated shard.</li>
       </ol>
@@ -276,20 +276,20 @@
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch01.html"><span class="muted">Prev</span><span>← Chapter 01 — Bridging Fundamentals to Applied Design</span></a>
-      <a class="next" rel="next" href="chapters/ch03.html"><span class="muted">Next</span><span>Chapter 03 — Data Management and Storage Strategies →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch01.html"><span class="muted">Prev</span><span><- Chapter 01 - Bridging Fundamentals to Applied Design</span></a>
+      <a class="next" rel="next" href="chapters/ch03.html"><span class="muted">Next</span><span>Chapter 03 - Data Management and Storage Strategies -></span></a>
     </nav>
 
     <!-- Image Link Audit -->
     <!-- <section class="section" id="ch02-image-audit">
       <h2>Image Link Audit</h2>
       <ul class="resource-list">
-        <li>https://cf-assets.www.cloudflare.com/zkvhlag99gkb/1653XjnZj666YAdzKgPcCN/d0146fc7d280e556ca4d36cfddbdd5ca/colo-4.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>https://cf-assets.www.cloudflare.com/zkvhlag99gkb/1653XjnZj666YAdzKgPcCN/d0146fc7d280e556ca4d36cfddbdd5ca/colo-4.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
         <li>images/consistent-hashing.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
-        <li>https://containous.ghost.io/content/images/2022/12/Diagram--1-.jpg — <strong>200 OK</strong>, content-type <strong>image/jpeg</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://learn.microsoft.com/en-us/azure/architecture/patterns/_images/sharding-tenant.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://docs.aws.amazon.com/images/elasticloadbalancing/latest/userguide/images/cross_zone_load_balancing_enabled.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://docs.aws.amazon.com/images/elasticloadbalancing/latest/userguide/images/cross_zone_load_balancing_disabled.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>https://containous.ghost.io/content/images/2022/12/Diagram--1-.jpg - <strong>200 OK</strong>, content-type <strong>image/jpeg</strong> - <span class="badge badge-success">pass</span></li>
+        <li>https://learn.microsoft.com/en-us/azure/architecture/patterns/_images/sharding-tenant.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
+        <li>https://docs.aws.amazon.com/images/elasticloadbalancing/latest/userguide/images/cross_zone_load_balancing_enabled.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
+        <li>https://docs.aws.amazon.com/images/elasticloadbalancing/latest/userguide/images/cross_zone_load_balancing_disabled.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
       </ul>
       <p class="muted">Only HTTPS assets or vetted local SVGs with reliable licensing are included.</p>
     </section> -->
@@ -299,8 +299,8 @@
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
     - [x] Pager prev/next valid; ToC numbering matches
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables, captions; code excluded)
+    - [x] Order: Hero -> Numbered Sections -> Resources -> Recap
+    - [x] >=1,800 words of prose (headings, paragraphs, lists, tables, captions; code excluded)
     - [x] Images: Local SVG or HTTPS assets validated; captions + attribution included
     - [x] Head/meta complete; no TODOs
     -->

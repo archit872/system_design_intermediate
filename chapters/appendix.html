@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Appendix — Pitfalls, Review, and Progression</title>
+  <title>Appendix - Pitfalls, Review, and Progression</title>
   <meta name="description" content="A compact field guide: top pitfalls with quick fixes, review checklists, interview drills, and a progression roadmap from Intermediate to Advanced System Design.">
-  <meta property="og:title" content="Appendix — Pitfalls, Review, and Progression">
+  <meta property="og:title" content="Appendix - Pitfalls, Review, and Progression">
   <meta property="og:description" content="Use this appendix as your practical playbook: anti-patterns, remediation steps, checklists, and a step-by-step progression plan for the next 90 days.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -35,7 +35,7 @@
         <span class="badge badge-primary">Appendix</span>
         <span class="badge">Playbook &amp; Progression</span>
       </div>
-      <h1>Appendix — Pitfalls, Review, and Progression</h1>
+      <h1>Appendix - Pitfalls, Review, and Progression</h1>
       <p class="abstract">A practical companion to the book. Use these checklists and playbooks to review designs, prepare for interviews, and guide production changes. Start with the top pitfalls and their quick fixes, then work through review questions, drills, and a 90-day progression plan toward advanced system design.</p>
     </div>
   </header>
@@ -49,13 +49,13 @@
       <ol class="spaced">
         <li id="apx-top10-1">
           <h3>A.1 Caching Personal Data at the Edge</h3>
-          <p><strong>Symptom:</strong> Users intermittently see others’ content; CDN shows high hit ratio and 200 OKs.</p>
+          <p><strong>Symptom:</strong> Users intermittently see others' content; CDN shows high hit ratio and 200 OKs.</p>
           <p><strong>Why:</strong> Missing <code>Vary</code> on auth-related headers or shared cache keys for personalized responses.</p>
           <p><strong>Fix:</strong> Mark personalized endpoints <code>Cache-Control: private, no-store</code>. Move public data to cacheable endpoints with strong validators (<code>ETag</code>). Use token-bound keys or segment-specific variants when partial personalization is required.</p>
         </li>
 
         <li id="apx-top10-2">
-          <h3>A.2 Breaking APIs with “Minor” Changes</h3>
+          <h3>A.2 Breaking APIs with "Minor" Changes</h3>
           <p><strong>Symptom:</strong> Client errors spike after adding or renaming fields.</p>
           <p><strong>Why:</strong> Silent contract changes, strict client validation, no versioning window.</p>
           <p><strong>Fix:</strong> Enforce additive-only changes by default; introduce <code>/v{n}/</code> or media-type versions for breaks; keep two adjacent versions live; add contract tests to CI and publish deprecation dates.</p>
@@ -72,7 +72,7 @@
           <h3>A.4 Average-Driven Capacity Planning</h3>
           <p><strong>Symptom:</strong> System fine in tests, melts during peak or tenant surges.</p>
           <p><strong>Why:</strong> Ignoring skew and tails; fan-out amplifies latency variance.</p>
-          <p><strong>Fix:</strong> Plan with P95/P99 and Zipf-like key distributions; introduce virtual shards for hot tenants; budget headroom 20–40% below the knee of the throughput–latency curve.</p>
+          <p><strong>Fix:</strong> Plan with P95/P99 and Zipf-like key distributions; introduce virtual shards for hot tenants; budget headroom 20-40% below the knee of the throughput-latency curve.</p>
         </li>
 
         <li id="apx-top10-5">
@@ -83,8 +83,8 @@
         </li>
 
         <li id="apx-top10-6">
-          <h3>A.6 DR that Isn’t</h3>
-          <p><strong>Symptom:</strong> “Passive” region fails during the only real failover.</p>
+          <h3>A.6 DR that Isn't</h3>
+          <p><strong>Symptom:</strong> "Passive" region fails during the only real failover.</p>
           <p><strong>Why:</strong> Unpracticed runbooks; configuration bit-rot; untested data promotion.</p>
           <p><strong>Fix:</strong> Automate quarterly failovers; measure RTO/RPO; script promotion and cache warmups; alert on replication lag and failover health.</p>
         </li>
@@ -98,7 +98,7 @@
 
         <li id="apx-top10-8">
           <h3>A.8 Schema Changes in One Shot</h3>
-          <p><strong>Symptom:</strong> DB locks and timeouts during “simple” alters.</p>
+          <p><strong>Symptom:</strong> DB locks and timeouts during "simple" alters.</p>
           <p><strong>Why:</strong> Blocking <code>ALTER</code> under load; coupling app and DB deploys.</p>
           <p><strong>Fix:</strong> Expand/contract: add nullable columns; backfill in batches; flip reads behind a flag; remove old columns later using online tools.</p>
         </li>
@@ -112,7 +112,7 @@
 
         <li id="apx-top10-10">
           <h3>A.10 Flag Debt</h3>
-          <p><strong>Symptom:</strong> Unpredictable behavior; “works for me” with stale flag states.</p>
+          <p><strong>Symptom:</strong> Unpredictable behavior; "works for me" with stale flag states.</p>
           <p><strong>Why:</strong> Flags never removed; no owners or expiry dates.</p>
           <p><strong>Fix:</strong> Track owner and expiry on each flag; add lint rules and dashboards; delete flags after rollout; create emergency kill switches for risky features.</p>
         </li>
@@ -125,7 +125,7 @@
       <p>Run this checklist before you ship a design document or walk into an interview. Each item should be answerable in one or two crisp sentences.</p>
 
       <ul class="checklist">
-        <li><strong>Scope:</strong> What are the top 2–3 user journeys and their SLOs (success %, P95/P99)?</li>
+        <li><strong>Scope:</strong> What are the top 2-3 user journeys and their SLOs (success %, P95/P99)?</li>
         <li><strong>Scale:</strong> What are peak QPS, data size, and skew (e.g., 1% keys drive 25% traffic)?</li>
         <li><strong>State:</strong> For each entity, who is source of truth? What replicas exist and with what consistency?</li>
         <li><strong>Partitioning:</strong> What keys and shard counts? How will you handle hotspots and reshard?</li>
@@ -135,7 +135,7 @@
         <li><strong>Observability:</strong> SLIs/SLOs, key dashboards, traces, error-budget policy, and alert routing?</li>
         <li><strong>Security:</strong> User and service identity, authorization model, secrets management, and egress controls?</li>
         <li><strong>Evolution:</strong> Versioning plan, expand/contract migrations, rollout strategy, and rollback button?</li>
-        <li><strong>Cost:</strong> Unit cost (₹/1k requests, ₹/order). Top 3 cost levers and risks to SLOs?</li>
+        <li><strong>Cost:</strong> Unit cost (INR/1k requests, INR/order). Top 3 cost levers and risks to SLOs?</li>
       </ul>
 
       <h3 id="apx-drills">B.1 Interview & Whiteboard Drills</h3>
@@ -149,7 +149,7 @@
       <pre data-lang="md"><code>**Problem &amp; SLOs**: Journeys + SLIs/SLOs
 **Scale Model**: QPS, skew, data growth
 **Architecture**: Edge, services, state, messaging
-**Consistency**: For each entity: SoT → replicas → staleness
+**Consistency**: For each entity: SoT -> replicas -> staleness
 **Reliability**: Fault domains, redundancy, degradation
 **Observability**: Dashboards, alerts, traces
 **Security**: IAM, secrets, network policy
@@ -160,7 +160,7 @@
 
     <!-- C. Progression Map -->
     <section class="section" id="apx-progression">
-      <h2>C. Progression Map — Beginner → Intermediate → Advanced</h2>
+      <h2>C. Progression Map - Beginner -> Intermediate -> Advanced</h2>
       <p>Use this map to plan your next quarter. Each level adds capabilities without discarding earlier practices.</p>
 
       <table>
@@ -191,10 +191,10 @@
 
       <h3 id="apx-90d">C.1 90-Day Plan</h3>
       <ol>
-        <li><strong>Days 1–21:</strong> Rebuild two past designs using the one-page template; add SLIs/SLOs and cost estimates.</li>
-        <li><strong>Days 22–45:</strong> Implement tracing on one production flow; add burn-rate alerts; run one incident game day.</li>
-        <li><strong>Days 46–70:</strong> Execute a safe schema expand/contract on a non-trivial table with backfill and rollback.</li>
-        <li><strong>Days 71–90:</strong> Deliver a capstone slice (e.g., feed or checkout) with a benchmark report and unit cost brief.</li>
+        <li><strong>Days 1-21:</strong> Rebuild two past designs using the one-page template; add SLIs/SLOs and cost estimates.</li>
+        <li><strong>Days 22-45:</strong> Implement tracing on one production flow; add burn-rate alerts; run one incident game day.</li>
+        <li><strong>Days 46-70:</strong> Execute a safe schema expand/contract on a non-trivial table with backfill and rollback.</li>
+        <li><strong>Days 71-90:</strong> Deliver a capstone slice (e.g., feed or checkout) with a benchmark report and unit cost brief.</li>
       </ol>
     </section>
 
@@ -205,14 +205,14 @@
       <h3 id="apx-quickref-cache">D.1 Cache Invalidation Cheats</h3>
       <ul>
         <li><strong>Default:</strong> TTL + versioned keys (<code>resource:{id}:v3</code>)</li>
-        <li><strong>High-value objects:</strong> Outbox/CDC event → targeted delete/update</li>
+        <li><strong>High-value objects:</strong> Outbox/CDC event -> targeted delete/update</li>
         <li><strong>Stampede control:</strong> Singleflight + <em>stale-while-revalidate</em> + TTL jitter</li>
       </ul>
 
       <h3 id="apx-quickref-capacity">D.2 Capacity Sanity Checks</h3>
       <ul>
-        <li>Pick a target P95 and find the knee via step-load; operate 20–40% below.</li>
-        <li>Provision N+1 at steady-state utilization 50–70% for stateless tiers.</li>
+        <li>Pick a target P95 and find the knee via step-load; operate 20-40% below.</li>
+        <li>Provision N+1 at steady-state utilization 50-70% for stateless tiers.</li>
         <li>Watch tail amplifiers: fan-out width, queue depths, GC pauses, cold starts.</li>
       </ul>
 
@@ -244,16 +244,16 @@
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch10.html"><span class="muted">Prev</span><span>← Chapter 10 — Common Pitfalls and Next Steps</span></a>
-      <a class="next" rel="next" href="chapters/glossary.html"><span class="muted">Next</span><span>Glossary →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch10.html"><span class="muted">Prev</span><span><- Chapter 10 - Common Pitfalls and Next Steps</span></a>
+      <a class="next" rel="next" href="chapters/glossary.html"><span class="muted">Next</span><span>Glossary -></span></a>
     </nav>
 
     <!--
     CHECKLIST
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
-    - [x] Pager prev/next valid (Prev→Ch10, Next→Glossary)
-    - [x] Clear ordering: Top 10 Pitfalls → Review → Progression → Quick Reference → Exercises
+    - [x] Pager prev/next valid (Prev->Ch10, Next->Glossary)
+    - [x] Clear ordering: Top 10 Pitfalls -> Review -> Progression -> Quick Reference -> Exercises
     - [x] No external images (image audit N/A)
     - [x] Head/meta complete; no TODOs
     -->

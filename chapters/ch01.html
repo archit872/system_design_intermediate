@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 01 — Bridging Fundamentals to Applied Design</title>
-  <meta name="description" content="Chapter 1 connects beginner concepts—availability, scalability, latency—to production-grade system design with frameworks, trade-off analysis, and a guided mini-exercise.">
-  <meta property="og:title" content="Chapter 01 — Bridging Fundamentals to Applied Design">
+  <title>Chapter 01 - Bridging Fundamentals to Applied Design</title>
+  <meta name="description" content="Chapter 1 connects beginner concepts-availability, scalability, latency-to production-grade system design with frameworks, trade-off analysis, and a guided mini-exercise.">
+  <meta property="og:title" content="Chapter 01 - Bridging Fundamentals to Applied Design">
   <meta property="og:description" content="From concepts to practice: SLAs/SLOs/SLIs, scoping constraints, CAP in practice, and a structured lifecycle from prototype to production.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -33,10 +33,10 @@
     <div class="container">
       <div class="meta">
         <span class="badge badge-primary">Chapter 01</span>
-        <span class="badge">Foundations → Practice</span>
+        <span class="badge">Foundations -> Practice</span>
       </div>
       <h1>Bridging Fundamentals to Applied Design</h1>
-      <p class="abstract">You know the vocabulary—availability, latency, throughput, consistency. This chapter turns those terms into a practical workflow you can apply to interviews and real production systems. You’ll translate product needs into measurable objectives, select patterns with explicit trade-offs, and adopt a lifecycle that safely evolves a prototype into a dependable service.</p>
+      <p class="abstract">You know the vocabulary-availability, latency, throughput, consistency. This chapter turns those terms into a practical workflow you can apply to interviews and real production systems. You'll translate product needs into measurable objectives, select patterns with explicit trade-offs, and adopt a lifecycle that safely evolves a prototype into a dependable service.</p>
     </div>
   </header>
 
@@ -44,21 +44,21 @@
     <!-- 01.1 -->
     <section class="section" id="ch01-1">
       <h2>01.1 From Concepts to Practice</h2>
-      <p id="ch01-1-why">Why it matters: Teams don’t ship “availability” or “latency” in the abstract; they ship products that meet user expectations under cost and time constraints. Turning concepts into numbers and guardrails avoids endless debates and aligns engineering with outcomes.</p>
+      <p id="ch01-1-why">Why it matters: Teams don't ship "availability" or "latency" in the abstract; they ship products that meet user expectations under cost and time constraints. Turning concepts into numbers and guardrails avoids endless debates and aligns engineering with outcomes.</p>
 
       <h3 id="ch01-1-1">01.1.1 SLAs, SLOs, and SLIs</h3>
-      <p><strong>Plain:</strong> Think of an online store promising “we’re fast and up most of the time.” That promise must become numbers everyone can check. We define what we observe (<em>SLIs</em>), what we aim for (<em>SLOs</em>), and what we contractually promise (<em>SLAs</em>).</p>
-      <p><strong>Formal:</strong> A <em>Service Level Indicator</em> (SLI) is a quantitative measure (e.g., fraction of HTTP 2xx responses within 300&nbsp;ms). A <em>Service Level Objective</em> (SLO) sets a target for that indicator (e.g., P95 latency ≤ 300&nbsp;ms over 28 days). A <em>Service Level Agreement</em> (SLA) is an external commitment with penalties (e.g., 99.9% monthly availability with credits if breached).</p>
-      <p><strong>Pitfall:</strong> Setting SLOs you cannot measure (“snappy experience”) or that fight each other (ultra-low latency and ultra-strict consistency without budget to pay for it).</p>
-      <p><strong>Example:</strong> For a checkout API, measure success rate (2xx), P95 latency, and <em>end-to-end</em> completion rate. SLOs might be: 99.95% success, P95 ≤ 250&nbsp;ms, and ≥ 99.9% order completion within 5 minutes.</p>
+      <p><strong>Plain:</strong> Think of an online store promising "we're fast and up most of the time." That promise must become numbers everyone can check. We define what we observe (<em>SLIs</em>), what we aim for (<em>SLOs</em>), and what we contractually promise (<em>SLAs</em>).</p>
+      <p><strong>Formal:</strong> A <em>Service Level Indicator</em> (SLI) is a quantitative measure (e.g., fraction of HTTP 2xx responses within 300&nbsp;ms). A <em>Service Level Objective</em> (SLO) sets a target for that indicator (e.g., P95 latency <= 300&nbsp;ms over 28 days). A <em>Service Level Agreement</em> (SLA) is an external commitment with penalties (e.g., 99.9% monthly availability with credits if breached).</p>
+      <p><strong>Pitfall:</strong> Setting SLOs you cannot measure ("snappy experience") or that fight each other (ultra-low latency and ultra-strict consistency without budget to pay for it).</p>
+      <p><strong>Example:</strong> For a checkout API, measure success rate (2xx), P95 latency, and <em>end-to-end</em> completion rate. SLOs might be: 99.95% success, P95 <= 250&nbsp;ms, and >= 99.9% order completion within 5 minutes.</p>
 
       <h3 id="ch01-1-2">01.1.2 Translating Requirements to Technical Specs</h3>
-      <p><strong>Plain:</strong> Start from user jobs—what must happen within what time—and convert those into capacities, latencies, and budgets.</p>
-      <p><strong>Formal:</strong> Given user demand <em>λ</em> (requests/sec), workload distribution (read/write mix), and SLOs, derive required concurrency, queueing targets (Little’s Law), and headroom (typically 30–50%) to survive variance and failures.</p>
-      <p><strong>Pitfall:</strong> Copying another company’s architecture without your own numbers. Good SLOs for search results are not identical to SLOs for money movement.</p>
-      <p><strong>Worked Example A — Back-of-Envelope Capacity:</strong> Your feature flag service must serve 15k RPS reads and 1k RPS writes with P95 ≤ 50&nbsp;ms. Assume each read is 1.5&nbsp;KB and each write is 2&nbsp;KB. A single node sustains ~4k RPS reads at P95 35&nbsp;ms and 400 RPS writes. <em>Sizing:</em> Reads: 15k / 4k ≈ 3.75 → 4 nodes. Writes: 1k / 400 = 2.5 → 3 nodes. With 50% headroom for failover and traffic spikes, plan 6–8 nodes (N=8 if you want one-node maintenance windows).</p>
-      <p><strong>Worked Example B — SLO to Alert:</strong> SLO is P95 ≤ 50&nbsp;ms. Define alert as “burn rate &gt; 4× for 15 minutes,” meaning you’d spend a week’s error budget in &lt; 2 hours if nothing changes. This reduces noise compared to alerting on single samples.</p>
-      <p><strong>Analogy:</strong> SLIs/SLOs are like speed limits and fuel gauges. You don’t stare at the odometer (total users); you watch current speed (latency percentile) and fuel (error budget) to decide whether to accelerate features or refuel reliability.</p>
+      <p><strong>Plain:</strong> Start from user jobs-what must happen within what time-and convert those into capacities, latencies, and budgets.</p>
+      <p><strong>Formal:</strong> Given user demand <em>lambda</em> (requests/sec), workload distribution (read/write mix), and SLOs, derive required concurrency, queueing targets (Little's Law), and headroom (typically 30-50%) to survive variance and failures.</p>
+      <p><strong>Pitfall:</strong> Copying another company's architecture without your own numbers. Good SLOs for search results are not identical to SLOs for money movement.</p>
+      <p><strong>Worked Example A - Back-of-Envelope Capacity:</strong> Your feature flag service must serve 15k RPS reads and 1k RPS writes with P95 <= 50&nbsp;ms. Assume each read is 1.5&nbsp;KB and each write is 2&nbsp;KB. A single node sustains ~4k RPS reads at P95 35&nbsp;ms and 400 RPS writes. <em>Sizing:</em> Reads: 15k / 4k ~ 3.75 -> 4 nodes. Writes: 1k / 400 = 2.5 -> 3 nodes. With 50% headroom for failover and traffic spikes, plan 6-8 nodes (N=8 if you want one-node maintenance windows).</p>
+      <p><strong>Worked Example B - SLO to Alert:</strong> SLO is P95 <= 50&nbsp;ms. Define alert as "burn rate &gt; 4x for 15 minutes," meaning you'd spend a week's error budget in &lt; 2 hours if nothing changes. This reduces noise compared to alerting on single samples.</p>
+      <p><strong>Analogy:</strong> SLIs/SLOs are like speed limits and fuel gauges. You don't stare at the odometer (total users); you watch current speed (latency percentile) and fuel (error budget) to decide whether to accelerate features or refuel reliability.</p>
 
       <p class="summary">Takeaway: Make the abstract observable. Once SLIs and SLOs exist, every later design choice (datastore, caching, retries) can be judged by how it affects the indicators.</p>
     </section>
@@ -69,45 +69,45 @@
       <p id="ch01-2-why">Why it matters: Pressure and ambiguity lead to ad-hoc choices. A consistent framework speeds decisions, reveals risks early, and produces artifacts others can review.</p>
 
       <h3 id="ch01-2-1">01.2.1 Clarifying Scope and Constraints</h3>
-      <p><strong>Plain:</strong> Before drawing boxes, lock down what you’re solving, for whom, and under what limits.</p>
+      <p><strong>Plain:</strong> Before drawing boxes, lock down what you're solving, for whom, and under what limits.</p>
       <p><strong>Formal:</strong> Define <em>scope</em> (features included/excluded), <em>constraints</em> (SLOs, compliance, budgets), and <em>assumptions</em> (traffic models, data freshness). Record <em>non-goals</em> to prevent scope creep.</p>
       <p><strong>Pitfall:</strong> Premature optimization (e.g., multi-region write consistency) when the product needs only regional low-latency reads.</p>
-      <p><strong>Example:</strong> Notification service v1: In-app and email only (SMS out of scope). Target 10k RPS fan-out peak, ≤ 1&nbsp;s end-to-end 95% of time, GDPR compliant, budget of two engineers/month for ops.</p>
+      <p><strong>Example:</strong> Notification service v1: In-app and email only (SMS out of scope). Target 10k RPS fan-out peak, <= 1&nbsp;s end-to-end 95% of time, GDPR compliant, budget of two engineers/month for ops.</p>
 
       <h3 id="ch01-2-2">01.2.2 Establishing Metrics for Success</h3>
-      <p><strong>Plain:</strong> Decide what “done” looks like in numbers.</p>
+      <p><strong>Plain:</strong> Decide what "done" looks like in numbers.</p>
       <p><strong>Formal:</strong> Couple <em>leading</em> indicators (queue depth, cache hit ratio) with <em>lagging</em> indicators (user-visible latency, errors). Use targets with windows (e.g., 30-day rolling) and define error budgets for feature velocity.</p>
-      <p><strong>Pitfall:</strong> Choosing only infrastructure metrics (CPU %) without user SLIs; you might “optimize” and still fail users.</p>
-      <p><strong>Example (KPI set):</strong> P95 latency ≤ 200&nbsp;ms, P99 ≤ 450&nbsp;ms; success ≥ 99.95%; cache hit ≥ 85%; tail amplification factor ≤ 3× (P99 vs P50); cost ≤ ₹0.04 per 1k requests.</p>
+      <p><strong>Pitfall:</strong> Choosing only infrastructure metrics (CPU %) without user SLIs; you might "optimize" and still fail users.</p>
+      <p><strong>Example (KPI set):</strong> P95 latency <= 200&nbsp;ms, P99 <= 450&nbsp;ms; success >= 99.95%; cache hit >= 85%; tail amplification factor <= 3x (P99 vs P50); cost <= INR0.04 per 1k requests.</p>
 
       <h3 id="ch01-2-3">01.2.3 A 7-Step Design Flow</h3>
       <ol>
         <li><strong>Clarify</strong> use cases and constraints; capture non-goals.</li>
         <li><strong>Quantify</strong> demand; estimate RPS, storage growth, and tail latencies.</li>
-        <li><strong>Choose</strong> a baseline architecture that could pass the SLOs (don’t gold-plate).</li>
+        <li><strong>Choose</strong> a baseline architecture that could pass the SLOs (don't gold-plate).</li>
         <li><strong>Place data</strong> (persistence model, partitioning, consistency choice).</li>
         <li><strong>Route traffic</strong> (LB, caching, backpressure, retries with budgets).</li>
         <li><strong>Design for failure</strong> (timeouts, circuit breakers, idempotency, DR).</li>
         <li><strong>Observe</strong> (SLIs wired, red/black deploys, rollback, cost guardrails).</li>
       </ol>
 
-      <p class="summary">Takeaway: A repeatable flow makes designs comparable and teachable. We’ll use this 7-step template throughout the book.</p>
+      <p class="summary">Takeaway: A repeatable flow makes designs comparable and teachable. We'll use this 7-step template throughout the book.</p>
     </section>
 
     <!-- 01.3 -->
     <section class="section" id="ch01-3">
       <h2>01.3 Evaluating Trade-offs</h2>
-      <p id="ch01-3-why">Why it matters: Most “best practices” are context-dependent. Knowing the levers—consistency, cost, complexity—prevents cargo-culting architectures.</p>
+      <p id="ch01-3-why">Why it matters: Most "best practices" are context-dependent. Knowing the levers-consistency, cost, complexity-prevents cargo-culting architectures.</p>
 
       <h3 id="ch01-3-1">01.3.1 CAP in Practice</h3>
       <p><strong>Plain:</strong> In a network partition, you can keep answering requests (availability) or keep answers perfectly in sync (consistency), but not both.</p>
       <p><strong>Formal:</strong> The CAP theorem states that in the presence of network partitions, a distributed store cannot simultaneously provide strong consistency and availability. Systems pick a default: CP (consistent, partition-tolerant) or AP (available, partition-tolerant), often with tunable reads/writes.</p>
-      <p><strong>Pitfall:</strong> Equating “eventual consistency” with “sloppy.” Eventual consistency can be engineered with tight bounds, idempotency, and reconciliation.</p>
+      <p><strong>Pitfall:</strong> Equating "eventual consistency" with "sloppy." Eventual consistency can be engineered with tight bounds, idempotency, and reconciliation.</p>
       <p><strong>Example:</strong> A cart service can accept writes locally (AP) and reconcile later; a payment ledger prefers CP to avoid double-spends.</p>
 
       <h3 id="ch01-3-2">01.3.2 Cost vs Performance vs Complexity</h3>
-      <p><strong>Plain:</strong> Faster and more reliable usually means more moving parts and higher bills. The art is finding “enough” for the current stage.</p>
-      <p><strong>Formal:</strong> Model marginal benefit (ΔSLO, Δconversion) versus marginal cost (infra + people). Complexity cost includes longer MTTR, slower onboarding, and higher change failure rate.</p>
+      <p><strong>Plain:</strong> Faster and more reliable usually means more moving parts and higher bills. The art is finding "enough" for the current stage.</p>
+      <p><strong>Formal:</strong> Model marginal benefit (DeltaSLO, Deltaconversion) versus marginal cost (infra + people). Complexity cost includes longer MTTR, slower onboarding, and higher change failure rate.</p>
       <p><strong>Pitfall:</strong> Mistaking cloud credits for free scalability; operational complexity still accrues interest.</p>
 
       <p><em>Compare: Common Storage Choices</em></p>
@@ -123,11 +123,11 @@
         </tbody>
       </table>
 
-      <h3 id="ch01-3-3">01.3.3 Worked Example — Reads vs Writes Budget</h3>
-      <p>You run an article service with 95:5 read:write. Edge cache hit is 80%. Origin sees 20% of reads. With 30k RPS external, origin reads are 0.2 × 0.95 × 30k = 5,700 RPS; writes are 0.05 × 30k = 1,500 RPS. A single DB node handles 3,000 reads and 300 writes at target latency. To meet SLO with N+1 redundancy and 50% headroom:</p>
+      <h3 id="ch01-3-3">01.3.3 Worked Example - Reads vs Writes Budget</h3>
+      <p>You run an article service with 95:5 read:write. Edge cache hit is 80%. Origin sees 20% of reads. With 30k RPS external, origin reads are 0.2 x 0.95 x 30k = 5,700 RPS; writes are 0.05 x 30k = 1,500 RPS. A single DB node handles 3,000 reads and 300 writes at target latency. To meet SLO with N+1 redundancy and 50% headroom:</p>
       <ul>
-        <li>Reads: need 5,700 / 3,000 ≈ 1.9 → 2 nodes; with headroom ×1.5 → 3; with N+1 → 4 reader nodes.</li>
-        <li>Writes: need 1,500 / 300 = 5; headroom ×1.5 → 7.5 → 8; N+1 → 9 primary-capable nodes (or 3 partitions × 3 replicas).</li>
+        <li>Reads: need 5,700 / 3,000 ~ 1.9 -> 2 nodes; with headroom x1.5 -> 3; with N+1 -> 4 reader nodes.</li>
+        <li>Writes: need 1,500 / 300 = 5; headroom x1.5 -> 7.5 -> 8; N+1 -> 9 primary-capable nodes (or 3 partitions x 3 replicas).</li>
       </ul>
       <p><em>Trade-off:</em> Edge caching reduced read pressure drastically; writes still dominate. Consider write batching, queueing, or a CQRS split to separate read replicas from write paths.</p>
 
@@ -137,7 +137,7 @@
     <!-- 01.4 -->
     <section class="section" id="ch01-4">
       <h2>01.4 Design Lifecycle</h2>
-      <p id="ch01-4-why">Why it matters: Many outages arrive from “good” designs shipped without guardrails. A lifecycle bakes in proof, feedback, and reversibility.</p>
+      <p id="ch01-4-why">Why it matters: Many outages arrive from "good" designs shipped without guardrails. A lifecycle bakes in proof, feedback, and reversibility.</p>
 
       <h3 id="ch01-4-1">01.4.1 From Prototype to Production</h3>
       <p><strong>Plain:</strong> Build the smallest thing that can pass your SLOs, then harden it before feature fireworks.</p>
@@ -147,7 +147,7 @@
         <li><em>Beta/Canary:</em> Real traffic for a subset of users or regions. Add timeouts, retries with budgets, and circuit breakers.</li>
         <li><em>Production:</em> Automated rollouts/rollbacks, blue-green or red-black deploys, dashboards aligned to SLOs, paging only on user-impacting burn rates.</li>
       </ol>
-      <p><strong>Pitfall:</strong> “Temporary” scripts becoming permanent; lack of runbooks; no owner for data migrations.</p>
+      <p><strong>Pitfall:</strong> "Temporary" scripts becoming permanent; lack of runbooks; no owner for data migrations.</p>
 
       <h3 id="ch01-4-2">01.4.2 Feedback Loops</h3>
       <p><strong>Plain:</strong> Observe, compare to targets, adjust. Repeat.</p>
@@ -156,7 +156,7 @@
       <p><strong>Example:</strong> A search service sets P99 < 800&nbsp;ms. After launch, P99 creeps to 1,100&nbsp;ms due to new ranking features. The quarterly loop reveals memory pressure; the fix is a memory-friendly index and a tuned cache TTL, restoring P99 without doubling hardware.</p>
 
       <h3 id="ch01-4-3">01.4.3 Guardrails and Reversibility</h3>
-      <p><strong>Plain:</strong> Assume failures will happen—design easy ways to stop the bleeding.</p>
+      <p><strong>Plain:</strong> Assume failures will happen-design easy ways to stop the bleeding.</p>
       <p><strong>Formal:</strong> Implement kill-switches, feature flags, traffic shedding, static defaults on config failures, and idempotent operations to make retries safe. Prefer designs with low blast radius by default.</p>
       <p><strong>Pitfall:</strong> Global config pushes without validation; retries amplifying an outage.</p>
       <p><strong>Example Runbook Snippet:</strong></p>
@@ -170,27 +170,27 @@
     - "Redeploy last green version (blue-green)."
     - "Pin feature flags to safe defaults."</code></pre>
 
-      <p class="summary">Takeaway: A lifecycle plus guardrails turns “hope” into a plan. Your design is not complete until it can fail safely.</p>
+      <p class="summary">Takeaway: A lifecycle plus guardrails turns "hope" into a plan. Your design is not complete until it can fail safely.</p>
     </section>
 
     <!-- 01.5 -->
     <section class="section" id="ch01-5">
-      <h2>01.5 Checkpoints — Mini Exercise</h2>
+      <h2>01.5 Checkpoints - Mini Exercise</h2>
       <p id="ch01-5-why">Why it matters: Re-evaluating a familiar system with SLOs and trade-offs reveals blind spots and cements the framework.</p>
 
       <h3 id="ch01-5-1">01.5.1 URL Shortener: Re-evaluation</h3>
-      <p><strong>Scope & Constraints:</strong> Create/resolve short links. Exclude analytics beyond daily counts. SLOs: 99.95% success, P95 resolve ≤ 80&nbsp;ms, P99 ≤ 200&nbsp;ms; create ≤ 150&nbsp;ms P95. Target 20k RPS resolves peak, 200 RPS creates. Single region, CDN available, budget modest.</p>
-      <p><strong>Baseline:</strong> Edge-cache GET /{code} with TTL 60s on 2xx; origin is a KV store keyed by code → URL; writes go through a small API with rate limiting and id space management.</p>
+      <p><strong>Scope & Constraints:</strong> Create/resolve short links. Exclude analytics beyond daily counts. SLOs: 99.95% success, P95 resolve <= 80&nbsp;ms, P99 <= 200&nbsp;ms; create <= 150&nbsp;ms P95. Target 20k RPS resolves peak, 200 RPS creates. Single region, CDN available, budget modest.</p>
+      <p><strong>Baseline:</strong> Edge-cache GET /{code} with TTL 60s on 2xx; origin is a KV store keyed by code -> URL; writes go through a small API with rate limiting and id space management.</p>
 
       <h3 id="ch01-5-2">01.5.2 Apply the 7-Step Flow</h3>
       <ol>
-        <li><strong>Clarify:</strong> No per-click geolocation redirects; one code → one target URL; custom vanity codes allowed for paid tier (out of scope now).</li>
-        <li><strong>Quantify:</strong> With 90% cache hit, origin sees 2k RPS reads and 200 RPS writes. Data growth ~100M links/year at ~100&nbsp;B avg key, 200&nbsp;B value → ~30&nbsp;GB/year raw.</li>
+        <li><strong>Clarify:</strong> No per-click geolocation redirects; one code -> one target URL; custom vanity codes allowed for paid tier (out of scope now).</li>
+        <li><strong>Quantify:</strong> With 90% cache hit, origin sees 2k RPS reads and 200 RPS writes. Data growth ~100M links/year at ~100&nbsp;B avg key, 200&nbsp;B value -> ~30&nbsp;GB/year raw.</li>
         <li><strong>Choose baseline:</strong> Anycast CDN, L7 LB, stateless API, managed KV (e.g., partitioned by code hash), background compaction for expired links.</li>
-        <li><strong>Place data:</strong> Partition by consistent hash of code; replicate 3×; use conditional put for unique codes; store small metadata (created_at, ttl).</li>
-        <li><strong>Route traffic:</strong> Retry reads only on <em>timeouts</em> with jitter; budgeted to 1 retry. No retries on 4xx. Writes are idempotent via client-supplied nonce or “put-if-absent”.</li>
+        <li><strong>Place data:</strong> Partition by consistent hash of code; replicate 3x; use conditional put for unique codes; store small metadata (created_at, ttl).</li>
+        <li><strong>Route traffic:</strong> Retry reads only on <em>timeouts</em> with jitter; budgeted to 1 retry. No retries on 4xx. Writes are idempotent via client-supplied nonce or "put-if-absent".</li>
         <li><strong>Design for failure:</strong> If KV unavailable, serve stale from CDN for TTL window; if create path degrades, degrade gracefully (return 503 with retry-after).</li>
-        <li><strong>Observe:</strong> SLIs: success, P95/99 resolve latency, cache hit ratio, write conflicts. Burn rate alerts at 2× and 8× with 1h/5m windows respectively.</li>
+        <li><strong>Observe:</strong> SLIs: success, P95/99 resolve latency, cache hit ratio, write conflicts. Burn rate alerts at 2x and 8x with 1h/5m windows respectively.</li>
       </ol>
 
       <h3 id="ch01-5-3">01.5.3 Trade-offs & Extensions</h3>
@@ -212,18 +212,18 @@
         </tbody>
       </table>
 
-      <p class="summary">Takeaway: Even a “simple” system hides decisions on caching, idempotency, and error budgets. State them explicitly and align them to SLOs.</p>
+      <p class="summary">Takeaway: Even a "simple" system hides decisions on caching, idempotency, and error budgets. State them explicitly and align them to SLOs.</p>
     </section>
 
     <!-- Resources -->
     <section class="section" id="ch01-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>Google SRE Book (Ch. 3: Embracing Risk)</strong> — Grounding for SLOs, error budgets, and release velocity (Google, 2016/2020). <span class="badge">Free</span></li>
-        <li><strong>Designing Data-Intensive Applications (Ch. 1–2)</strong> — Clear treatment of data models, reliability, and scaling (O’Reilly, 2017). <span class="badge">Paid</span></li>
-        <li><strong>System Design Primer</strong> — Broad survey of design problems and trade-offs; good for brushing up patterns (GitHub, ongoing). <span class="badge">Free</span></li>
-        <li><strong>ACM Queue: “The Tail at Scale”</strong> — Practical tail-latency mitigation ideas informing SLOs and retries (ACM, 2013). <span class="badge">Free</span></li>
-        <li><strong>OpenTelemetry Docs</strong> — Instrumentation patterns for SLIs and tracing across services (CNCF, ongoing). <span class="badge">Free</span></li>
+        <li><strong>Google SRE Book (Ch. 3: Embracing Risk)</strong> - Grounding for SLOs, error budgets, and release velocity (Google, 2016/2020). <span class="badge">Free</span></li>
+        <li><strong>Designing Data-Intensive Applications (Ch. 1-2)</strong> - Clear treatment of data models, reliability, and scaling (O'Reilly, 2017). <span class="badge">Paid</span></li>
+        <li><strong>System Design Primer</strong> - Broad survey of design problems and trade-offs; good for brushing up patterns (GitHub, ongoing). <span class="badge">Free</span></li>
+        <li><strong>ACM Queue: "The Tail at Scale"</strong> - Practical tail-latency mitigation ideas informing SLOs and retries (ACM, 2013). <span class="badge">Free</span></li>
+        <li><strong>OpenTelemetry Docs</strong> - Instrumentation patterns for SLIs and tracing across services (CNCF, ongoing). <span class="badge">Free</span></li>
       </ul>
       <p class="muted">Rationales: These sources emphasize measuring what matters, designing for failure, and building observability into the lifecycle.</p>
     </section>
@@ -242,13 +242,13 @@
       <ol>
         <li>Carry your chosen capstone idea into Chapter 2. Estimate baseline RPS, storage growth, and latency targets.</li>
         <li>Draft SLOs and an initial dashboard outline (which SLIs, what windows, what alerts).</li>
-        <li>List three explicit non-goals for your system; defend why they’re out of scope today.</li>
+        <li>List three explicit non-goals for your system; defend why they're out of scope today.</li>
       </ol>
     </section>
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="next" rel="next" href="chapters/ch02.html"><span class="muted">Next</span><span>Chapter 02 — Designing Scalable Architectures →</span></a>
+      <a class="next" rel="next" href="chapters/ch02.html"><span class="muted">Next</span><span>Chapter 02 - Designing Scalable Architectures -></span></a>
     </nav>
 
     <!--
@@ -256,8 +256,8 @@
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
     - [x] Pager next valid; first chapter has no prev
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables included; code blocks excluded)
+    - [x] Order: Hero -> Numbered Sections -> Resources -> Recap
+    - [x] >=1,800 words of prose (headings, paragraphs, lists, tables included; code blocks excluded)
     - [x] Head/meta complete; no TODOs
     - [x] No images in this chapter (image audit N/A). Future chapters may include validated images.
     -->

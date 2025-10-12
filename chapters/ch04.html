@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 04 — Communication, Coordination, and Consistency</title>
+  <title>Chapter 04 - Communication, Coordination, and Consistency</title>
   <meta name="description" content="Service-to-service communication models (REST, gRPC, WebSockets), messaging infrastructure (Kafka, RabbitMQ, SNS/SQS), distributed coordination (ZooKeeper, etcd, Raft), and practical consistency & idempotency patterns.">
-  <meta property="og:title" content="Chapter 04 — Communication, Coordination, and Consistency">
+  <meta property="og:title" content="Chapter 04 - Communication, Coordination, and Consistency">
   <meta property="og:description" content="Pick the right communication style, coordinate safely with consensus systems, and balance consistency and performance with idempotency and retries.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -36,7 +36,7 @@
         <span class="badge">Messaging &amp; Consistency</span>
       </div>
       <h1>Communication, Coordination, and Consistency</h1>
-      <p class="abstract">Distributed systems live or die by how components talk and agree. This chapter helps you choose the right communication model (REST, gRPC, WebSockets, pub/sub), stand up reliable messaging (Kafka, RabbitMQ, SNS/SQS), use coordination systems judiciously (ZooKeeper, etcd, Raft), and implement practical consistency and idempotency. You’ll learn to balance throughput, latency, and correctness with patterns you can ship.</p>
+      <p class="abstract">Distributed systems live or die by how components talk and agree. This chapter helps you choose the right communication model (REST, gRPC, WebSockets, pub/sub), stand up reliable messaging (Kafka, RabbitMQ, SNS/SQS), use coordination systems judiciously (ZooKeeper, etcd, Raft), and implement practical consistency and idempotency. You'll learn to balance throughput, latency, and correctness with patterns you can ship.</p>
     </div>
   </header>
 
@@ -50,9 +50,9 @@
       <p><strong>Plain:</strong> REST over HTTP is universal, human-friendly, and cacheable. gRPC is binary, contract-first, and fast for service-to-service. WebSockets keep a long-lived connection for real-time push.</p>
       <p><strong>Formal:</strong> REST typically uses HTTP/1.1 or HTTP/2 with resource-oriented URIs and JSON. gRPC builds on HTTP/2 with Protocol Buffers for schema and multiplexed streams, supporting unary and streaming RPCs (gRPC Docs, 2025). WebSockets upgrade an HTTP connection to a bidirectional TCP stream, ideal for low-latency event push but demanding careful connection lifecycle management (MDN, 2025).</p>
       <p><strong>Pitfall:</strong> Using WebSockets when you actually need idempotent request/response and CDN caching; or using JSON REST for high-QPS internal calls where serialization and headers dominate latency.</p>
-      <p><strong>Worked Example A — Latency Budget:</strong> A microservice-to-microservice call with small messages (≤2&nbsp;KB) spends ~1–3&nbsp;ms on Protobuf serialization vs ~5–9&nbsp;ms on JSON encode/decode at modest CPU allocations. Across 10 hops, gRPC can reclaim tens of milliseconds and reduce tail latency variance, especially over HTTP/2 multiplexing (gRPC Docs, 2025).</p>
-      <p><strong>Worked Example B — Compatibility:</strong> gRPC with explicit proto versions lets you add fields without breaking old clients (use defaults / field presence). REST can achieve similar with additive JSON fields, but binary contracts enforce stronger guarantees at compile time for internal services.</p>
-      <p><strong>Analogy:</strong> REST is like mailing letters—anyone can read them, post offices (CDNs) cache them. gRPC is like a direct fiber call—fast and structured but requires both ends to speak the same codec. WebSockets are an open phone line—great for chatty conversations but you pay to keep the line up.</p>
+      <p><strong>Worked Example A - Latency Budget:</strong> A microservice-to-microservice call with small messages (<=2&nbsp;KB) spends ~1-3&nbsp;ms on Protobuf serialization vs ~5-9&nbsp;ms on JSON encode/decode at modest CPU allocations. Across 10 hops, gRPC can reclaim tens of milliseconds and reduce tail latency variance, especially over HTTP/2 multiplexing (gRPC Docs, 2025).</p>
+      <p><strong>Worked Example B - Compatibility:</strong> gRPC with explicit proto versions lets you add fields without breaking old clients (use defaults / field presence). REST can achieve similar with additive JSON fields, but binary contracts enforce stronger guarantees at compile time for internal services.</p>
+      <p><strong>Analogy:</strong> REST is like mailing letters-anyone can read them, post offices (CDNs) cache them. gRPC is like a direct fiber call-fast and structured but requires both ends to speak the same codec. WebSockets are an open phone line-great for chatty conversations but you pay to keep the line up.</p>
 
       <p><em>Compare: REST vs gRPC vs WebSockets</em></p>
       <table>
@@ -68,7 +68,7 @@
       </table>
 
       <h3 id="ch04-1-2">04.1.2 Pub/Sub and Event Streaming</h3>
-      <p><strong>Plain:</strong> Pub/sub decouples producers and consumers—senders publish messages to a topic; subscribers receive them asynchronously. Event streaming stores ordered logs of events, letting consumers replay and process at their own pace.</p>
+      <p><strong>Plain:</strong> Pub/sub decouples producers and consumers-senders publish messages to a topic; subscribers receive them asynchronously. Event streaming stores ordered logs of events, letting consumers replay and process at their own pace.</p>
       <p><strong>Formal:</strong> Pub/sub systems like SNS, RabbitMQ (topics) push messages to queues. Event streaming systems like Kafka append to partitioned logs, where offsets represent position; consumer groups provide parallelism and durability (Kafka Docs, 2025; AWS SNS/SQS Docs, 2025).</p>
       <p><strong>Pitfall:</strong> Assuming pub/sub equals durable replay. Classic broker queues often delete messages after delivery; streaming logs retain data for reprocessing, which is vital for backfills and new consumers.</p>
 
@@ -83,7 +83,7 @@
       <h3 id="ch04-2-1">04.2.1 Kafka, RabbitMQ, and AWS SNS/SQS</h3>
       <p><strong>Plain:</strong> Kafka gives you partitioned logs and consumer groups for scalable throughput and replay. RabbitMQ offers flexible routing and acknowledgments for classic queue semantics. SNS/SQS provides managed fan-out and queueing with minimal ops.</p>
       <p><strong>Formal:</strong> Kafka topics are split into partitions; each partition has a leader and followers; consumers in a group divide partitions so each partition goes to one consumer at a time, preserving order per partition (Confluent Docs, 2025). RabbitMQ uses exchanges (direct, topic, fanout) to route messages to queues; consumers ack messages, and redelivery happens on negative ack or timeout (RabbitMQ Docs, 2025). SNS publishes to many subscribers (HTTP, Lambda, SQS), and SQS provides at-least-once delivery with visibility timeouts (AWS Docs, 2025).</p>
-      <p><strong>Pitfall:</strong> Exactly-once misunderstandings. Many systems are at-least-once by default; “exactly-once” usually requires idempotency at the application or transactional sinks (Kafka EOS has constraints).</p>
+      <p><strong>Pitfall:</strong> Exactly-once misunderstandings. Many systems are at-least-once by default; "exactly-once" usually requires idempotency at the application or transactional sinks (Kafka EOS has constraints).</p>
 
       <figure>
         <img src="https://docs.confluent.io/_images/consumer-group.png" alt="Kafka consumer group: partitions assigned to different consumers, one consumer per partition at a time" loading="lazy" decoding="async" width="780" height="366" referrerpolicy="no-referrer">
@@ -92,7 +92,7 @@
 
       <figure>
         <img src="https://docs.aws.amazon.com/images/sns/latest/dg/images/sns-fanout.png" alt="Amazon SNS fanout to multiple SQS queues and HTTPS endpoints" loading="lazy" decoding="async" width="700" height="332" referrerpolicy="no-referrer">
-        <figcaption>Managed fanout with SNS → SQS/HTTP decouples producers from many consumers (AWS SNS Docs, 2025).</figcaption>
+        <figcaption>Managed fanout with SNS -> SQS/HTTP decouples producers from many consumers (AWS SNS Docs, 2025).</figcaption>
       </figure>
 
       <p><em>Compare: Kafka vs RabbitMQ vs SNS/SQS</em></p>
@@ -109,17 +109,17 @@
         </tbody>
       </table>
 
-      <h3 id="ch04-2-2">04.2.2 Worked Example — Partitioning &amp; Lag</h3>
-      <p><strong>Scenario:</strong> Topic <code>orders</code> at 8k messages/s, average 1&nbsp;KB, with per-customer ordering required. You target ≤ 2&nbsp;s end-to-end processing at P95.</p>
+      <h3 id="ch04-2-2">04.2.2 Worked Example - Partitioning &amp; Lag</h3>
+      <p><strong>Scenario:</strong> Topic <code>orders</code> at 8k messages/s, average 1&nbsp;KB, with per-customer ordering required. You target <= 2&nbsp;s end-to-end processing at P95.</p>
       <ol>
-        <li><strong>Partitioning:</strong> Key by <code>customer_id</code> to preserve order per customer. Start with 48 partitions to allow 3–4 consumers per AZ and headroom for growth.</li>
-        <li><strong>Consumer Groups:</strong> With 24 consumers, each handles ~333 msgs/s on average. If processing is 1&nbsp;ms/msg CPU plus 2&nbsp;ms I/O, each consumer can do ~333–500 msgs/s comfortably with batching.</li>
-        <li><strong>Lag Budget:</strong> Keep lag &lt; 2× the ingest rate per partition during spikes. Alert when lag growth persists for ≥5 minutes; scale consumers horizontally or add partitions (with a rehash plan) if needed.</li>
+        <li><strong>Partitioning:</strong> Key by <code>customer_id</code> to preserve order per customer. Start with 48 partitions to allow 3-4 consumers per AZ and headroom for growth.</li>
+        <li><strong>Consumer Groups:</strong> With 24 consumers, each handles ~333 msgs/s on average. If processing is 1&nbsp;ms/msg CPU plus 2&nbsp;ms I/O, each consumer can do ~333-500 msgs/s comfortably with batching.</li>
+        <li><strong>Lag Budget:</strong> Keep lag &lt; 2x the ingest rate per partition during spikes. Alert when lag growth persists for >=5 minutes; scale consumers horizontally or add partitions (with a rehash plan) if needed.</li>
       </ol>
 
       <h3 id="ch04-2-3">04.2.3 Delivery Semantics &amp; DLQs</h3>
       <p><strong>Plain:</strong> At-least-once means duplicates happen; at-most-once means you may drop messages; exactly-once is simulated with idempotency or transactions. Dead-letter queues (DLQs) isolate poison messages.</p>
-      <p><strong>Formal:</strong> In at-least-once systems, a consumer must handle duplicates via de-dup keys or idempotent state transitions. Kafka’s EOS combines producer idempotency with transactional writes to a sink, but requires careful configuration (Confluent Docs, 2025). DLQs should include headers explaining failure cause and attempt count.</p>
+      <p><strong>Formal:</strong> In at-least-once systems, a consumer must handle duplicates via de-dup keys or idempotent state transitions. Kafka's EOS combines producer idempotency with transactional writes to a sink, but requires careful configuration (Confluent Docs, 2025). DLQs should include headers explaining failure cause and attempt count.</p>
       <p><strong>Pitfall:</strong> Infinite redelivery loops. Use circuit breakers and quarantine policies to avoid burning capacity on permanently bad messages.</p>
 
       <p class="summary">Takeaway: Size partitions to parallelize safely, monitor lag as a first-class SLI, and design idempotent consumers with well-governed DLQs.</p>
@@ -128,12 +128,12 @@
     <!-- 04.3 -->
     <section class="section" id="ch04-3">
       <h2>04.3 Distributed Coordination</h2>
-      <p id="ch04-3-why">Why it matters: Coordination systems provide the illusion of a single, correct decision in a flaky world. Overuse them and you’ll bottleneck; misuse them and you’ll fork the universe.</p>
+      <p id="ch04-3-why">Why it matters: Coordination systems provide the illusion of a single, correct decision in a flaky world. Overuse them and you'll bottleneck; misuse them and you'll fork the universe.</p>
 
       <h3 id="ch04-3-1">04.3.1 ZooKeeper, etcd, and Raft</h3>
       <p><strong>Plain:</strong> ZooKeeper and etcd store small critical metadata (leaders, locks, configs) and replicate it consistently across a quorum. Raft is a consensus algorithm many of these systems use to elect leaders and replicate logs.</p>
       <p><strong>Formal:</strong> etcd uses the Raft consensus algorithm to replicate a log of operations across members; once a majority persists an entry, it is committed (etcd Docs, 2025). ZooKeeper exposes a hierarchical namespace of znodes with ephemeral and sequential nodes, enabling leader election and watchers (Apache ZK Docs, 2025). Raft ensures safety (no two leaders for same term) and liveness (progress with majority available).</p>
-      <p><strong>Pitfall:</strong> Storing large blobs or high-churn data in coordination stores; they are optimized for small config/metadata and steady workloads. Another trap is “DIY locks” without fencing tokens, causing split-brain writers.</p>
+      <p><strong>Pitfall:</strong> Storing large blobs or high-churn data in coordination stores; they are optimized for small config/metadata and steady workloads. Another trap is "DIY locks" without fencing tokens, causing split-brain writers.</p>
 
       <figure>
         <img src="images/etcd-architecture.svg" alt="Custom diagram of an etcd cluster with three members and watchers" loading="lazy" decoding="async" width="520" height="300">
@@ -155,7 +155,7 @@
 
       <h3 id="ch04-3-2">04.3.2 Leader Election &amp; Leases</h3>
       <p><strong>Plain:</strong> When only one worker must act, elect a leader with a lease that expires if it dies.</p>
-      <p><strong>Formal:</strong> Create an ephemeral node (ZK) or lease (etcd). The active holder performs work; if the session breaks, the ephemeral state disappears and another contender takes over. Use <em>fencing tokens</em> (monotonically increasing numbers) passed to downstream systems so stale leaders can’t clobber current ones (Martin Kleppmann, 2015).</p>
+      <p><strong>Formal:</strong> Create an ephemeral node (ZK) or lease (etcd). The active holder performs work; if the session breaks, the ephemeral state disappears and another contender takes over. Use <em>fencing tokens</em> (monotonically increasing numbers) passed to downstream systems so stale leaders can't clobber current ones (Martin Kleppmann, 2015).</p>
       <p><strong>Pitfall:</strong> Long GC pauses or network partitions causing false leadership loss; design idempotent handlers and be prepared for quick re-elects.</p>
 
       <h3 id="ch04-3-3">04.3.3 Configuration &amp; Feature Flags</h3>
@@ -163,7 +163,7 @@
       <p><strong>Formal:</strong> Watchers receive change events; clients should cache and apply with validation and fallback defaults. For safety, tie flags to rollout systems with percentage-based or segment-based exposure and kill-switches.</p>
       <p><strong>Pitfall:</strong> Global config pushes without guardrails. Validate and stage changes; an invalid schema should fail shut with safe defaults.</p>
 
-      <p class="summary">Takeaway: Use coordination stores sparingly for control-plane decisions—leadership, service discovery, and config—not for data planes or hot paths.</p>
+      <p class="summary">Takeaway: Use coordination stores sparingly for control-plane decisions-leadership, service discovery, and config-not for data planes or hot paths.</p>
     </section>
 
     <!-- 04.4 -->
@@ -173,13 +173,13 @@
 
       <h3 id="ch04-4-1">04.4.1 Eventual Consistency Patterns</h3>
       <p><strong>Plain:</strong> Instead of blocking on all updates everywhere, write once to a source of truth and let other views catch up. Users may see slightly stale data, but the system stays fast and available.</p>
-      <p><strong>Formal:</strong> Use <em>outbox</em> pattern: in the same transaction as your OLTP write, store an “event” row in an outbox table; a relay publishes to a log (Kafka). Downstream projections (search index, read models) update asynchronously. For workflows spanning services, use <em>sagas</em>—a series of local transactions coordinated by events and compensating actions (DDIA, 2017).</p>
-      <p><strong>Pitfall:</strong> Hiding staleness. If a user updates a profile picture and doesn’t see it, offer UI hints (“updating…”) or serve read-your-writes from a master for that session.</p>
+      <p><strong>Formal:</strong> Use <em>outbox</em> pattern: in the same transaction as your OLTP write, store an "event" row in an outbox table; a relay publishes to a log (Kafka). Downstream projections (search index, read models) update asynchronously. For workflows spanning services, use <em>sagas</em>-a series of local transactions coordinated by events and compensating actions (DDIA, 2017).</p>
+      <p><strong>Pitfall:</strong> Hiding staleness. If a user updates a profile picture and doesn't see it, offer UI hints ("updating...") or serve read-your-writes from a master for that session.</p>
 
       <h3 id="ch04-4-2">04.4.2 Idempotency Keys</h3>
       <p><strong>Plain:</strong> If the same request hits your service twice, you should perform the action once and return the same result. An idempotency key is a client-supplied unique token you use to deduplicate.</p>
-      <p><strong>Formal:</strong> Store a mapping <code>(idempotency_key → outcome)</code> with TTL; on duplicate, short-circuit to the cached outcome. For stateful transitions, ensure your operations are naturally idempotent (e.g., <em>upsert</em>, <em>set state to</em> vs <em>increment</em>).</p>
-      <p><strong>Pitfall:</strong> Dedup caches that expire too soon: a retry after a network partition may arrive after the TTL and double-apply. Keep the TTL ≥ maximum client retry window.</p>
+      <p><strong>Formal:</strong> Store a mapping <code>(idempotency_key -> outcome)</code> with TTL; on duplicate, short-circuit to the cached outcome. For stateful transitions, ensure your operations are naturally idempotent (e.g., <em>upsert</em>, <em>set state to</em> vs <em>increment</em>).</p>
+      <p><strong>Pitfall:</strong> Dedup caches that expire too soon: a retry after a network partition may arrive after the TTL and double-apply. Keep the TTL >= maximum client retry window.</p>
 
       <pre data-lang="pseudo"><code># Payment capture with idempotency
 if exists(store.get(key)):
@@ -191,12 +191,12 @@ else:
 
       <h3 id="ch04-4-3">04.4.3 Retry Budgets, Timeouts, and Backoff</h3>
       <p><strong>Plain:</strong> Retries save users from transient failures, but too many retries make outages worse. Bound them with timeouts and budgets.</p>
-      <p><strong>Formal:</strong> If the user-facing SLO is 3&nbsp;s and the downstream P95 is 200&nbsp;ms, you can afford <em>n</em> attempts such that <code>sum(expected_latency_i + backoff_i) ≤ 3s</code>. Use exponential backoff with jitter; propagate deadlines via headers (e.g., <code>x-deadline-ms</code>) so downstreams avoid work that can’t finish in time (Google SRE, 2016/2020).</p>
+      <p><strong>Formal:</strong> If the user-facing SLO is 3&nbsp;s and the downstream P95 is 200&nbsp;ms, you can afford <em>n</em> attempts such that <code>sum(expected_latency_i + backoff_i) <= 3s</code>. Use exponential backoff with jitter; propagate deadlines via headers (e.g., <code>x-deadline-ms</code>) so downstreams avoid work that can't finish in time (Google SRE, 2016/2020).</p>
       <p><strong>Pitfall:</strong> Layered retries (client, gateway, service) multiplying each other. Centralize retry policy or pass a budget token that all layers decrement.</p>
 
       <h3 id="ch04-4-4">04.4.4 Exactly-Once vs At-Least-Once</h3>
       <p><strong>Plain:</strong> Exactly-once is a great marketing term; in practice you get at-least-once delivery and build idempotency at sinks to achieve exactly-once <em>effects</em>.</p>
-      <p><strong>Formal:</strong> Kafka’s EOS combines producer idempotency, transactional writes, and a read-process-write transaction boundary. It guarantees that a message’s effects are committed once to both Kafka and a transactional sink, within the same transaction, under certain constraints (Confluent Docs, 2025). Many systems still choose at-least-once + idempotency because it’s simpler and robust.</p>
+      <p><strong>Formal:</strong> Kafka's EOS combines producer idempotency, transactional writes, and a read-process-write transaction boundary. It guarantees that a message's effects are committed once to both Kafka and a transactional sink, within the same transaction, under certain constraints (Confluent Docs, 2025). Many systems still choose at-least-once + idempotency because it's simpler and robust.</p>
       <p><strong>Pitfall:</strong> Implementing global distributed transactions across microservices; the operational complexity usually outweighs the benefit compared to sagas + idempotency.</p>
 
       <p class="summary">Takeaway: Make write paths idempotent, present staleness transparently, and budget retries by user deadlines. Avoid global distributed transactions unless absolutely required.</p>
@@ -204,12 +204,12 @@ else:
 
     <!-- 04.5 -->
     <section class="section" id="ch04-5">
-      <h2>04.5 Checkpoints — Design: Event-Driven Order Fulfillment</h2>
-      <p id="ch04-5-why">Why it matters: Order fulfillment spans services (orders, payment, inventory, shipping). It’s a realistic test of messaging, coordination, and consistency.</p>
+      <h2>04.5 Checkpoints - Design: Event-Driven Order Fulfillment</h2>
+      <p id="ch04-5-why">Why it matters: Order fulfillment spans services (orders, payment, inventory, shipping). It's a realistic test of messaging, coordination, and consistency.</p>
 
       <h3 id="ch04-5-1">04.5.1 Requirements &amp; Constraints</h3>
       <ul>
-        <li>SLOs: 99.9% order creation success, payment authorization ≤ 800&nbsp;ms P95, inventory reserve ≤ 300&nbsp;ms P95, fulfillment pipeline end-to-end ≤ 2&nbsp;min P95.</li>
+        <li>SLOs: 99.9% order creation success, payment authorization <= 800&nbsp;ms P95, inventory reserve <= 300&nbsp;ms P95, fulfillment pipeline end-to-end <= 2&nbsp;min P95.</li>
         <li>Scale: 500 RPS order create peak; bursts to 2k RPS during sales. Multi-AZ, single region for v1.</li>
         <li>Correctness: No double charges; no shipping without payment capture. Idempotent external webhooks.</li>
       </ul>
@@ -218,15 +218,15 @@ else:
       <ol>
         <li><strong>APIs:</strong> Public REST (<code>POST /orders</code>) with idempotency key. Internal calls via gRPC.</li>
         <li><strong>Outbox &amp; Streams:</strong> Order service writes <code>OrderCreated</code> to an outbox in the same transaction; a relay publishes to <code>orders</code> topic (Kafka).</li>
-        <li><strong>Saga Orchestrator:</strong> Consumes <code>orders</code>, drives steps: <em>authorize payment → reserve inventory → arrange shipment → capture payment</em>. On failure, issues compensations (release inventory, cancel authorization).</li>
+        <li><strong>Saga Orchestrator:</strong> Consumes <code>orders</code>, drives steps: <em>authorize payment -> reserve inventory -> arrange shipment -> capture payment</em>. On failure, issues compensations (release inventory, cancel authorization).</li>
         <li><strong>Messaging:</strong> Kafka for orchestration and auditability; SNS fanout to trigger emails/notifications without coupling to the core workflow.</li>
         <li><strong>Coordination:</strong> etcd-backed lease for exactly one orchestrator shard acting as leader per partition range; fencing tokens on external systems.</li>
       </ol>
 
       <h3 id="ch04-5-3">04.5.3 Idempotency &amp; External Integrations</h3>
       <ul>
-        <li><strong>Payments:</strong> Idempotency key = <code>order_id</code> or a client-supplied token; store <code>(key → capture_status, provider_txn_id)</code> for 24–48&nbsp;h.</li>
-        <li><strong>Inventory:</strong> <em>Reserve</em> is “set reserved_quantity to X if version==v” (CAS). Replays are safe; idempotent by version.</li>
+        <li><strong>Payments:</strong> Idempotency key = <code>order_id</code> or a client-supplied token; store <code>(key -> capture_status, provider_txn_id)</code> for 24-48&nbsp;h.</li>
+        <li><strong>Inventory:</strong> <em>Reserve</em> is "set reserved_quantity to X if version==v" (CAS). Replays are safe; idempotent by version.</li>
         <li><strong>Webhooks:</strong> Accept at-least-once delivery; dedup with <code>event_id</code>. Sign payloads; enforce replay windows.</li>
       </ul>
 
@@ -234,24 +234,24 @@ else:
       <ul>
         <li><strong>Lag &gt; budget:</strong> Alert on consumer lag burn rates per partition; autoscale consumers.</li>
         <li><strong>Poison messages:</strong> Route to DLQ after N attempts; surface a remediation dashboard with redrive controls.</li>
-        <li><strong>Leader loss:</strong> Lease expires → new leader resumes with fencing token; design idempotent step handlers to tolerate replays.</li>
+        <li><strong>Leader loss:</strong> Lease expires -> new leader resumes with fencing token; design idempotent step handlers to tolerate replays.</li>
         <li><strong>SLIs:</strong> Orchestration success rate, step latencies, DLQ rate, payment duplicate attempts, saga completion time distribution.</li>
       </ul>
 
-      <p class="summary">Deliverables: A sequence diagram (create→outbox→orders topic→steps), a topic/partition plan, idempotency key policy, and an SLO dashboard plan. Aim for small, explicit contracts between services and observable, replayable workflows.</p>
+      <p class="summary">Deliverables: A sequence diagram (create->outbox->orders topic->steps), a topic/partition plan, idempotency key policy, and an SLO dashboard plan. Aim for small, explicit contracts between services and observable, replayable workflows.</p>
     </section>
 
     <!-- Resources -->
     <section class="section" id="ch04-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>gRPC Documentation</strong> — Protocol design, streaming patterns, and performance notes (gRPC Docs, 2025). <span class="badge">Free</span></li>
-        <li><strong>Kafka Documentation (Confluent)</strong> — Partitions, consumer groups, EOS semantics, and lag monitoring (Confluent Docs, 2025). <span class="badge">Free</span></li>
-        <li><strong>RabbitMQ Docs</strong> — Exchanges, routing keys, acknowledgments, and requeue policies (RabbitMQ, 2025). <span class="badge">Free</span></li>
-        <li><strong>AWS SNS/SQS Docs</strong> — Managed pub/sub and queueing with fanout examples (AWS Docs, 2025). <span class="badge">Free</span></li>
-        <li><strong>etcd &amp; ZooKeeper Docs</strong> — Leases, watchers, and coordination best practices (etcd &amp; Apache ZK, 2025). <span class="badge">Free</span></li>
-        <li><strong>Google SRE Book</strong> — Timeouts, retries, and budgets in production (Google, 2016/2020). <span class="badge">Free</span></li>
-        <li><strong>Designing Data-Intensive Applications</strong> — Sagas, outbox, and consistency trade-offs (Kleppmann, 2017). <span class="badge">Paid</span></li>
+        <li><strong>gRPC Documentation</strong> - Protocol design, streaming patterns, and performance notes (gRPC Docs, 2025). <span class="badge">Free</span></li>
+        <li><strong>Kafka Documentation (Confluent)</strong> - Partitions, consumer groups, EOS semantics, and lag monitoring (Confluent Docs, 2025). <span class="badge">Free</span></li>
+        <li><strong>RabbitMQ Docs</strong> - Exchanges, routing keys, acknowledgments, and requeue policies (RabbitMQ, 2025). <span class="badge">Free</span></li>
+        <li><strong>AWS SNS/SQS Docs</strong> - Managed pub/sub and queueing with fanout examples (AWS Docs, 2025). <span class="badge">Free</span></li>
+        <li><strong>etcd &amp; ZooKeeper Docs</strong> - Leases, watchers, and coordination best practices (etcd &amp; Apache ZK, 2025). <span class="badge">Free</span></li>
+        <li><strong>Google SRE Book</strong> - Timeouts, retries, and budgets in production (Google, 2016/2020). <span class="badge">Free</span></li>
+        <li><strong>Designing Data-Intensive Applications</strong> - Sagas, outbox, and consistency trade-offs (Kleppmann, 2017). <span class="badge">Paid</span></li>
       </ul>
       <p class="muted">Rationales: Messaging and coordination evolve quickly; vendor docs and the SRE book give up-to-date operational guidance, while DDIA provides durable mental models.</p>
     </section>
@@ -275,16 +275,16 @@ else:
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch03.html"><span class="muted">Prev</span><span>← Chapter 03 — Data Management and Storage Strategies</span></a>
-      <a class="next" rel="next" href="chapters/ch05.html"><span class="muted">Next</span><span>Chapter 05 — Reliability, Fault Tolerance, and Observability →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch03.html"><span class="muted">Prev</span><span><- Chapter 03 - Data Management and Storage Strategies</span></a>
+      <a class="next" rel="next" href="chapters/ch05.html"><span class="muted">Next</span><span>Chapter 05 - Reliability, Fault Tolerance, and Observability -></span></a>
     </nav>
 
     <!-- Image Link Audit -->
     <!-- <section class="section" id="ch04-image-audit">
       <h2>Image Link Audit</h2>
       <ul class="resource-list">
-        <li>https://docs.confluent.io/_images/consumer-group.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://docs.aws.amazon.com/images/sns/latest/dg/images/sns-fanout.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>https://docs.confluent.io/_images/consumer-group.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
+        <li>https://docs.aws.amazon.com/images/sns/latest/dg/images/sns-fanout.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
         <li>images/etcd-architecture.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
       </ul>
       <p class="muted">Only HTTPS assets or vetted local SVGs with reliable licensing are included.</p>
@@ -295,8 +295,8 @@ else:
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
     - [x] Pager prev/next valid; ToC numbering matches
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
+    - [x] Order: Hero -> Numbered Sections -> Resources -> Recap
+    - [x] >=1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
     - [x] Images: Local SVG or HTTPS assets validated; captions + attribution included
     - [x] Head/meta complete; no TODOs
     -->

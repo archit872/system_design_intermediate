@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 03 — Data Management and Storage Strategies</title>
+  <title>Chapter 03 - Data Management and Storage Strategies</title>
   <meta name="description" content="Choose and integrate the right storage systems, replication models, and indexes to meet scalability and performance goals while respecting compliance and lifecycle constraints.">
-  <meta property="og:title" content="Chapter 03 — Data Management and Storage Strategies">
+  <meta property="og:title" content="Chapter 03 - Data Management and Storage Strategies">
   <meta property="og:description" content="OLTP vs OLAP, replication and consistency, indexing and denormalization, and lifecycle management with GDPR-aware retention.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -44,7 +44,7 @@
     <!-- 03.1 -->
     <section class="section" id="ch03-1">
       <h2>03.1 Storage System Choices</h2>
-      <p id="ch03-1-why">Why it matters: If you choose the wrong store, all the optimizations in the world won’t save you. The right choice aligns with access patterns, latency targets, and scaling model.</p>
+      <p id="ch03-1-why">Why it matters: If you choose the wrong store, all the optimizations in the world won't save you. The right choice aligns with access patterns, latency targets, and scaling model.</p>
 
       <h3 id="ch03-1-1">03.1.1 OLTP vs. OLAP</h3>
       <p><strong>Plain:</strong> OLTP systems serve lots of small reads/writes for user-facing features (orders, messages). OLAP systems scan and aggregate lots of data for analytics and reporting. Trying to make one database do both usually punishes both.</p>
@@ -57,18 +57,18 @@
 
       <figure>
         <img src="https://docs.aws.amazon.com/images/redshift/latest/dg/images/03b-Rows-vs-Columns.png" alt="Column-oriented storage: blocks contain values from a single column" loading="lazy" decoding="async" width="640" height="370" referrerpolicy="no-referrer">
-        <figcaption>Column store: scans fewer bytes for analytic queries, often 3× less I/O or more (AWS Redshift Docs, 2025).</figcaption>
+        <figcaption>Column store: scans fewer bytes for analytic queries, often 3x less I/O or more (AWS Redshift Docs, 2025).</figcaption>
       </figure>
 
-      <p><strong>Pitfall:</strong> “One warehouse to rule them all.” Running heavy OLAP queries against your OLTP primary steals cache, increases compaction, and bumps P99. Use changelog/CDC to replicate into analytics.</p>
+      <p><strong>Pitfall:</strong> "One warehouse to rule them all." Running heavy OLAP queries against your OLTP primary steals cache, increases compaction, and bumps P99. Use changelog/CDC to replicate into analytics.</p>
       <p><strong>Example:</strong> E-commerce site: Orders and inventory live in a transactional store (PostgreSQL, MySQL, or DynamoDB). Nightly and near-real-time analytics land in a columnar warehouse (BigQuery, Redshift) fed via CDC or event streams.</p>
       <p class="summary">Takeaway: Split workloads by shape: place writes and point reads on OLTP, scans and aggregations on OLAP; keep them synchronized via streaming or CDC.</p>
 
-      <h3 id="ch03-1-2">03.1.2 Key–Value, Document, and Columnar Stores</h3>
-      <p><strong>Plain:</strong> Key–value excels at fast lookups (sessions, feature flags). Document stores fit flexible aggregates (user profile with nested addresses). Columnar stores win when you scan few columns over many rows.</p>
+      <h3 id="ch03-1-2">03.1.2 Key-Value, Document, and Columnar Stores</h3>
+      <p><strong>Plain:</strong> Key-value excels at fast lookups (sessions, feature flags). Document stores fit flexible aggregates (user profile with nested addresses). Columnar stores win when you scan few columns over many rows.</p>
       <p><strong>Formal:</strong> KV offers <em>O(1)</em> by key with limited query operators; document stores trade per-field indexing for schema flexibility; columnar stores compress per column, improving scan throughput and CPU cache locality (AWS Redshift Docs, 2025).</p>
       <p><strong>Pitfall:</strong> Using a document store as if it were relational, then re-implementing joins in application code with N+1 queries.</p>
-      <p><strong>Example (Analogy):</strong> KV is a labeled locker; you can only get the item if you know the locker number. A document store is a folder with subfolders; you can index some tags for search. A columnar store is like stacked shelves of a single ingredient—quick to fetch one ingredient for many recipes.</p>
+      <p><strong>Example (Analogy):</strong> KV is a labeled locker; you can only get the item if you know the locker number. A document store is a folder with subfolders; you can index some tags for search. A columnar store is like stacked shelves of a single ingredient-quick to fetch one ingredient for many recipes.</p>
 
       <p><em>Compare: Store Types by Access Pattern</em></p>
       <table>
@@ -89,9 +89,9 @@
       <h2>03.2 Replication and Consistency</h2>
       <p id="ch03-2-why">Why it matters: Replication gives durability and availability, but the <em>style</em> of replication determines latency, failover behavior, and the read/write semantics your application can rely on.</p>
 
-      <h3 id="ch03-2-1">03.2.1 Leader–Follower, Multi-Leader, and Quorum</h3>
-      <p><strong>Plain:</strong> Leader–follower has one write leader and read replicas. Multi-leader lets multiple nodes accept writes (useful across regions). Quorum systems accept a write only when a majority (or chosen set) of nodes acknowledge.</p>
-      <p><strong>Formal:</strong> In leader–follower, writes flow to one leader then replicate to followers; failover elects a new leader. Multi-leader trades write conflicts for multi-region write availability. Quorum (e.g., Kafka ISR, Raft) requires <em>W</em> acknowledgments to commit; with replication factor <em>R</em>, tolerate <em>R−W</em> failures while keeping durability (Confluent Kafka Docs, 2025).</p>
+      <h3 id="ch03-2-1">03.2.1 Leader-Follower, Multi-Leader, and Quorum</h3>
+      <p><strong>Plain:</strong> Leader-follower has one write leader and read replicas. Multi-leader lets multiple nodes accept writes (useful across regions). Quorum systems accept a write only when a majority (or chosen set) of nodes acknowledge.</p>
+      <p><strong>Formal:</strong> In leader-follower, writes flow to one leader then replicate to followers; failover elects a new leader. Multi-leader trades write conflicts for multi-region write availability. Quorum (e.g., Kafka ISR, Raft) requires <em>W</em> acknowledgments to commit; with replication factor <em>R</em>, tolerate <em>R-W</em> failures while keeping durability (Confluent Kafka Docs, 2025).</p>
       <p><strong>Pitfall:</strong> Assuming <em>read-your-writes</em> on asynchronous replicas. Unless your client is pinned to the leader or uses sufficient consistency (e.g., <code>acks=all</code>, <code>min.insync.replicas</code>, majority reads), a just-written value may be invisible for a short time (Confluent Kafka Docs, 2025).</p>
 
       <figure>
@@ -100,7 +100,7 @@
       </figure>
 
       <h3 id="ch03-2-2">03.2.2 Semi-sync in Managed Databases</h3>
-      <p><strong>Plain:</strong> Some managed databases use semi-synchronous (or “semisync”) replication to reduce data loss while keeping write latency reasonable. A write is committed after at least one replica acknowledges.</p>
+      <p><strong>Plain:</strong> Some managed databases use semi-synchronous (or "semisync") replication to reduce data loss while keeping write latency reasonable. A write is committed after at least one replica acknowledges.</p>
       <p><strong>Formal:</strong> Amazon RDS Multi-AZ DB clusters keep a writer and two readers in separate AZs; writes commit after at least one reader acknowledges the change. Readers serve reads and act as failover targets (AWS RDS Docs, 2025).</p>
 
       <figure>
@@ -108,12 +108,12 @@
         <figcaption>RDS Multi-AZ DB cluster: single writer, two readers across AZs with semisync replication (AWS RDS Docs, 2025).</figcaption>
       </figure>
 
-      <p><strong>Pitfall:</strong> Confusing “Multi-AZ” with global. Multi-AZ increases availability inside a region; it doesn’t protect against regional outages or give multi-region read locality.</p>
+      <p><strong>Pitfall:</strong> Confusing "Multi-AZ" with global. Multi-AZ increases availability inside a region; it doesn't protect against regional outages or give multi-region read locality.</p>
 
       <h3 id="ch03-2-3">03.2.3 Consistency Levels in Practice</h3>
       <p><strong>Plain:</strong> Strong consistency reads the latest committed write. Eventual consistency allows stale reads for lower latency or higher availability. <em>Read-your-writes</em> ensures a client sees its own updates.</p>
       <p><strong>Formal:</strong> Systems like Kafka define committed data as present on all in-sync replicas; producers tune durability with <code>acks</code> and operators with <code>min.insync.replicas</code>. In relational replicas, lag determines staleness; in quorum stores, read/write consistency is set via <em>R</em>/<em>W</em> quorum sizes (Confluent Kafka Docs, 2025).</p>
-      <p><strong>Pitfall:</strong> Multi-leader topologies without conflict resolution produce “last write wins” data loss. Prefer CRDTs or single-leader per keyspace if you can’t afford lost updates.</p>
+      <p><strong>Pitfall:</strong> Multi-leader topologies without conflict resolution produce "last write wins" data loss. Prefer CRDTs or single-leader per keyspace if you can't afford lost updates.</p>
 
       <p><em>Compare: Replication &amp; Consistency Options</em></p>
       <table>
@@ -121,20 +121,20 @@
           <tr><th>Model</th><th>Latency</th><th>Durability</th><th>Best for</th><th>Trade-offs</th></tr>
         </thead>
         <tbody>
-          <tr><td>Leader–Follower (async)</td><td>Low</td><td>Good (with lag)</td><td>Read scale, simple failover</td><td>Replica staleness</td></tr>
+          <tr><td>Leader-Follower (async)</td><td>Low</td><td>Good (with lag)</td><td>Read scale, simple failover</td><td>Replica staleness</td></tr>
           <tr><td>Semi-sync</td><td>Moderate</td><td>Better</td><td>HA in one region</td><td>Write latency variance</td></tr>
           <tr><td>Quorum (Raft/ISR)</td><td>Leader + quorum RTT</td><td>High</td><td>Log consistency, streaming</td><td>Throughput limited by quorum</td></tr>
           <tr><td>Multi-leader</td><td>Low local</td><td>Depends</td><td>Multi-region writes</td><td>Conflict resolution complexity</td></tr>
         </tbody>
       </table>
 
-      <p class="summary">Takeaway: Decide consistency based on user promises. If “no lost writes” matters more than absolute availability, pick quorum/stronger settings; if low-latency reads matter, tolerate staleness and make it visible in UX.</p>
+      <p class="summary">Takeaway: Decide consistency based on user promises. If "no lost writes" matters more than absolute availability, pick quorum/stronger settings; if low-latency reads matter, tolerate staleness and make it visible in UX.</p>
     </section>
 
     <!-- 03.3 -->
     <section class="section" id="ch03-3">
       <h2>03.3 Indexing and Query Optimization</h2>
-      <p id="ch03-3-why">Why it matters: Indexes trade space and write cost for read speed. Choosing the right index—and knowing when to denormalize—often saves an order of magnitude of latency.</p>
+      <p id="ch03-3-why">Why it matters: Indexes trade space and write cost for read speed. Choosing the right index-and knowing when to denormalize-often saves an order of magnitude of latency.</p>
 
       <h3 id="ch03-3-1">03.3.1 Choosing Index Types</h3>
       <p><strong>Plain:</strong> B-tree indexes speed comparisons and equality. Hash indexes speed pure equality. GIN/FTS indexes accelerate search and array containment. Bitmap scans combine results from multiple indexes efficiently.</p>
@@ -150,7 +150,7 @@
       <h3 id="ch03-3-3">03.3.3 Secondary Indexes and Caching Layers</h3>
       <p><strong>Plain:</strong> Secondary indexes create alternate lookups (e.g., by email). On write-heavy systems, caches (Redis) in front of the database absorb reads when indexes alone are insufficient.</p>
       <p><strong>Formal:</strong> In distributed KV/NoSQL, global secondary indexes write alongside base rows; provision and isolate index throughput separately (AWS DynamoDB Docs, 2025). For relational systems, covering indexes avoid heap lookups; for partial indexes, ensure predicate matches the query.</p>
-      <p><strong>Pitfall:</strong> Cache incoherency—stale reads after write. Use write-through or write-behind with TTLs and version tokens; avoid cache stampedes with request coalescing.</p>
+      <p><strong>Pitfall:</strong> Cache incoherency-stale reads after write. Use write-through or write-behind with TTLs and version tokens; avoid cache stampedes with request coalescing.</p>
 
       <p class="summary">Takeaway: Measure queries. Add the minimal index set to hit SLOs; denormalize only where joins are the bottleneck; guard caches against stampedes and staleness.</p>
     </section>
@@ -158,7 +158,7 @@
     <!-- 03.4 -->
     <section class="section" id="ch03-4">
       <h2>03.4 Data Lifecycle Management</h2>
-      <p id="ch03-4-why">Why it matters: Data you keep forever becomes the cost you pay forever—and the liability you carry forever. Lifecycle policies tame cost, performance, and compliance.</p>
+      <p id="ch03-4-why">Why it matters: Data you keep forever becomes the cost you pay forever-and the liability you carry forever. Lifecycle policies tame cost, performance, and compliance.</p>
 
       <h3 id="ch03-4-1">03.4.1 Retention, Archival, and Tiering</h3>
       <p><strong>Plain:</strong> Not all data needs the same storage class. Keep hot data on fast disks, warm data in cheaper tiers, and archive cold data.</p>
@@ -166,17 +166,17 @@
       <p><strong>Pitfall:</strong> Keeping unbounded event topics or audit tables in primary stores; compaction or partition pruning becomes the dominant cost.</p>
 
       <h3 id="ch03-4-2">03.4.2 GDPR/CCPA-Aware Design</h3>
-      <p><strong>Plain:</strong> Regulations require deletion on request and purpose-limited processing. If you can’t find data by subject, you can’t delete it.</p>
+      <p><strong>Plain:</strong> Regulations require deletion on request and purpose-limited processing. If you can't find data by subject, you can't delete it.</p>
       <p><strong>Formal:</strong> Implement <em>subject-indexed</em> data (e.g., user ID mapping) with tombstones and erasure workflows. Avoid embedding PII in immutable logs; store references and resolve at read time so deletion means removing one record, not rewriting a log. Keep a lawful basis and retention schedule per data category.</p>
-      <p><strong>Pitfall:</strong> “Delete flag only.” If you merely mark rows deleted, backups and derived stores still hold PII. Design dataflows where deletion propagates to search, cache, and analytics.</p>
+      <p><strong>Pitfall:</strong> "Delete flag only." If you merely mark rows deleted, backups and derived stores still hold PII. Design dataflows where deletion propagates to search, cache, and analytics.</p>
 
-      <h3 id="ch03-4-3">03.4.3 Worked Example — A Pragmatic Retention Plan</h3>
+      <h3 id="ch03-4-3">03.4.3 Worked Example - A Pragmatic Retention Plan</h3>
       <p><strong>Scenario:</strong> A B2B SaaS app stores audit logs and metrics. Customers expect one-year history for audits and 90-day history for detailed metrics; beyond that, aggregates suffice.</p>
       <ol>
         <li><strong>Partitioning:</strong> Time-bucket tables by day with TTL. Metrics raw table retained 90 days; aggregated table (hourly) retained 400 days.</li>
         <li><strong>Archival:</strong> Weekly snapshots into object storage (glacier class) with inventory for eDiscovery.</li>
-        <li><strong>Deletion:</strong> Subject-indexed PII kept in a single “identity” table; logs reference subject hash only. Deletion removes mapping and reprocesses derived stores via a queue.</li>
-        <li><strong>Cost:</strong> Cold storage costs <em>c</em>, hot storage costs ~10×<em>c</em>; the plan cuts primary storage by ~70% and query cost by ~50% after 90 days.</li>
+        <li><strong>Deletion:</strong> Subject-indexed PII kept in a single "identity" table; logs reference subject hash only. Deletion removes mapping and reprocesses derived stores via a queue.</li>
+        <li><strong>Cost:</strong> Cold storage costs <em>c</em>, hot storage costs ~10x<em>c</em>; the plan cuts primary storage by ~70% and query cost by ~50% after 90 days.</li>
       </ol>
 
       <p class="summary">Takeaway: Tie retention to business promises and law. Partition by time, tier by heat, and plan for deletion to propagate across all replicas and derivatives.</p>
@@ -184,14 +184,14 @@
 
     <!-- 03.5 -->
     <section class="section" id="ch03-5">
-      <h2>03.5 Checkpoints — Design: Product Catalog with Search</h2>
-      <p id="ch03-5-why">Why it matters: A catalog blends transactional updates (price/stock) with search and filters—perfect for practicing modeling and indexes.</p>
+      <h2>03.5 Checkpoints - Design: Product Catalog with Search</h2>
+      <p id="ch03-5-why">Why it matters: A catalog blends transactional updates (price/stock) with search and filters-perfect for practicing modeling and indexes.</p>
 
       <h3 id="ch03-5-1">03.5.1 Requirements &amp; Constraints</h3>
       <ul>
         <li>10M SKUs, 50 attributes each. Peak: 4k QPS search/filter; 2k QPS product detail; 500 QPS admin updates.</li>
         <li>Filters by category, price range, brand, facets (color/size), and text search. P95 &lt; 200&nbsp;ms for detail; P95 &lt; 400&nbsp;ms for search.</li>
-        <li>Strong correctness for price/stock; search may be eventually consistent (≤ 5&nbsp;s).</li>
+        <li>Strong correctness for price/stock; search may be eventually consistent (<= 5&nbsp;s).</li>
       </ul>
 
       <h3 id="ch03-5-2">03.5.2 Modeling &amp; System Sketch</h3>
@@ -202,9 +202,9 @@
         <li><strong>Analytics:</strong> Columnar warehouse fed by CDC for merchandising dashboards; no direct queries against OLTP.</li>
       </ol>
 
-      <h3 id="ch03-5-3">03.5.3 Worked Example — Query Paths &amp; Indexes</h3>
-      <p><strong>Detail Page:</strong> Lookup by <code>product_id</code> → cached; on miss, fetch from Postgres with covering index, then hydrate cache. Average 2–3 queries per detail page (product, variants, price). Target 20–30&nbsp;ms at DB tier.</p>
-      <p><strong>Search Page:</strong> Text + facets → query search engine; return <code>product_id</code> list; hydrate details via read-through cache (batched <code>MGET</code>), falling back to DB in batches. Use stable sort keys (e.g., popularity) to avoid deep pagination cost.</p>
+      <h3 id="ch03-5-3">03.5.3 Worked Example - Query Paths &amp; Indexes</h3>
+      <p><strong>Detail Page:</strong> Lookup by <code>product_id</code> -> cached; on miss, fetch from Postgres with covering index, then hydrate cache. Average 2-3 queries per detail page (product, variants, price). Target 20-30&nbsp;ms at DB tier.</p>
+      <p><strong>Search Page:</strong> Text + facets -> query search engine; return <code>product_id</code> list; hydrate details via read-through cache (batched <code>MGET</code>), falling back to DB in batches. Use stable sort keys (e.g., popularity) to avoid deep pagination cost.</p>
       <p><strong>Admin Update:</strong> Transaction updates Postgres; an outbox table records change events in the same commit. A relay publishes to a topic consumed by indexers (search) and cache invalidators.</p>
 
       <p><em>Compare: Search Architecture Choices</em></p>
@@ -213,7 +213,7 @@
           <tr><th>Option</th><th>Pros</th><th>Cons</th><th>When to choose</th></tr>
         </thead>
         <tbody>
-          <tr><td>Postgres + GIN FTS</td><td>Simpler ops, strong consistency</td><td>Less powerful facets; heavy writes impact search</td><td>&lt; 1–2k QPS search, modest corpus</td></tr>
+          <tr><td>Postgres + GIN FTS</td><td>Simpler ops, strong consistency</td><td>Less powerful facets; heavy writes impact search</td><td>&lt; 1-2k QPS search, modest corpus</td></tr>
           <tr><td>Dedicated Search (OpenSearch)</td><td>Rich facets, scale out</td><td>Eventual consistency, extra infra</td><td>&gt; 2k QPS search, complex filters</td></tr>
         </tbody>
       </table>
@@ -229,12 +229,12 @@
       <h3 id="ch03-6-1">03.6.1 Two Worked Trade-offs</h3>
       <ol>
         <li><strong>Global counters:</strong> A single strongly consistent counter collapses at scale. <em>Use sharded counters</em>: split into <em>N</em> shards, increment random shard, and report sum. For exactness, reconcile periodically in the background.</li>
-        <li><strong>Hot tenant isolation:</strong> When 1% of tenants generate 20% of traffic, isolate them. Start with hash-based virtual shards, then “promote” heavy tenants to dedicated shards by updating a lookup table and rebalancing (Microsoft Learn Sharding Pattern, 2023).</li>
+        <li><strong>Hot tenant isolation:</strong> When 1% of tenants generate 20% of traffic, isolate them. Start with hash-based virtual shards, then "promote" heavy tenants to dedicated shards by updating a lookup table and rebalancing (Microsoft Learn Sharding Pattern, 2023).</li>
       </ol>
 
       <h3 id="ch03-6-2">03.6.2 Anti-Patterns to Avoid</h3>
       <ul>
-        <li><strong>Write-heavy GSI without capacity:</strong> In NoSQL, secondary indexes consume write capacity proportional to updates—under-provisioning throttles the base table (AWS DynamoDB Docs, 2025).</li>
+        <li><strong>Write-heavy GSI without capacity:</strong> In NoSQL, secondary indexes consume write capacity proportional to updates-under-provisioning throttles the base table (AWS DynamoDB Docs, 2025).</li>
         <li><strong>OLAP on primaries:</strong> Running big scans against your transactional primary turns every user request into a page cache miss.</li>
         <li><strong>Ignoring replica lag:</strong> Reading from followers for freshness-critical paths introduces stale reads during bursts; use leader reads or <em>read-your-writes</em> sessions.</li>
       </ul>
@@ -246,11 +246,11 @@
     <section class="section" id="ch03-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>PostgreSQL Documentation — Index Types &amp; EXPLAIN</strong> — Official guidance on B-tree, GIN, BRIN, and bitmap scans (PostgreSQL Docs, 2025).</li>
-        <li><strong>Amazon Redshift Documentation — Columnar Storage</strong> — Clear visual explanation of row vs. column stores (AWS Redshift Docs, 2025).</li>
-        <li><strong>Amazon RDS Multi-AZ DB Clusters</strong> — Semisynchronous replication model and failover behavior (AWS RDS Docs, 2025).</li>
-        <li><strong>Confluent Kafka — Replication &amp; ISRs</strong> — Quorum semantics, <code>acks</code>, and in-sync replicas (Confluent Docs, 2025).</li>
-        <li><strong>Azure Architecture Center — Sharding Pattern</strong> — Virtual shards/lookup strategy for hot tenant isolation (Microsoft Learn, 2023).</li>
+        <li><strong>PostgreSQL Documentation - Index Types &amp; EXPLAIN</strong> - Official guidance on B-tree, GIN, BRIN, and bitmap scans (PostgreSQL Docs, 2025).</li>
+        <li><strong>Amazon Redshift Documentation - Columnar Storage</strong> - Clear visual explanation of row vs. column stores (AWS Redshift Docs, 2025).</li>
+        <li><strong>Amazon RDS Multi-AZ DB Clusters</strong> - Semisynchronous replication model and failover behavior (AWS RDS Docs, 2025).</li>
+        <li><strong>Confluent Kafka - Replication &amp; ISRs</strong> - Quorum semantics, <code>acks</code>, and in-sync replicas (Confluent Docs, 2025).</li>
+        <li><strong>Azure Architecture Center - Sharding Pattern</strong> - Virtual shards/lookup strategy for hot tenant isolation (Microsoft Learn, 2023).</li>
       </ul>
       <p class="muted">Rationales: We prioritize vendor docs for evolving features (replication, columnar engines) and standards-aligned database documentation for indexing and query planning.</p>
     </section>
@@ -274,18 +274,18 @@
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch02.html"><span class="muted">Prev</span><span>← Chapter 02 — Designing Scalable Architectures</span></a>
-      <a class="next" rel="next" href="chapters/ch04.html"><span class="muted">Next</span><span>Chapter 04 — Communication, Coordination, and Consistency →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch02.html"><span class="muted">Prev</span><span><- Chapter 02 - Designing Scalable Architectures</span></a>
+      <a class="next" rel="next" href="chapters/ch04.html"><span class="muted">Next</span><span>Chapter 04 - Communication, Coordination, and Consistency -></span></a>
     </nav>
 
     <!-- Image Link Audit -->
     <!-- <section class="section" id="ch03-image-audit">
       <h2>Image Link Audit</h2>
       <ul class="resource-list">
-        <li>https://docs.aws.amazon.com/images/redshift/latest/dg/images/03a-Rows-vs-Columns.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://docs.aws.amazon.com/images/redshift/latest/dg/images/03b-Rows-vs-Columns.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://docs.aws.amazon.com/images/AmazonRDS/latest/UserGuide/images/multi-az-db-cluster.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
-        <li>https://docs.confluent.io/_images/replication.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>https://docs.aws.amazon.com/images/redshift/latest/dg/images/03a-Rows-vs-Columns.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
+        <li>https://docs.aws.amazon.com/images/redshift/latest/dg/images/03b-Rows-vs-Columns.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
+        <li>https://docs.aws.amazon.com/images/AmazonRDS/latest/UserGuide/images/multi-az-db-cluster.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
+        <li>https://docs.confluent.io/_images/replication.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
       </ul>
       <p class="muted">Only HTTPS, non-SVG images with 200 OK and image/* MIME types are included.</p>
     </section> -->
@@ -295,8 +295,8 @@
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
     - [x] Pager prev/next valid; ToC numbering matches
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables, captions; code excluded)
+    - [x] Order: Hero -> Numbered Sections -> Resources -> Recap
+    - [x] >=1,800 words of prose (headings, paragraphs, lists, tables, captions; code excluded)
     - [x] Images: HTTPS, non-SVG, validated 200 OK image/*; captions + attribution included
     - [x] Head/meta complete; no TODOs
     -->

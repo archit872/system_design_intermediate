@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Glossary — System Design (Intermediate)</title>
+  <title>Glossary - System Design (Intermediate)</title>
   <meta name="description" content="Alphabetical glossary of system design terms used in this book. Each entry includes a plain definition, a formal definition, and a short example.">
-  <meta property="og:title" content="Glossary — System Design (Intermediate)">
+  <meta property="og:title" content="Glossary - System Design (Intermediate)">
   <meta property="og:description" content="Definitions and examples for SLI/SLO/SLA, CAP, consistency, caches, retries, idempotency, sharding, quorum, zero trust, and more.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -47,21 +47,21 @@
 
       <div class="term" id="g-acceptance-criteria">
         <h3>Acceptance Criteria</h3>
-        <p><strong>Plain:</strong> The checklist that proves a feature is “done.”</p>
+        <p><strong>Plain:</strong> The checklist that proves a feature is "done."</p>
         <p><strong>Formal:</strong> Verifiable statements that map user requirements to testable outcomes (functional and non-functional), often tied to <a href="#g-slo">SLOs</a> and <a href="#g-sli">SLIs</a>.</p>
-        <p><strong>Example:</strong> “P95 latency ≤ 200&nbsp;ms for <code>POST /checkout</code> at 2k RPS with &lt;0.1% errors.”</p>
+        <p><strong>Example:</strong> "P95 latency <= 200&nbsp;ms for <code>POST /checkout</code> at 2k RPS with &lt;0.1% errors."</p>
       </div>
 
       <div class="term" id="g-abac">
         <h3>ABAC (Attribute-Based Access Control)</h3>
         <p><strong>Plain:</strong> Authorize by attributes (department=finance), not just roles.</p>
         <p><strong>Formal:</strong> A model where policies evaluate subject, resource, action, and environment attributes, often alongside <a href="#g-rbac">RBAC</a> in a central policy engine.</p>
-        <p><strong>Example:</strong> “Users with <code>tenant_id=X</code> and <code>region=EU</code> can read orders tagged <code>tenant_id=X</code>.”</p>
+        <p><strong>Example:</strong> "Users with <code>tenant_id=X</code> and <code>region=EU</code> can read orders tagged <code>tenant_id=X</code>."</p>
       </div>
 
       <div class="term" id="g-acid">
         <h3>ACID</h3>
-        <p><strong>Plain:</strong> The “safe transaction” rules for databases.</p>
+        <p><strong>Plain:</strong> The "safe transaction" rules for databases.</p>
         <p><strong>Formal:</strong> Atomicity, Consistency, Isolation, Durability; guarantees for single-node transactional systems, often traded against availability in distributed contexts (see <a href="#g-cap">CAP</a>).</p>
         <p><strong>Example:</strong> A bank transfer either debits and credits or rolls back entirely.</p>
       </div>
@@ -69,7 +69,7 @@
       <div class="term" id="g-api-gateway">
         <h3>API Gateway</h3>
         <p><strong>Plain:</strong> The front door for your APIs.</p>
-        <p><strong>Formal:</strong> A layer providing TLS termination, routing, authentication/authorization, rate limiting, and observability for north–south traffic; often paired with a <a href="#g-waf">WAF</a> and <a href="#g-service-mesh">service mesh</a>.</p>
+        <p><strong>Formal:</strong> A layer providing TLS termination, routing, authentication/authorization, rate limiting, and observability for north-south traffic; often paired with a <a href="#g-waf">WAF</a> and <a href="#g-service-mesh">service mesh</a>.</p>
         <p><strong>Example:</strong> Public requests hit the gateway, which verifies a <a href="#g-jwt">JWT</a> and forwards to <code>orders</code> service.</p>
       </div>
 
@@ -83,8 +83,8 @@
       <div class="term" id="g-availability">
         <h3>Availability</h3>
         <p><strong>Plain:</strong> The fraction of time your system works.</p>
-        <p><strong>Formal:</strong> Probability a request completes successfully within the <a href="#g-slo">SLO</a> bounds over a period; expressed as “nines.”</p>
-        <p><strong>Example:</strong> 99.95% monthly availability ≈ 21.6 minutes of allowed unavailability.</p>
+        <p><strong>Formal:</strong> Probability a request completes successfully within the <a href="#g-slo">SLO</a> bounds over a period; expressed as "nines."</p>
+        <p><strong>Example:</strong> 99.95% monthly availability ~ 21.6 minutes of allowed unavailability.</p>
       </div>
     </section>
 
@@ -94,16 +94,16 @@
 
       <div class="term" id="g-backpressure">
         <h3>Backpressure</h3>
-        <p><strong>Plain:</strong> Telling callers to slow down when you’re overloaded.</p>
+        <p><strong>Plain:</strong> Telling callers to slow down when you're overloaded.</p>
         <p><strong>Formal:</strong> Flow-control mechanisms that bound queue growth and response time, often via limited concurrency, 429s, or server-side shedding; complements <a href="#g-retry">retries</a> and <a href="#g-circuit-breaker">circuit breakers</a>.</p>
         <p><strong>Example:</strong> When queue depth exceeds 100, the service returns 429 with a Retry-After header.</p>
       </div>
 
       <div class="term" id="g-bulkhead">
         <h3>Bulkhead</h3>
-        <p><strong>Plain:</strong> Partitioning capacity so one failure doesn’t sink the ship.</p>
+        <p><strong>Plain:</strong> Partitioning capacity so one failure doesn't sink the ship.</p>
         <p><strong>Formal:</strong> Resource isolation (threads, connections, queues) per dependency or priority class to contain blast radius.</p>
-        <p><strong>Example:</strong> Separate worker pools for “checkout” vs “reports” so analytics load can’t starve orders.</p>
+        <p><strong>Example:</strong> Separate worker pools for "checkout" vs "reports" so analytics load can't starve orders.</p>
       </div>
 
       <div class="term" id="g-bff">
@@ -143,7 +143,7 @@
         <h3>Circuit Breaker</h3>
         <p><strong>Plain:</strong> A switch that opens when calls fail too much.</p>
         <p><strong>Formal:</strong> A protective pattern that transitions between closed, open, and half-open states to prevent cascading failures; complements <a href="#g-backpressure">backpressure</a> and <a href="#g-retry">retries</a>.</p>
-        <p><strong>Example:</strong> After 20% failures to payments service, stop calling for 30 seconds and degrade to “save cart.”</p>
+        <p><strong>Example:</strong> After 20% failures to payments service, stop calling for 30 seconds and degrade to "save cart."</p>
       </div>
 
       <div class="term" id="g-consistent-hashing">
@@ -186,7 +186,7 @@
 
       <div class="term" id="g-encryption-envelope">
         <h3>Envelope Encryption</h3>
-        <p><strong>Plain:</strong> Encrypt data with a data key that’s itself encrypted by a master key.</p>
+        <p><strong>Plain:</strong> Encrypt data with a data key that's itself encrypted by a master key.</p>
         <p><strong>Formal:</strong> Hierarchical key management where DEKs encrypt payloads and are wrapped by KMS/HSM-protected CMKs; supports rotation and limited blast radius.</p>
         <p><strong>Example:</strong> Each tenant has its own DEK for PII columns; CMKs rotate quarterly.</p>
       </div>
@@ -214,7 +214,7 @@
         <h3>Freshness SLA</h3>
         <p><strong>Plain:</strong> How stale a view is allowed to be.</p>
         <p><strong>Formal:</strong> A bound on the age of data in derived systems (caches, indexes) measured by lag or timestamps.</p>
-        <p><strong>Example:</strong> “Catalog changes visible in search within 5 seconds, 99% of the time.”</p>
+        <p><strong>Example:</strong> "Catalog changes visible in search within 5 seconds, 99% of the time."</p>
       </div>
     </section>
 
@@ -243,9 +243,9 @@
 
       <div class="term" id="g-hpa">
         <h3>HPA (Horizontal Pod Autoscaler)</h3>
-        <p><strong>Plain:</strong> Kubernetes’ autoscaling for pods.</p>
+        <p><strong>Plain:</strong> Kubernetes' autoscaling for pods.</p>
         <p><strong>Formal:</strong> Adjusts replica counts based on metrics (CPU, custom) with stabilization and min/max bounds; see <a href="#g-autoscaling">Autoscaling</a>.</p>
-        <p><strong>Example:</strong> Scale API pods from 8→24 on P95 latency &gt; 180&nbsp;ms.</p>
+        <p><strong>Example:</strong> Scale API pods from 8->24 on P95 latency &gt; 180&nbsp;ms.</p>
       </div>
     </section>
 
@@ -257,7 +257,7 @@
         <h3>Idempotency</h3>
         <p><strong>Plain:</strong> Safe to repeat the same request.</p>
         <p><strong>Formal:</strong> An operation that produces the same effect when applied multiple times; often enforced by idempotency keys, <a href="#g-upsert">upserts</a>, or unique constraints.</p>
-        <p><strong>Example:</strong> <code>POST /orders</code> requires <code>Idempotency-Key</code> so retries don’t duplicate charges.</p>
+        <p><strong>Example:</strong> <code>POST /orders</code> requires <code>Idempotency-Key</code> so retries don't duplicate charges.</p>
       </div>
 
       <div class="term" id="g-inflight">
@@ -330,7 +330,7 @@
       <div class="term" id="g-nines">
         <h3>Nines</h3>
         <p><strong>Plain:</strong> Shorthand for availability levels.</p>
-        <p><strong>Formal:</strong> 99% (two nines) ≈ 3.65 days/yr downtime; 99.99% (four nines) ≈ 52.6 minutes/yr.</p>
+        <p><strong>Formal:</strong> 99% (two nines) ~ 3.65 days/yr downtime; 99.99% (four nines) ~ 52.6 minutes/yr.</p>
         <p><strong>Example:</strong> Choose nines based on user tolerance and cost of redundancy.</p>
       </div>
     </section>
@@ -342,7 +342,7 @@
       <div class="term" id="g-observability">
         <h3>Observability</h3>
         <p><strong>Plain:</strong> Seeing what the system is doing and why.</p>
-        <p><strong>Formal:</strong> The ability to infer internal state from outputs—metrics, logs, and traces—often via <a href="#g-opentelemetry">OpenTelemetry</a>; anchored on user-centric <a href="#g-sli">SLIs</a>.</p>
+        <p><strong>Formal:</strong> The ability to infer internal state from outputs-metrics, logs, and traces-often via <a href="#g-opentelemetry">OpenTelemetry</a>; anchored on user-centric <a href="#g-sli">SLIs</a>.</p>
         <p><strong>Example:</strong> Dashboards show checkout success, P95 latency, and link exemplars to traces.</p>
       </div>
 
@@ -355,7 +355,7 @@
 
       <div class="term" id="g-outbox">
         <h3>Outbox Pattern</h3>
-        <p><strong>Plain:</strong> Save your event with your data so they can’t get out of sync.</p>
+        <p><strong>Plain:</strong> Save your event with your data so they can't get out of sync.</p>
         <p><strong>Formal:</strong> Write domain data and an event in the same transaction; a relay publishes the event to a log/queue, ensuring at-least-once delivery to downstreams like caches or search.</p>
         <p><strong>Example:</strong> On order update, write <code>order</code> row and <code>order_updated</code> outbox record; relay emits Kafka event.</p>
       </div>
@@ -368,7 +368,7 @@
       <div class="term" id="g-pager-knee">
         <h3>Knee of the Curve</h3>
         <p><strong>Plain:</strong> The load point where latency starts rising sharply.</p>
-        <p><strong>Formal:</strong> Transition from stable to queuing-dominated region in throughput–latency plots; operating target sits 20–40% below.</p>
+        <p><strong>Formal:</strong> Transition from stable to queuing-dominated region in throughput-latency plots; operating target sits 20-40% below.</p>
         <p><strong>Example:</strong> Capacity plan sets 8k RPS ceiling when knee occurs at ~10k RPS.</p>
       </div>
 
@@ -376,7 +376,7 @@
         <h3>Progressive Delivery</h3>
         <p><strong>Plain:</strong> Roll out changes gradually with metrics watching.</p>
         <p><strong>Formal:</strong> Techniques (canary, blue/green, flags) to increment exposure based on <a href="#g-sli">SLIs</a>, enabling fast rollback.</p>
-        <p><strong>Example:</strong> 1% → 10% → 25% → 100% rollout with automatic abort on error budget burn.</p>
+        <p><strong>Example:</strong> 1% -> 10% -> 25% -> 100% rollout with automatic abort on error budget burn.</p>
       </div>
     </section>
 
@@ -386,7 +386,7 @@
 
       <div class="term" id="g-quorum">
         <h3>Quorum</h3>
-        <p><strong>Plain:</strong> “Enough” nodes to agree.</p>
+        <p><strong>Plain:</strong> "Enough" nodes to agree.</p>
         <p><strong>Formal:</strong> Majority or configured subset of replicas required to accept reads/writes, enabling consistency bounds in replicated systems.</p>
         <p><strong>Example:</strong> Write requires W=2 of 3; read requires R=2 of 3; R+W&gt;N ensures no stale reads.</p>
       </div>
@@ -426,27 +426,27 @@
         <h3>SLA (Service Level Agreement)</h3>
         <p><strong>Plain:</strong> The public promise (often contractual) of service quality.</p>
         <p><strong>Formal:</strong> An external commitment including remedies; informed by internal <a href="#g-slo">SLOs</a> and measured by <a href="#g-sli">SLIs</a>.</p>
-        <p><strong>Example:</strong> “99.9% monthly availability” with service credits for breaches.</p>
+        <p><strong>Example:</strong> "99.9% monthly availability" with service credits for breaches.</p>
       </div>
 
       <div class="term" id="g-sli">
         <h3>SLI (Service Level Indicator)</h3>
         <p><strong>Plain:</strong> A metric users care about.</p>
         <p><strong>Formal:</strong> A carefully defined measurement of service performance (e.g., success ratio, P95 latency) used to judge SLO attainment.</p>
-        <p><strong>Example:</strong> “Checkout success = 2xx/total over 5 minutes, tenant-scoped.”</p>
+        <p><strong>Example:</strong> "Checkout success = 2xx/total over 5 minutes, tenant-scoped."</p>
       </div>
 
       <div class="term" id="g-slo">
         <h3>SLO (Service Level Objective)</h3>
         <p><strong>Plain:</strong> Your internal target for an SLI.</p>
         <p><strong>Formal:</strong> A quantitative goal for an SLI over a time window; defines error budgets that drive risk decisions.</p>
-        <p><strong>Example:</strong> “P95 latency ≤ 200&nbsp;ms for <code>GET /feed</code> weekly.”</p>
+        <p><strong>Example:</strong> "P95 latency <= 200&nbsp;ms for <code>GET /feed</code> weekly."</p>
       </div>
 
       <div class="term" id="g-service-mesh">
         <h3>Service Mesh</h3>
         <p><strong>Plain:</strong> Infrastructure that adds mTLS, retries, and policy between services.</p>
-        <p><strong>Formal:</strong> Data-plane proxies with a control plane to enforce identity, telemetry, and traffic policies for east–west calls.</p>
+        <p><strong>Formal:</strong> Data-plane proxies with a control plane to enforce identity, telemetry, and traffic policies for east-west calls.</p>
         <p><strong>Example:</strong> Sidecars inject mTLS and limit egress destinations per service.</p>
       </div>
 
@@ -485,9 +485,9 @@
 
       <div class="term" id="g-tolerant-reader">
         <h3>Tolerant Reader</h3>
-        <p><strong>Plain:</strong> A client that ignores fields it doesn’t know yet.</p>
+        <p><strong>Plain:</strong> A client that ignores fields it doesn't know yet.</p>
         <p><strong>Formal:</strong> Consumer design that survives additive schema changes by defaulting unknowns and ignoring extras; key to compatibility.</p>
-        <p><strong>Example:</strong> JSON client ignores new <code>summary</code> property until it’s ready to use it.</p>
+        <p><strong>Example:</strong> JSON client ignores new <code>summary</code> property until it's ready to use it.</p>
       </div>
     </section>
 
@@ -498,8 +498,8 @@
       <div class="term" id="g-unit-cost">
         <h3>Unit Cost</h3>
         <p><strong>Plain:</strong> Cost per unit of user value.</p>
-        <p><strong>Formal:</strong> Normalized spend (e.g., ₹/1k requests, ₹/order) used to evaluate <a href="#g-autoscaling">scaling</a>, <a href="#g-cache-control">caching</a>, and architecture trade-offs.</p>
-        <p><strong>Example:</strong> CDN offload halves ₹/1k product views while meeting SLOs.</p>
+        <p><strong>Formal:</strong> Normalized spend (e.g., INR/1k requests, INR/order) used to evaluate <a href="#g-autoscaling">scaling</a>, <a href="#g-cache-control">caching</a>, and architecture trade-offs.</p>
+        <p><strong>Example:</strong> CDN offload halves INR/1k product views while meeting SLOs.</p>
       </div>
 
       <div class="term" id="g-upsert">
@@ -550,17 +550,17 @@
     <section class="section" id="g-chapter-links">
       <h2>Where to Go Next</h2>
       <ul>
-        <li>Caching terms → <a href="chapters/ch06.html">Chapter 06: Caching, Performance, and Cost</a></li>
-        <li>Security terms → <a href="chapters/ch07.html">Chapter 07: Security and Compliance</a></li>
-        <li>Evolution terms → <a href="chapters/ch08.html">Chapter 08: Evolution &amp; Extensibility</a></li>
-        <li>Capstone application → <a href="chapters/ch09.html">Chapter 09: Capstone</a></li>
-        <li>Pitfalls &amp; drills → <a href="chapters/appendix.html">Appendix</a></li>
+        <li>Caching terms -> <a href="chapters/ch06.html">Chapter 06: Caching, Performance, and Cost</a></li>
+        <li>Security terms -> <a href="chapters/ch07.html">Chapter 07: Security and Compliance</a></li>
+        <li>Evolution terms -> <a href="chapters/ch08.html">Chapter 08: Evolution &amp; Extensibility</a></li>
+        <li>Capstone application -> <a href="chapters/ch09.html">Chapter 09: Capstone</a></li>
+        <li>Pitfalls &amp; drills -> <a href="chapters/appendix.html">Appendix</a></li>
       </ul>
     </section>
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/appendix.html"><span class="muted">Prev</span><span>← Appendix — Pitfalls, Review, and Progression</span></a>
+      <a class="prev" rel="prev" href="chapters/appendix.html"><span class="muted">Prev</span><span><- Appendix - Pitfalls, Review, and Progression</span></a>
     </nav>
 
     <!--

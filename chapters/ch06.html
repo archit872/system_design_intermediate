@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 06 — Caching, Performance, and Cost Optimization</title>
+  <title>Chapter 06 - Caching, Performance, and Cost Optimization</title>
   <meta name="description" content="Apply caching strategies, profile latency and throughput, and optimize cost without harming reliability. Learn HTTP/edge caching, Redis patterns, performance analysis, right-sizing, and benchmark methodology.">
-  <meta property="og:title" content="Chapter 06 — Caching, Performance, and Cost Optimization">
+  <meta property="og:title" content="Chapter 06 - Caching, Performance, and Cost Optimization">
   <meta property="og:description" content="CDN and Redis caching, latency profiling and tail control, right-sizing and autoscaling, and load-testing practices with a hands-on optimization checkpoint.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -36,7 +36,7 @@
         <span class="badge">Latency &amp; Efficiency</span>
       </div>
       <h1>Caching, Performance, and Cost Optimization</h1>
-      <p class="abstract">Caching is the cheapest performance feature you can add—until it isn’t. This chapter teaches you where to cache (browser, CDN, service, database), how to make caches safe and observable, and how to profile latency so you optimize the right thing. You’ll also learn cost-aware design: right-sizing, autoscaling policies, storage tiers, and when to trade milliseconds for money without breaking SLOs.</p>
+      <p class="abstract">Caching is the cheapest performance feature you can add-until it isn't. This chapter teaches you where to cache (browser, CDN, service, database), how to make caches safe and observable, and how to profile latency so you optimize the right thing. You'll also learn cost-aware design: right-sizing, autoscaling policies, storage tiers, and when to trade milliseconds for money without breaking SLOs.</p>
     </div>
   </header>
 
@@ -44,12 +44,12 @@
     <!-- 06.1 -->
     <section class="section" id="ch06-1">
       <h2>06.1 Caching Layers</h2>
-      <p id="ch06-1-why">Why it matters: Most traffic is read-heavy and skewed. Caching exploits repetition to collapse latency and cost. The trick is doing it deliberately—so you don’t serve lies or melt during invalidation.</p>
+      <p id="ch06-1-why">Why it matters: Most traffic is read-heavy and skewed. Caching exploits repetition to collapse latency and cost. The trick is doing it deliberately-so you don't serve lies or melt during invalidation.</p>
 
       <h3 id="ch06-1-1">06.1.1 The Four Places to Cache</h3>
       <p><strong>Plain:</strong> You can cache in the <em>browser</em>, at the <em>edge/CDN</em>, in your <em>service/app tier</em> (e.g., Redis), or in the <em>database</em> (query caches, materialized results). Each layer sees different keys and lifetimes.</p>
-      <p><strong>Formal:</strong> The closer the cache to the user, the more it reduces network latency and egress. Browser and CDN caches use HTTP semantics; service caches hold computed or fetched objects; database caches (or denormalized projections) avoid heavy joins and disk I/O. Proper layering reduces origin requests by 80–99% for hot paths, shifting spend from CPU/IO to memory and a small control-plane for invalidation.</p>
-      <p><strong>Pitfall:</strong> Duplicate caches with incoherent invalidation. A “fast” result that is wrong is slower than a miss—because it creates user support and reconciliation cost.</p>
+      <p><strong>Formal:</strong> The closer the cache to the user, the more it reduces network latency and egress. Browser and CDN caches use HTTP semantics; service caches hold computed or fetched objects; database caches (or denormalized projections) avoid heavy joins and disk I/O. Proper layering reduces origin requests by 80-99% for hot paths, shifting spend from CPU/IO to memory and a small control-plane for invalidation.</p>
+      <p><strong>Pitfall:</strong> Duplicate caches with incoherent invalidation. A "fast" result that is wrong is slower than a miss-because it creates user support and reconciliation cost.</p>
 
       <p><em>Compare: Caching Layers</em></p>
       <table>
@@ -65,9 +65,9 @@
       </table>
 
       <h3 id="ch06-1-2">06.1.2 HTTP Caching Fundamentals</h3>
-      <p><strong>Plain:</strong> If your endpoint is cacheable, you can get “free” performance from browsers and CDNs using headers only.</p>
+      <p><strong>Plain:</strong> If your endpoint is cacheable, you can get "free" performance from browsers and CDNs using headers only.</p>
       <p><strong>Formal:</strong> Use <code>Cache-Control</code> to control freshness (<code>max-age</code>, <code>s-maxage</code>), <code>ETag</code>/<code>If-None-Match</code> for validation, and <code>Vary</code> to separate variants (e.g., <code>Accept-Language</code>). <code>stale-while-revalidate</code> serves stale for a short window while fetching fresh, smoothing thundering herds. Private data should send <code>Cache-Control: private, no-store</code> and rely on authenticated, non-cacheable endpoints.</p>
-      <p><strong>Pitfall:</strong> Missing <code>Vary: Authorization</code> (or using authorization on cacheable routes). You’ll leak personalized responses. Prefer token-bound keys at the edge or move personalization to a separate uncacheable call.</p>
+      <p><strong>Pitfall:</strong> Missing <code>Vary: Authorization</code> (or using authorization on cacheable routes). You'll leak personalized responses. Prefer token-bound keys at the edge or move personalization to a separate uncacheable call.</p>
 
       <h3 id="ch06-1-3">06.1.3 Redis Patterns That Actually Ship</h3>
       <p><strong>Plain:</strong> Use Redis to store what is expensive to re-compute or fetch, not everything.</p>
@@ -75,14 +75,14 @@
       <p><strong>Pitfall:</strong> Huge values and unbounded TTLs. Large blobs reduce hit ratio under memory pressure; use compression and size limits. TTL-less caches become data stores with none of the safety.</p>
 
       <h3 id="ch06-1-4">06.1.4 Invalidation Strategies</h3>
-      <p><strong>Plain:</strong> There are only two hard things in Computer Science… and cache invalidation is both of them when you have multiple layers and tenants.</p>
+      <p><strong>Plain:</strong> There are only two hard things in Computer Science... and cache invalidation is both of them when you have multiple layers and tenants.</p>
       <p><strong>Formal:</strong> Three pragmatic approaches:</p>
       <ul>
         <li><strong>Time-based TTL:</strong> Choose a TTL that balances freshness vs traffic; combine with <em>stale-while-revalidate</em> to hide refresh latency.</li>
         <li><strong>Event-driven:</strong> Emit change events (outbox/CDC) to a small invalidation service that deletes or updates keys (e.g., <code>product:123:v2</code>).</li>
         <li><strong>Versioned keys:</strong> Encode schema/data version; a data change bumps the version so misses naturally pick up fresh data while old keys expire.</li>
       </ul>
-      <p><strong>Analogy:</strong> TTL is like labeling milk “use within 7 days.” Event-driven invalidation is like getting a message from the dairy when a batch is recalled. Versioned keys are like a new carton design that makes old cartons obviously outdated.</p>
+      <p><strong>Analogy:</strong> TTL is like labeling milk "use within 7 days." Event-driven invalidation is like getting a message from the dairy when a batch is recalled. Versioned keys are like a new carton design that makes old cartons obviously outdated.</p>
 
       <p class="summary">Takeaway: Cache publicly when you can (HTTP semantics), locally when you must (Redis), and invalidate simply (TTL + versioning) before inventing elaborate purges.</p>
     </section>
@@ -99,20 +99,20 @@
 
       <h3 id="ch06-2-2">06.2.2 Latency Breakdown and Critical Path</h3>
       <p><strong>Plain:</strong> Break your request into segments: network, CPU, lock/queue, storage, and dependencies. The <em>critical path</em> is the longest chain of dependent segments.</p>
-      <p><strong>Formal:</strong> Distributed tracing reveals spans; rank endpoints by “latency × traffic.” For each hot endpoint, compute: (1) percent time in your code vs dependencies, (2) queueing vs service time, (3) cache hit ratio contribution, and (4) fan-out width. Optimize the largest term on the critical path first, not whichever is fashionable.</p>
-      <p><strong>Pitfall:</strong> Misattributing time waiting on TCP retransmits, TLS handshakes, or Nagle’s algorithm to “slow DB.” Always corroborate with dependency metrics.</p>
+      <p><strong>Formal:</strong> Distributed tracing reveals spans; rank endpoints by "latency x traffic." For each hot endpoint, compute: (1) percent time in your code vs dependencies, (2) queueing vs service time, (3) cache hit ratio contribution, and (4) fan-out width. Optimize the largest term on the critical path first, not whichever is fashionable.</p>
+      <p><strong>Pitfall:</strong> Misattributing time waiting on TCP retransmits, TLS handshakes, or Nagle's algorithm to "slow DB." Always corroborate with dependency metrics.</p>
 
       <h3 id="ch06-2-3">06.2.3 CPU vs I/O vs Lock Contention</h3>
       <p><strong>Plain:</strong> Different bottlenecks look similar in dashboards but require opposite fixes.</p>
       <p><strong>Formal:</strong> <em>CPU-bound</em>: high CPU, low IO wait; fix by algorithmic improvements, concurrency limits, or more cores. <em>I/O-bound</em>: high disk/network wait; fix by batching, caching, or async I/O. <em>Lock-bound</em>: normal CPU but high tail latency and thread contention; fix by reducing shared critical sections, using lock-free data structures, or sharding state.</p>
-      <p><strong>Analogy:</strong> If your kitchen is the bottleneck (CPU), hiring more waiters (threads) doesn’t help. If deliveries are slow (I/O), a faster chef (JIT) won’t fix it.</p>
+      <p><strong>Analogy:</strong> If your kitchen is the bottleneck (CPU), hiring more waiters (threads) doesn't help. If deliveries are slow (I/O), a faster chef (JIT) won't fix it.</p>
 
-      <h3 id="ch06-2-4">06.2.4 The “Three Knobs” for Tail Control</h3>
+      <h3 id="ch06-2-4">06.2.4 The "Three Knobs" for Tail Control</h3>
       <p><strong>Plain:</strong> You generally control tail latency by: (1) avoiding work (cache), (2) parallelizing safely (hedged requests), and (3) bounding waits (timeouts/backpressure).</p>
-      <p><strong>Formal:</strong> <em>Hedging</em> duplicates long-waiting requests to another replica after a threshold (e.g., the P95 of recent samples) and uses the first success, capped to a budget. <em>Priority queues</em> ensure low-latency work isn’t stuck behind heavy jobs. <em>Adaptive timeouts</em> and <em>server-side backpressure</em> prevent queues from exploding.</p>
+      <p><strong>Formal:</strong> <em>Hedging</em> duplicates long-waiting requests to another replica after a threshold (e.g., the P95 of recent samples) and uses the first success, capped to a budget. <em>Priority queues</em> ensure low-latency work isn't stuck behind heavy jobs. <em>Adaptive timeouts</em> and <em>server-side backpressure</em> prevent queues from exploding.</p>
       <p><strong>Pitfall:</strong> Global hedging without budgets creates positive feedback: you double load during spikes. Scope hedges to small percentages and avoid for non-idempotent operations.</p>
 
-      <p class="summary">Takeaway: Measure percentiles, decompose the critical path, and pull the three knobs—cache, parallelize carefully, and bound waits—based on what your traces show.</p>
+      <p class="summary">Takeaway: Measure percentiles, decompose the critical path, and pull the three knobs-cache, parallelize carefully, and bound waits-based on what your traces show.</p>
     </section>
 
     <!-- 06.3 -->
@@ -122,12 +122,12 @@
 
       <h3 id="ch06-3-1">06.3.1 Right-Sizing and Utilization Targets</h3>
       <p><strong>Plain:</strong> Big instances feel safe but waste money and amplify blast radius. Start smaller, scale out.</p>
-      <p><strong>Formal:</strong> Targets that work in practice: 50–70% steady-state CPU for stateless APIs, 60–75% memory for JVM services (to keep GC breathing room), and sustained queue depth &lt; 1× per worker for latency-sensitive paths. Re-run sizing when traffic patterns or code changes shift bottlenecks.</p>
-      <p><strong>Pitfall:</strong> “Rightsize once” thinking. Optimizations and feature growth invalidate old assumptions; institutionalize monthly reviews.</p>
+      <p><strong>Formal:</strong> Targets that work in practice: 50-70% steady-state CPU for stateless APIs, 60-75% memory for JVM services (to keep GC breathing room), and sustained queue depth &lt; 1x per worker for latency-sensitive paths. Re-run sizing when traffic patterns or code changes shift bottlenecks.</p>
+      <p><strong>Pitfall:</strong> "Rightsize once" thinking. Optimizations and feature growth invalidate old assumptions; institutionalize monthly reviews.</p>
 
       <h3 id="ch06-3-2">06.3.2 Autoscaling &amp; Schedules</h3>
-      <p><strong>Plain:</strong> The cheapest capacity is the pod you don’t run. Combine predictive schedules for known peaks with reactive target tracking.</p>
-      <p><strong>Formal:</strong> Use cron-based scale-outs before events (marketing emails, local commute hours), then let HPA/ASGs trim to demand. Stabilize aggressive scale-down with windows (e.g., 5–10 minutes) to avoid flapping during partial lulls.</p>
+      <p><strong>Plain:</strong> The cheapest capacity is the pod you don't run. Combine predictive schedules for known peaks with reactive target tracking.</p>
+      <p><strong>Formal:</strong> Use cron-based scale-outs before events (marketing emails, local commute hours), then let HPA/ASGs trim to demand. Stabilize aggressive scale-down with windows (e.g., 5-10 minutes) to avoid flapping during partial lulls.</p>
       <p><strong>Pitfall:</strong> Scaling purely on CPU for I/O-bound systems; add signals like <em>inflight per replica</em>, <em>queue lag</em>, or <em>P95 latency</em>.</p>
 
       <h3 id="ch06-3-3">06.3.3 Storage and Egress</h3>
@@ -137,11 +137,11 @@
 
       <h3 id="ch06-3-4">06.3.4 Spot/Preemptible and Multi-Cluster Trade-offs</h3>
       <p><strong>Plain:</strong> Discount capacity is great for elastic batch, risky for user-facing latency unless you design for preemption.</p>
-      <p><strong>Formal:</strong> Use spot/preemptible for asynchronous workers, background indexers, and analytics. Checkpoint work, implement idempotency, and keep a minimum of on-demand nodes to catch spills. Multi-cluster (per region or tenant) cuts blast radius and lets you scale more granularly—but increases operational overhead.</p>
+      <p><strong>Formal:</strong> Use spot/preemptible for asynchronous workers, background indexers, and analytics. Checkpoint work, implement idempotency, and keep a minimum of on-demand nodes to catch spills. Multi-cluster (per region or tenant) cuts blast radius and lets you scale more granularly-but increases operational overhead.</p>
 
       <h3 id="ch06-3-5">06.3.5 Cost Guardrails</h3>
       <p><strong>Plain:</strong> You need a speedometer and a seatbelt for spend.</p>
-      <p><strong>Formal:</strong> Tag resources, set budgets/alerts, and track <em>unit cost</em> (₹ per 1k requests, ₹ per checkout, ₹ per GB processed). Connect unit cost to business KPIs so trade-offs are explicit. Add admission control for “nice-to-have” features when spend exceeds budget (e.g., disable heavy enrichers).</p>
+      <p><strong>Formal:</strong> Tag resources, set budgets/alerts, and track <em>unit cost</em> (INR per 1k requests, INR per checkout, INR per GB processed). Connect unit cost to business KPIs so trade-offs are explicit. Add admission control for "nice-to-have" features when spend exceeds budget (e.g., disable heavy enrichers).</p>
 
       <p class="summary">Takeaway: Treat cost as a first-class SLO alongside latency. Use rightsizing, scheduled scale-outs, caching/CDNs, and unit economics to stay efficient without cutting reliability.</p>
     </section>
@@ -149,32 +149,32 @@
     <!-- 06.4 -->
     <section class="section" id="ch06-4">
       <h2>06.4 Performance Benchmarks &amp; Load Testing</h2>
-      <p id="ch06-4-why">Why it matters: Without disciplined testing, “optimizations” are anecdotes. Benchmarks reveal the knee of the curve where your system saturates.</p>
+      <p id="ch06-4-why">Why it matters: Without disciplined testing, "optimizations" are anecdotes. Benchmarks reveal the knee of the curve where your system saturates.</p>
 
       <h3 id="ch06-4-1">06.4.1 Methodology Over Tools</h3>
-      <p><strong>Plain:</strong> Tools don’t guarantee good tests; good tests have clear goals, realistic data, and reproducible results.</p>
-      <p><strong>Formal:</strong> Define the SLO target (e.g., P95 ≤ 200&nbsp;ms @ 8k RPS). Prepare representative payloads and warm caches as they would be in production. Run step-load (increasing RPS) to find the saturation knee; then run soak tests (hours) to catch leaks and GC pathologies.</p>
+      <p><strong>Plain:</strong> Tools don't guarantee good tests; good tests have clear goals, realistic data, and reproducible results.</p>
+      <p><strong>Formal:</strong> Define the SLO target (e.g., P95 <= 200&nbsp;ms @ 8k RPS). Prepare representative payloads and warm caches as they would be in production. Run step-load (increasing RPS) to find the saturation knee; then run soak tests (hours) to catch leaks and GC pathologies.</p>
       <p><strong>Pitfall:</strong> Testing only with empty caches or only with full caches. Report both <em>cold</em> and <em>warm</em> start results and the time-to-warm.</p>
 
-      <h3 id="ch06-4-2">06.4.2 Throughput–Latency Curves</h3>
+      <h3 id="ch06-4-2">06.4.2 Throughput-Latency Curves</h3>
       <p><strong>Plain:</strong> As QPS rises, latency stays flat until queues form; then P95 shoots up. That inflection is your safe operating ceiling.</p>
-      <p><strong>Formal:</strong> Plot latency percentiles against offered load. Identify the pre-saturation region (flat), the knee (rapid rise), and the collapse region. Choose production targets 20–40% below the knee to absorb variance and failures.</p>
+      <p><strong>Formal:</strong> Plot latency percentiles against offered load. Identify the pre-saturation region (flat), the knee (rapid rise), and the collapse region. Choose production targets 20-40% below the knee to absorb variance and failures.</p>
       <p><strong>Pitfall:</strong> Reporting only P50; the knee often appears first in P99.</p>
 
       <h3 id="ch06-4-3">06.4.3 Data Management for Tests</h3>
       <p><strong>Plain:</strong> Production-like data shapes performance. Tests against toy datasets mislead.</p>
       <p><strong>Formal:</strong> Use synthetic data with realistic key skew (Zipfian) and payload size distributions. Seed caches with a priming run. For privacy, generate anonymized data or build synthetic datasets that approximate join depth, cardinality, and hot-key distribution.</p>
-      <p><strong>Pitfall:</strong> Monotonic IDs in tests that eliminate hot partitions you’ll see in production. Use salted or hashed keys for realism.</p>
+      <p><strong>Pitfall:</strong> Monotonic IDs in tests that eliminate hot partitions you'll see in production. Use salted or hashed keys for realism.</p>
 
       <h3 id="ch06-4-4">06.4.4 What to Report</h3>
       <p><strong>Plain:</strong> Make your results decision-friendly.</p>
-      <p><strong>Formal:</strong> Include: test version/config, data scale, warm/cold indicators, P50/95/99 latency vs load, error rate, saturation markers (CPU, queue depth), cache hit ratios, and unit cost estimates at target load. Summarize “safe throughput at SLO” and “bottleneck identified.”</p>
+      <p><strong>Formal:</strong> Include: test version/config, data scale, warm/cold indicators, P50/95/99 latency vs load, error rate, saturation markers (CPU, queue depth), cache hit ratios, and unit cost estimates at target load. Summarize "safe throughput at SLO" and "bottleneck identified."</p>
       <p class="summary">Takeaway: Benchmarks are experiments. Declare a hypothesis (SLO at X RPS), run controlled tests, report tails and costs, and capture the knee for capacity planning.</p>
     </section>
 
     <!-- 06.5 -->
     <section class="section" id="ch06-5">
-      <h2>06.5 Checkpoints — Optimization Exercise: API Latency Reduction</h2>
+      <h2>06.5 Checkpoints - Optimization Exercise: API Latency Reduction</h2>
       <p id="ch06-5-why">Why it matters: Real systems rarely have a single silver bullet. This exercise forces you to combine caching, profiling, and cost thinking to achieve a concrete SLO.</p>
 
       <h3 id="ch06-5-1">06.5.1 Scenario &amp; Targets</h3>
@@ -182,25 +182,25 @@
         <li>Endpoint: <code>GET /products/{id}</code> for details.</li>
         <li>Traffic: 2.5k RPS peak, Zipfian key distribution (top 1% IDs receive 25% of traffic).</li>
         <li>Current: P95 420&nbsp;ms warm, 620&nbsp;ms cold; cache hit 55%; DB P95 150&nbsp;ms.</li>
-        <li>Goal: P95 ≤ 200&nbsp;ms warm, ≤ 350&nbsp;ms cold, success ≥ 99.95%.</li>
+        <li>Goal: P95 <= 200&nbsp;ms warm, <= 350&nbsp;ms cold, success >= 99.95%.</li>
       </ul>
 
       <h3 id="ch06-5-2">06.5.2 Plan (7 Steps)</h3>
       <ol>
-        <li><strong>Clarify:</strong> Response is public for anonymous users (no PII) → eligible for CDN caching. Personalization modules (recommendations) are separate calls.</li>
+        <li><strong>Clarify:</strong> Response is public for anonymous users (no PII) -> eligible for CDN caching. Personalization modules (recommendations) are separate calls.</li>
         <li><strong>Quantify:</strong> With 55% cache hit, origin sees ~1,125 RPS. CPU at 65%, DB at 70% P95 150&nbsp;ms suggests room at origin.</li>
         <li><strong>Baseline:</strong> Introduce HTTP headers: <code>Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=30</code>, strong <code>ETag</code>, and <code>Vary: Accept-Encoding</code>.</li>
         <li><strong>Place data:</strong> Redis read-through for product blobs (<code>product:{id}:v3</code>) TTL 5 minutes; size cap 64&nbsp;KB; compress if &gt; 8&nbsp;KB.</li>
         <li><strong>Route:</strong> Enable CDN for anonymous GETs; service returns <code>304 Not Modified</code> on <code>If-None-Match</code>. Coalesce misses in the app layer to stop stampedes (singleflight).</li>
-        <li><strong>Design for failure:</strong> When DB slows, serve stale (Redis/CDN) within TTL+<em>stale-while-revalidate</em>; instrument a “served stale” metric.</li>
-        <li><strong>Observe:</strong> Track P95/99, hit ratios (browser/CDN/Redis), origin QPS, bytes egress, and unit cost (₹ per 1k requests). Alert on error budget burn and cache stampede rate.</li>
+        <li><strong>Design for failure:</strong> When DB slows, serve stale (Redis/CDN) within TTL+<em>stale-while-revalidate</em>; instrument a "served stale" metric.</li>
+        <li><strong>Observe:</strong> Track P95/99, hit ratios (browser/CDN/Redis), origin QPS, bytes egress, and unit cost (INR per 1k requests). Alert on error budget burn and cache stampede rate.</li>
       </ol>
 
       <h3 id="ch06-5-3">06.5.3 Expected Results &amp; Follow-ups</h3>
       <ul>
-        <li><strong>Hit Ratio:</strong> CDN hit → 80–90% for hot IDs; Redis hit → 85% of remaining; origin falls to &lt; 300 RPS.</li>
-        <li><strong>Latency:</strong> Warm P95 drops towards edge latency (tens of ms); cold P95 bounded by Redis miss + DB (~200–300&nbsp;ms).</li>
-        <li><strong>Cost:</strong> Egress shifts to CDN (cheaper), origin compute shrinks by 40–60%. Track absolute vs unit cost.</li>
+        <li><strong>Hit Ratio:</strong> CDN hit -> 80-90% for hot IDs; Redis hit -> 85% of remaining; origin falls to &lt; 300 RPS.</li>
+        <li><strong>Latency:</strong> Warm P95 drops towards edge latency (tens of ms); cold P95 bounded by Redis miss + DB (~200-300&nbsp;ms).</li>
+        <li><strong>Cost:</strong> Egress shifts to CDN (cheaper), origin compute shrinks by 40-60%. Track absolute vs unit cost.</li>
         <li><strong>Next:</strong> Introduce partial responses and prioritization to keep critical fields fast; background hydrate top 1% products.</li>
       </ul>
 
@@ -211,11 +211,11 @@
     <section class="section" id="ch06-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>Redis Documentation</strong> — Patterns for caching, eviction policies, and memory management. <span class="badge">Free</span></li>
-        <li><strong>Google SRE Book — “The Tail at Scale”/Latency Chapters</strong> — Tail control, retries, and budgets. <span class="badge">Free</span></li>
-        <li><strong>Cloud CDN/Edge Providers Docs</strong> — HTTP caching headers, <code>stale-while-revalidate</code>, and purge APIs. <span class="badge">Free</span></li>
-        <li><strong>k6 &amp; JMeter Docs</strong> — Load testing scripting and best practices. <span class="badge">Free</span></li>
-        <li><strong>Cloud Cost Optimization Guides (AWS/GCP/Azure)</strong> — Rightsizing, autoscaling, storage tiers, and egress strategies. <span class="badge">Free</span></li>
+        <li><strong>Redis Documentation</strong> - Patterns for caching, eviction policies, and memory management. <span class="badge">Free</span></li>
+        <li><strong>Google SRE Book - "The Tail at Scale"/Latency Chapters</strong> - Tail control, retries, and budgets. <span class="badge">Free</span></li>
+        <li><strong>Cloud CDN/Edge Providers Docs</strong> - HTTP caching headers, <code>stale-while-revalidate</code>, and purge APIs. <span class="badge">Free</span></li>
+        <li><strong>k6 &amp; JMeter Docs</strong> - Load testing scripting and best practices. <span class="badge">Free</span></li>
+        <li><strong>Cloud Cost Optimization Guides (AWS/GCP/Azure)</strong> - Rightsizing, autoscaling, storage tiers, and egress strategies. <span class="badge">Free</span></li>
       </ul>
       <p class="muted">Rationales: These cover evolving caching and edge behaviors, reliable tail-latency playbooks, benchmarking technique, and practical cost levers.</p>
     </section>
@@ -233,15 +233,15 @@
       <p><strong>Next Steps:</strong></p>
       <ol>
         <li>For your capstone, design a caching plan (headers, keys, TTLs, invalidation) for the top two read endpoints. Define success metrics and safe fallbacks.</li>
-        <li>Run a step-load test and publish a throughput–latency plot. Choose a safe operating point 20–40% below the knee.</li>
+        <li>Run a step-load test and publish a throughput-latency plot. Choose a safe operating point 20-40% below the knee.</li>
         <li>Produce a one-page cost brief with current unit cost and a list of three levers to reduce it without hurting SLOs.</li>
       </ol>
     </section>
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch05.html"><span class="muted">Prev</span><span>← Chapter 05 — Reliability, Fault Tolerance, and Observability</span></a>
-      <a class="next" rel="next" href="chapters/ch07.html"><span class="muted">Next</span><span>Chapter 07 — Security and Compliance in Distributed Systems →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch05.html"><span class="muted">Prev</span><span><- Chapter 05 - Reliability, Fault Tolerance, and Observability</span></a>
+      <a class="next" rel="next" href="chapters/ch07.html"><span class="muted">Next</span><span>Chapter 07 - Security and Compliance in Distributed Systems -></span></a>
     </nav>
 
     <!--
@@ -249,8 +249,8 @@
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
     - [x] Pager prev/next valid; ToC numbering matches
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
+    - [x] Order: Hero -> Numbered Sections -> Resources -> Recap
+    - [x] >=1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
     - [x] No images in this chapter (image audit N/A)
     - [x] Head/meta complete; no TODOs
     -->

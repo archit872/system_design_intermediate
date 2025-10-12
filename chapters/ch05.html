@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 05 — Reliability, Fault Tolerance, and Observability</title>
+  <title>Chapter 05 - Reliability, Fault Tolerance, and Observability</title>
   <meta name="description" content="Design systems that keep promises under failure: fault domains, isolation, redundancy patterns, monitoring, alerting, and incident response with practical SLIs, SLOs, and error budgets.">
-  <meta property="og:title" content="Chapter 05 — Reliability, Fault Tolerance, and Observability">
+  <meta property="og:title" content="Chapter 05 - Reliability, Fault Tolerance, and Observability">
   <meta property="og:description" content="Model fault domains, choose active-active vs active-passive, wire observability that maps to user experience, and run incidents & postmortems effectively.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -36,7 +36,7 @@
         <span class="badge">Reliability &amp; Observability</span>
       </div>
       <h1>Reliability, Fault Tolerance, and Observability</h1>
-      <p class="abstract">Availability is not an accident; it’s the result of deliberate isolation, redundancy, and feedback. This chapter unifies three perspectives: designing for failure (fault domains, bulkheads, circuit breakers), building redundancy (active-active vs active-passive, failover, multi-AZ/region), and seeing reality (SLIs/SLOs, metrics, logs, traces, alerting, incident response). The goal is to meet user promises with the smallest necessary complexity—and to recover gracefully when the universe disagrees.</p>
+      <p class="abstract">Availability is not an accident; it's the result of deliberate isolation, redundancy, and feedback. This chapter unifies three perspectives: designing for failure (fault domains, bulkheads, circuit breakers), building redundancy (active-active vs active-passive, failover, multi-AZ/region), and seeing reality (SLIs/SLOs, metrics, logs, traces, alerting, incident response). The goal is to meet user promises with the smallest necessary complexity-and to recover gracefully when the universe disagrees.</p>
     </div>
   </header>
 
@@ -44,49 +44,49 @@
     <!-- 05.1 -->
     <section class="section" id="ch05-1">
       <h2>05.1 Fault Domains and Isolation</h2>
-      <p id="ch05-1-why">Why it matters: Failures cluster. A noisy neighbor, a router flap, or a bad deploy rarely hurts one request; it hurts many in the same “blast radius.” If you can name and separate those radii—rack, zone, cell, region—you can prevent a single spark from becoming a fire.</p>
+      <p id="ch05-1-why">Why it matters: Failures cluster. A noisy neighbor, a router flap, or a bad deploy rarely hurts one request; it hurts many in the same "blast radius." If you can name and separate those radii-rack, zone, cell, region-you can prevent a single spark from becoming a fire.</p>
 
       <h3 id="ch05-1-1">05.1.1 What Is a Fault Domain?</h3>
-      <p><strong>Plain:</strong> A fault domain is a boundary inside which a single failure can break many things. Think of a circuit in your house: one breaker trips, some rooms go dark; the whole city doesn’t.</p>
+      <p><strong>Plain:</strong> A fault domain is a boundary inside which a single failure can break many things. Think of a circuit in your house: one breaker trips, some rooms go dark; the whole city doesn't.</p>
       <p><strong>Formal:</strong> Common domains are <em>node</em> (machine/VM/container), <em>rack</em> (shared top-of-rack switch/power), <em>availability zone</em> (independent power/network in a region), <em>cell</em> (a self-contained slice of a service), and <em>region</em> (geographic location). Systems become <em>fault tolerant</em> by deploying redundant capacity across domains that fail independently.</p>
-      <p><strong>Pitfall:</strong> Hidden coupling defeats isolation. A “multi-AZ” app whose database is single-AZ is not multi-AZ in practice; nor is a multi-region service that depends on a region-locked control plane.</p>
+      <p><strong>Pitfall:</strong> Hidden coupling defeats isolation. A "multi-AZ" app whose database is single-AZ is not multi-AZ in practice; nor is a multi-region service that depends on a region-locked control plane.</p>
 
       <h3 id="ch05-1-2">05.1.2 Bulkheads, Pool Partitioning, and Circuit Breakers</h3>
-      <p><strong>Plain:</strong> Ships use bulkheads to contain flooding. Services use bulkheads to contain bad traffic and bugs. Partition resources so one tenant or feature can’t sink the fleet.</p>
+      <p><strong>Plain:</strong> Ships use bulkheads to contain flooding. Services use bulkheads to contain bad traffic and bugs. Partition resources so one tenant or feature can't sink the fleet.</p>
       <p><strong>Formal:</strong> Apply three patterns:</p>
       <ul>
         <li><strong>Pool partitioning:</strong> Divide workers into independent pools (by tenant, feature, or priority). Put quotas and token buckets on each pool so overload is local.</li>
         <li><strong>Circuit breakers:</strong> If a dependency fails, open the circuit to fast-fail instead of queueing forever. Half-open periodically to test recovery. Couple with timeouts and budgets.</li>
-        <li><strong>Load shedding:</strong> When burn rate spikes, preferentially drop low-value work (e.g., “typing indicators”) to protect core SLIs.</li>
+        <li><strong>Load shedding:</strong> When burn rate spikes, preferentially drop low-value work (e.g., "typing indicators") to protect core SLIs.</li>
       </ul>
-      <p><strong>Worked Example:</strong> A search backend performs primary query + three “expensive enrichers.” Under pressure, the breaker opens on enrichers, returning a simpler but fast result. Users see slightly lower quality, not errors.</p>
+      <p><strong>Worked Example:</strong> A search backend performs primary query + three "expensive enrichers." Under pressure, the breaker opens on enrichers, returning a simpler but fast result. Users see slightly lower quality, not errors.</p>
       <p><strong>Analogy:</strong> In a restaurant, table sections (bulkheads) prevent one big party from monopolizing all servers; the manager can stop seating (load shed) before the kitchen collapses.</p>
 
       <h3 id="ch05-1-3">05.1.3 Cells and Blast Radius</h3>
       <p><strong>Plain:</strong> Big monoliths fail big. <em>Cell architecture</em> splits a service into many identical, self-contained cells (e.g., by customer alphabet range), each with its own capacity and dependencies. A bad deploy only hurts a slice.</p>
-      <p><strong>Formal:</strong> Target a <em>cell SLO</em> slightly better than the global SLO. Keep cells small enough that you can evacuate one cell’s traffic to others during incidents. Use deterministic routing (hash by tenant) to keep sessions sticky within a cell but portable across cells during migration.</p>
+      <p><strong>Formal:</strong> Target a <em>cell SLO</em> slightly better than the global SLO. Keep cells small enough that you can evacuate one cell's traffic to others during incidents. Use deterministic routing (hash by tenant) to keep sessions sticky within a cell but portable across cells during migration.</p>
       <p class="summary">Takeaway: Reliability begins by assuming failure and limiting its reach. Partition your compute, your data, and your dependencies along fault-domain boundaries that map to business risk.</p>
     </section>
 
     <!-- 05.2 -->
     <section class="section" id="ch05-2">
       <h2>05.2 Redundancy Patterns</h2>
-      <p id="ch05-2-why">Why it matters: Redundancy is expensive—until you compare it to an outage. The pattern you pick (active-active, active-passive, N+1) defines not only uptime but also operational complexity, data semantics, and cost.</p>
+      <p id="ch05-2-why">Why it matters: Redundancy is expensive-until you compare it to an outage. The pattern you pick (active-active, active-passive, N+1) defines not only uptime but also operational complexity, data semantics, and cost.</p>
 
       <h3 id="ch05-2-1">05.2.1 Active-Active vs Active-Passive</h3>
       <p><strong>Plain:</strong> <em>Active-active</em> runs multiple sites serving users at once. <em>Active-passive</em> runs one primary site and one standby, which takes over during failure.</p>
       <p><strong>Formal:</strong> Let <em>RTO</em> be recovery time objective and <em>RPO</em> be acceptable data loss. Active-active minimizes RTO (often near zero) and RPO (with synchronous/near-sync writes) at the cost of conflict resolution and higher steady-state spend. Active-passive reduces cost and complexity but has non-zero RTO (minutes) and potentially higher RPO (async replication).</p>
-      <p><strong>Pitfall:</strong> Calling a weekly tested DR environment “passive.” Without frequent, automated failover drills, failover will fail when you need it most.</p>
+      <p><strong>Pitfall:</strong> Calling a weekly tested DR environment "passive." Without frequent, automated failover drills, failover will fail when you need it most.</p>
 
       <h3 id="ch05-2-2">05.2.2 Routing and Traffic Control</h3>
       <p><strong>Plain:</strong> Global traffic is steered by DNS, anycast, or global accelerators. Within a region, you balance across zones; across regions, you balance by <em>latency</em>, <em>geography</em>, or <em>health</em>.</p>
 
       <figure>
         <img src="images/latency-routing.svg" alt="Custom latency-based routing diagram with two regions and a Route 53 decision point" loading="lazy" decoding="async" width="520" height="320">
-        <figcaption>Latency-based routing sends users to the closest healthy region by measured latency (custom illustration inspired by AWS Route 53 Docs, 2025).</figcaption>
+        <figcaption>Latency-based routing sends users to the closest healthy region by measured latency (custom illustration inspired by AWS Route 53 Docs, 2025).</figcaption>
       </figure>
 
-      <p><strong>Worked Example — Active-Active Read, Single-Writer:</strong> A marketplace needs fast product reads worldwide but consistent orders. Put read replicas in multiple regions; route reads by latency; route writes to a single writer region via an API layer. If the writer region fails, promote a replica (scripted, under 5 minutes), accepting brief write unavailability. Many systems adopt this “read-local, write-central” compromise.</p>
+      <p><strong>Worked Example - Active-Active Read, Single-Writer:</strong> A marketplace needs fast product reads worldwide but consistent orders. Put read replicas in multiple regions; route reads by latency; route writes to a single writer region via an API layer. If the writer region fails, promote a replica (scripted, under 5 minutes), accepting brief write unavailability. Many systems adopt this "read-local, write-central" compromise.</p>
 
       <h3 id="ch05-2-3">05.2.3 Storage and State Redundancy</h3>
       <p><strong>Plain:</strong> Redundancy is easy for stateless compute. For state, you must choose replication and failover semantics with eyes open.</p>
@@ -95,18 +95,18 @@
 
       <h3 id="ch05-2-4">05.2.4 N+1, Quorum, and Graceful Degradation</h3>
       <p><strong>Plain:</strong> N+1 means you can lose one unit without violating SLOs. Quorum means you can lose <em>f</em> units and still accept reads/writes with a majority. Graceful degradation means features taper instead of falling off a cliff.</p>
-      <p><strong>Formal:</strong> If a service’s steady-state utilization is <em>u</em>, capacity planning for N+1 requires provisioning <em>(N+1) · u</em> ≥ peak. In practice, target 50–70% utilization and shed non-core features when burn rate goes red. For quorums, with replication factor 3 and <em>W=2</em>, you tolerate losing one node while keeping write durability.</p>
+      <p><strong>Formal:</strong> If a service's steady-state utilization is <em>u</em>, capacity planning for N+1 requires provisioning <em>(N+1) * u</em> >= peak. In practice, target 50-70% utilization and shed non-core features when burn rate goes red. For quorums, with replication factor 3 and <em>W=2</em>, you tolerate losing one node while keeping write durability.</p>
       <p class="summary">Takeaway: Pick redundancy for the promise you must keep. Most teams start with multi-AZ, add global read replicas, and graduate to selective multi-region writes only where business demands them.</p>
     </section>
 
     <!-- 05.3 -->
     <section class="section" id="ch05-3">
       <h2>05.3 Monitoring, Metrics, and Observability</h2>
-      <p id="ch05-3-why">Why it matters: You can’t keep promises you can’t see. Observability turns <em>what happened</em> into <em>what to do next</em>. The trick is to measure what users feel, not just what servers do.</p>
+      <p id="ch05-3-why">Why it matters: You can't keep promises you can't see. Observability turns <em>what happened</em> into <em>what to do next</em>. The trick is to measure what users feel, not just what servers do.</p>
 
       <h3 id="ch05-3-1">05.3.1 Signals: Metrics, Logs, and Traces</h3>
       <p><strong>Plain:</strong> <em>Metrics</em> capture numeric time series (latency, QPS). <em>Logs</em> record discrete events with context. <em>Traces</em> tie requests across services, showing where time went.</p>
-      <p><strong>Formal:</strong> Instrument upstream (edge/gateway) and downstream (datastores) with consistent labels: <code>service</code>, <code>endpoint</code>, <code>status_class</code>, <code>region</code>, <code>az</code>, <code>customer_tier</code>. Use exemplars to link metrics to representative traces, enabling “click-through” from a latency spike to a trace sample.</p>
+      <p><strong>Formal:</strong> Instrument upstream (edge/gateway) and downstream (datastores) with consistent labels: <code>service</code>, <code>endpoint</code>, <code>status_class</code>, <code>region</code>, <code>az</code>, <code>customer_tier</code>. Use exemplars to link metrics to representative traces, enabling "click-through" from a latency spike to a trace sample.</p>
       <p><strong>Pitfall:</strong> Unbounded label cardinality (e.g., per-user labels) explodes storage and query time. Hash or sample high-cardinality dimensions; place them in logs/traces, not metrics.</p>
 
       <figure>
@@ -117,27 +117,27 @@
       <h3 id="ch05-3-2">05.3.2 Golden Signals and SLIs</h3>
       <p><strong>Plain:</strong> Watch four things: <em>latency</em>, <em>traffic</em>, <em>errors</em>, and <em>saturation</em>. Then translate to SLIs users notice.</p>
       <p><strong>Formal:</strong> Example SLIs for a checkout API: success ratio (2xx/total), P95 and P99 latency, and end-to-end completion rate (order created and paid within 5 minutes). For streaming, track consumer lag and end-to-end time to processed.</p>
-      <p><strong>Worked Example — Dashboard Slice:</strong> Row 1: user SLIs (success, P95, P99). Row 2: dependency SLIs (DB latency, broker lag). Row 3: capacity (CPU, memory, queue depth). Row 4: error budget burn (2× and 8× multi-window). Put alerts only on rows 1–2; the rest explain <em>why</em>.</p>
+      <p><strong>Worked Example - Dashboard Slice:</strong> Row 1: user SLIs (success, P95, P99). Row 2: dependency SLIs (DB latency, broker lag). Row 3: capacity (CPU, memory, queue depth). Row 4: error budget burn (2x and 8x multi-window). Put alerts only on rows 1-2; the rest explain <em>why</em>.</p>
 
       <h3 id="ch05-3-3">05.3.3 Sampling, Retention, and Cost</h3>
-      <p><strong>Plain:</strong> You don’t need every log forever. Keep the right data at the right fidelity for the right time.</p>
-      <p><strong>Formal:</strong> Use head-based sampling for traces in low-traffic systems; tail-based or dynamic sampling for high traffic to keep the most interesting traces (errors, high latency). Retain high-resolution metrics for 7–14 days; downsample beyond. Logs: structured, request-scoped, rotating with TTL and cold storage for long-term audits.</p>
+      <p><strong>Plain:</strong> You don't need every log forever. Keep the right data at the right fidelity for the right time.</p>
+      <p><strong>Formal:</strong> Use head-based sampling for traces in low-traffic systems; tail-based or dynamic sampling for high traffic to keep the most interesting traces (errors, high latency). Retain high-resolution metrics for 7-14 days; downsample beyond. Logs: structured, request-scoped, rotating with TTL and cold storage for long-term audits.</p>
       <p><strong>Pitfall:</strong> Turning off sampling during incidents and leaving it off; costs surprise you later. Instead, use temporary dynamic policies tied to incident windows.</p>
 
       <h3 id="ch05-3-4">05.3.4 Alerting: Error Budgets and Burn Rates</h3>
-      <p><strong>Plain:</strong> An alert should mean “a promise is at risk right now.” Error budgets put numbers on how much unreliability you can spend; burn-rate alerts tell you when you’re spending too fast.</p>
-      <p><strong>Formal:</strong> If SLO is 99.9% over 30 days, the budget is 43.2 minutes. Use two alerts: a fast one (e.g., 2× burn over 5 minutes) to catch fast meltdowns, and a slow one (e.g., 2× over 1 hour) to catch smolders. Tie paging to user-visible SLIs; send non-paging alerts for saturation trends.</p>
+      <p><strong>Plain:</strong> An alert should mean "a promise is at risk right now." Error budgets put numbers on how much unreliability you can spend; burn-rate alerts tell you when you're spending too fast.</p>
+      <p><strong>Formal:</strong> If SLO is 99.9% over 30 days, the budget is 43.2 minutes. Use two alerts: a fast one (e.g., 2x burn over 5 minutes) to catch fast meltdowns, and a slow one (e.g., 2x over 1 hour) to catch smolders. Tie paging to user-visible SLIs; send non-paging alerts for saturation trends.</p>
       <p class="summary">Takeaway: Measure like a user; connect symptoms (SLIs) to causes (dependency metrics, traces). Use budgets to keep alerts meaningful and sustainable.</p>
     </section>
 
     <!-- 05.4 -->
     <section class="section" id="ch05-4">
       <h2>05.4 Incident Response and Reliability Culture</h2>
-      <p id="ch05-4-why">Why it matters: Incidents are the tuition you pay for complex systems. The way you respond—and the habits you build after—determine whether you get smarter or just older.</p>
+      <p id="ch05-4-why">Why it matters: Incidents are the tuition you pay for complex systems. The way you respond-and the habits you build after-determine whether you get smarter or just older.</p>
 
       <h3 id="ch05-4-1">05.4.1 Roles, Runbooks, and Comms</h3>
       <p><strong>Plain:</strong> In a crisis, ambiguity is the enemy. Assign roles; follow checklists; communicate clearly.</p>
-      <p><strong>Formal:</strong> Roles include <em>incident commander</em> (owns process), <em>operations lead</em> (owns technical triage), <em>communications</em> (status updates), and <em>scribe</em> (timeline). Define severity levels (SEV1–SEV4) with business impact. Keep pre-filled comms templates for internal and customer updates.</p>
+      <p><strong>Formal:</strong> Roles include <em>incident commander</em> (owns process), <em>operations lead</em> (owns technical triage), <em>communications</em> (status updates), and <em>scribe</em> (timeline). Define severity levels (SEV1-SEV4) with business impact. Keep pre-filled comms templates for internal and customer updates.</p>
       <p><strong>Runbook Snippet:</strong></p>
       <pre data-lang="yaml"><code>incident:
   declare: "SEV2 - checkout P95 &gt; 2s for 15m"
@@ -164,25 +164,25 @@
 
       <h3 id="ch05-4-3">05.4.3 Postmortems and Learning Loops</h3>
       <p><strong>Plain:</strong> Blame wastes time. Curiosity compounds. A good postmortem turns surprises into guardrails.</p>
-      <p><strong>Formal:</strong> Include: summary, impact, timeline, detection, response, contributing factors, <em>what went well</em>, <em>what went poorly</em>, and <em>action items with owners and dates</em>. Track leading indicators like change failure rate and MTTR over quarters. Guard against “fighting the last war” by focusing on systemic controls (tests, automation, safe deploys) rather than one-off patches.</p>
+      <p><strong>Formal:</strong> Include: summary, impact, timeline, detection, response, contributing factors, <em>what went well</em>, <em>what went poorly</em>, and <em>action items with owners and dates</em>. Track leading indicators like change failure rate and MTTR over quarters. Guard against "fighting the last war" by focusing on systemic controls (tests, automation, safe deploys) rather than one-off patches.</p>
 
       <h3 id="ch05-4-4">05.4.4 Chaos and Game Days</h3>
       <p><strong>Plain:</strong> Practice outages when stakes are low. Break small things on purpose; verify bulkheads, timeouts, and failovers work as designed.</p>
-      <p><strong>Formal:</strong> Start with “tabletop” exercises, then move to <em>failure injection</em> (latency, packet loss, instance kill) in staging, graduating to production with guardrails (time windows, blast-radius limits, auto-revert). Automate common drills: zone loss, dependency slowdowns, cache outage, message backlog growth.</p>
+      <p><strong>Formal:</strong> Start with "tabletop" exercises, then move to <em>failure injection</em> (latency, packet loss, instance kill) in staging, graduating to production with guardrails (time windows, blast-radius limits, auto-revert). Automate common drills: zone loss, dependency slowdowns, cache outage, message backlog growth.</p>
       <p class="summary">Takeaway: Reliability is a team sport. Clear roles and practiced drills shrink MTTR; blameless learning improves the system faster than any single clever idea.</p>
     </section>
 
     <!-- 05.5 -->
     <section class="section" id="ch05-5">
-      <h2>05.5 Checkpoints — Multi-Region Deployment Plan</h2>
+      <h2>05.5 Checkpoints - Multi-Region Deployment Plan</h2>
       <p id="ch05-5-why">Why it matters: Few projects <em>start</em> multi-region, but many need to <em>grow</em> there. A concrete plan de-risks the transition.</p>
 
       <h3 id="ch05-5-1">05.5.1 Requirements &amp; Constraints</h3>
       <ul>
-        <li><strong>Business goal:</strong> Reduce P95 for EU users from 450&nbsp;ms to ≤ 250&nbsp;ms; keep order integrity (no double-charges).</li>
-        <li><strong>SLOs:</strong> API success ≥ 99.95%, checkout P95 ≤ 250&nbsp;ms (regional), P99 ≤ 600&nbsp;ms (global).</li>
-        <li><strong>Data:</strong> Orders are CP; catalog is AP with ≤ 5&nbsp;s freshness drift acceptable.</li>
-        <li><strong>Budget/Team:</strong> Two squads for 6–8 weeks; modest infra headroom.</li>
+        <li><strong>Business goal:</strong> Reduce P95 for EU users from 450&nbsp;ms to <= 250&nbsp;ms; keep order integrity (no double-charges).</li>
+        <li><strong>SLOs:</strong> API success >= 99.95%, checkout P95 <= 250&nbsp;ms (regional), P99 <= 600&nbsp;ms (global).</li>
+        <li><strong>Data:</strong> Orders are CP; catalog is AP with <= 5&nbsp;s freshness drift acceptable.</li>
+        <li><strong>Budget/Team:</strong> Two squads for 6-8 weeks; modest infra headroom.</li>
       </ul>
 
       <h3 id="ch05-5-2">05.5.2 Architecture Sketch</h3>
@@ -194,12 +194,12 @@
         <li><strong>Observability:</strong> Regional SLIs + global rollups; exemplars link to traces; burn-rate alerts per region.</li>
       </ol>
 
-      <h3 id="ch05-5-3">05.5.3 Runbook — Regional Failover (Writer)</h3>
+      <h3 id="ch05-5-3">05.5.3 Runbook - Regional Failover (Writer)</h3>
       <ol>
         <li>Freeze writes at the API layer (return 503 with <code>Retry-After: 5</code>) for writer endpoints.</li>
         <li>Verify replica catch-up (replication lag &lt; threshold).</li>
         <li>Promote replica to writer; update connection strings and secrets via config rollout.</li>
-        <li>Warm caches with top keys; reopen writes gradually (10% → 50% → 100%).</li>
+        <li>Warm caches with top keys; reopen writes gradually (10% -> 50% -> 100%).</li>
         <li>Backfill analytics; reconcile any partial orders; close incident with timeline.</li>
       </ol>
 
@@ -217,11 +217,11 @@
     <section class="section" id="ch05-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>Google SRE Book</strong> — Error budgets, burn-rate alerting, and incident management (Google, 2016/2020). <span class="badge">Free</span></li>
-        <li><strong>AWS Route 53 Docs — Latency-Based Routing</strong> — Global traffic steering patterns and health checks (AWS Docs, 2025). <span class="badge">Free</span></li>
-        <li><strong>Jaeger Tracing Docs</strong> — End-to-end tracing architecture and operations (CNCF/Jaeger, 2025). <span class="badge">Free</span></li>
-        <li><strong>OpenTelemetry</strong> — Instrumentation for metrics, logs, traces; collector pipeline patterns (CNCF, ongoing). <span class="badge">Free</span></li>
-        <li><strong>Netflix Tech Blog (Chaos Engineering)</strong> — Principles and practice of failure injection (Netflix, ongoing). <span class="badge">Free</span></li>
+        <li><strong>Google SRE Book</strong> - Error budgets, burn-rate alerting, and incident management (Google, 2016/2020). <span class="badge">Free</span></li>
+        <li><strong>AWS Route 53 Docs - Latency-Based Routing</strong> - Global traffic steering patterns and health checks (AWS Docs, 2025). <span class="badge">Free</span></li>
+        <li><strong>Jaeger Tracing Docs</strong> - End-to-end tracing architecture and operations (CNCF/Jaeger, 2025). <span class="badge">Free</span></li>
+        <li><strong>OpenTelemetry</strong> - Instrumentation for metrics, logs, traces; collector pipeline patterns (CNCF, ongoing). <span class="badge">Free</span></li>
+        <li><strong>Netflix Tech Blog (Chaos Engineering)</strong> - Principles and practice of failure injection (Netflix, ongoing). <span class="badge">Free</span></li>
       </ul>
       <p class="muted">Rationales: Reliability practice evolves; we prioritize vendor/standards documentation for current mechanisms (routing, tracing) and the SRE book for stable operating principles.</p>
     </section>
@@ -230,7 +230,7 @@
     <section class="section" id="ch05-recap">
       <h2>Recap &amp; Next Steps</h2>
       <ul>
-        <li><strong>Isolate</strong> along fault domains—cells, zones, regions—and contain failure with bulkheads, breakers, and quotas.</li>
+        <li><strong>Isolate</strong> along fault domains-cells, zones, regions-and contain failure with bulkheads, breakers, and quotas.</li>
         <li><strong>Choose redundancy</strong> for the promise you must keep: multi-AZ by default, selective multi-region reads/writes as business requires.</li>
         <li><strong>Instrument for users</strong>: SLIs reflect user experience; connect metrics to traces; control alert noise with error budgets and burn rates.</li>
         <li><strong>Practice incidents</strong>: clear roles, crisp comms, fast rollback; then learn via blameless postmortems and regular game days.</li>
@@ -245,8 +245,8 @@
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch04.html"><span class="muted">Prev</span><span>← Chapter 04 — Communication, Coordination, and Consistency</span></a>
-      <a class="next" rel="next" href="chapters/ch06.html"><span class="muted">Next</span><span>Chapter 06 — Caching, Performance, and Cost Optimization →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch04.html"><span class="muted">Prev</span><span><- Chapter 04 - Communication, Coordination, and Consistency</span></a>
+      <a class="next" rel="next" href="chapters/ch06.html"><span class="muted">Next</span><span>Chapter 06 - Caching, Performance, and Cost Optimization -></span></a>
     </nav>
 
     <!-- Image Link Audit -->
@@ -254,7 +254,7 @@
       <h2>Image Link Audit</h2>
       <ul class="resource-list">
         <li>images/latency-routing.svg - <strong>local svg</strong> - <span class="badge badge-success">pass</span></li>
-        <li>https://www.jaegertracing.io/img/architecture-v1.png — <strong>200 OK</strong>, content-type <strong>image/png</strong> — <span class="badge badge-success">pass</span></li>
+        <li>https://www.jaegertracing.io/img/architecture-v1.png - <strong>200 OK</strong>, content-type <strong>image/png</strong> - <span class="badge badge-success">pass</span></li>
       </ul>
       <p class="muted">Only HTTPS assets or vetted local SVGs with reliable licensing are included.</p>
     </section> -->
@@ -264,8 +264,8 @@
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
     - [x] Pager prev/next valid; ToC numbering matches
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, lists; code blocks excluded)
+    - [x] Order: Hero -> Numbered Sections -> Resources -> Recap
+    - [x] >=1,800 words of prose (headings, paragraphs, lists; code blocks excluded)
     - [x] Images: Local SVG or HTTPS assets validated; captions + attribution included
     - [x] Head/meta complete; no TODOs
     -->

@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 10 — Common Pitfalls and Next Steps</title>
+  <title>Chapter 10 - Common Pitfalls and Next Steps</title>
   <meta name="description" content="Avoid the traps that sink real systems: overengineering, weak observability, misjudged load, brittle interfaces, and migration mishaps. Finish with a practical self-evaluation and a roadmap to advanced system design.">
-  <meta property="og:title" content="Chapter 10 — Common Pitfalls and Next Steps">
-  <meta property="og:description" content="Anti-patterns, worked examples, and pragmatic checklists to help you ship resilient, evolvable systems—and a concrete path to Advanced System Design.">
+  <meta property="og:title" content="Chapter 10 - Common Pitfalls and Next Steps">
+  <meta property="og:description" content="Anti-patterns, worked examples, and pragmatic checklists to help you ship resilient, evolvable systems-and a concrete path to Advanced System Design.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
   <link rel="stylesheet" href="styles/theme.css">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -36,7 +36,7 @@
         <span class="badge">Pitfalls &amp; Next Steps</span>
       </div>
       <h1>Common Pitfalls and Next Steps</h1>
-      <p class="abstract">Real systems fail for ordinary reasons: we add features faster than we add understanding; we optimize the wrong metric; we deploy without a rollback; we change schemas as if no one else depended on them. This chapter distills the most frequent issues engineers hit when moving from “it works” to “it works reliably at scale.” You’ll learn to recognize anti-patterns early, apply corrective patterns, and end with a self-evaluation checklist and a roadmap toward Advanced System Design.</p>
+      <p class="abstract">Real systems fail for ordinary reasons: we add features faster than we add understanding; we optimize the wrong metric; we deploy without a rollback; we change schemas as if no one else depended on them. This chapter distills the most frequent issues engineers hit when moving from "it works" to "it works reliably at scale." You'll learn to recognize anti-patterns early, apply corrective patterns, and end with a self-evaluation checklist and a roadmap toward Advanced System Design.</p>
     </div>
   </header>
 
@@ -44,18 +44,18 @@
     <!-- 10.1 -->
     <section class="section" id="ch10-1">
       <h2>10.1 Overengineering and Premature Optimization</h2>
-      <p id="ch10-1-why">Why it matters: Complexity is a debt you pay interest on forever. The fastest path to outages is building for a scale you don’t have with tools you don’t need.</p>
+      <p id="ch10-1-why">Why it matters: Complexity is a debt you pay interest on forever. The fastest path to outages is building for a scale you don't have with tools you don't need.</p>
 
       <h3 id="ch10-1-1">10.1.1 The Temptation of Fancy</h3>
-      <p><strong>Plain:</strong> It’s easy to reach for microservices, multi-region writes, and exotic databases because they sound professional. But every moving part becomes a new way to be wrong. If you don’t need it <em>now</em>, it slows you down and widens the failure surface.</p>
-      <p><strong>Formal:</strong> Choose the <em>simplest architecture that meets stated SLOs and constraints</em> with 20–40% headroom. Minimize the number of consistency domains and communication patterns. Add new tech only when the current system, under measured load and realistic tests, cannot meet SLOs without unsustainable cost or risk.</p>
-      <p><strong>Pitfall:</strong> Adopting microservices to “move faster” while sharing the same database and deployment cadence. You get distributed failure without independent evolution.</p>
-      <p><strong>Worked Example — “Global from Day 1”:</strong> A startup launches with cross-region synchronous writes “for resilience.” Write latency doubles, developers fight replication conflicts, and incidents multiply. A simpler v1 (single region, multi-AZ, strong backups, clear RTO/RPO, and read replicas near users) would have hit user SLOs with fewer dials to misconfigure. Later, measured user demand can justify multi-region writes for <em>specific</em> data.</p>
-      <p><strong>Analogy:</strong> Don’t buy a bus to commute one person. If growth arrives, you can add seats—or buy the bus then.</p>
+      <p><strong>Plain:</strong> It's easy to reach for microservices, multi-region writes, and exotic databases because they sound professional. But every moving part becomes a new way to be wrong. If you don't need it <em>now</em>, it slows you down and widens the failure surface.</p>
+      <p><strong>Formal:</strong> Choose the <em>simplest architecture that meets stated SLOs and constraints</em> with 20-40% headroom. Minimize the number of consistency domains and communication patterns. Add new tech only when the current system, under measured load and realistic tests, cannot meet SLOs without unsustainable cost or risk.</p>
+      <p><strong>Pitfall:</strong> Adopting microservices to "move faster" while sharing the same database and deployment cadence. You get distributed failure without independent evolution.</p>
+      <p><strong>Worked Example - "Global from Day 1":</strong> A startup launches with cross-region synchronous writes "for resilience." Write latency doubles, developers fight replication conflicts, and incidents multiply. A simpler v1 (single region, multi-AZ, strong backups, clear RTO/RPO, and read replicas near users) would have hit user SLOs with fewer dials to misconfigure. Later, measured user demand can justify multi-region writes for <em>specific</em> data.</p>
+      <p><strong>Analogy:</strong> Don't buy a bus to commute one person. If growth arrives, you can add seats-or buy the bus then.</p>
 
       <h3 id="ch10-1-2">10.1.2 Optimize the Right Thing</h3>
       <p><strong>Plain:</strong> Shaving milliseconds off P50 is useless if P99 is where users churn. Optimizing compute cost is shortsighted if egress and storage dominate the bill.</p>
-      <p><strong>Formal:</strong> Let <em>SLIs/SLOs</em> and <em>unit economics</em> drive optimization. Measure P95/P99, error budget burn, and ₹/1k requests. Choose interventions that improve user-facing SLIs first, then reduce cost without hurting SLOs. Document the objective, hypothesis, and observed effect for each change.</p>
+      <p><strong>Formal:</strong> Let <em>SLIs/SLOs</em> and <em>unit economics</em> drive optimization. Measure P95/P99, error budget burn, and INR/1k requests. Choose interventions that improve user-facing SLIs first, then reduce cost without hurting SLOs. Document the objective, hypothesis, and observed effect for each change.</p>
       <p><strong>Pitfall:</strong> Chasing GC pauses with exotic JVM flags rather than fixing allocation hotspots and request fan-out that create pressure in the first place.</p>
 
       <p class="summary">Takeaway: Be boring on purpose. Earn complexity with data, not vibes.</p>
@@ -64,15 +64,15 @@
     <!-- 10.2 -->
     <section class="section" id="ch10-2">
       <h2>10.2 Ignoring Observability and User-Centric SLIs</h2>
-      <p id="ch10-2-why">Why it matters: If you can’t see a failure, you can’t fix it—and if you’re measuring the wrong thing, you’ll fix what doesn’t matter.</p>
+      <p id="ch10-2-why">Why it matters: If you can't see a failure, you can't fix it-and if you're measuring the wrong thing, you'll fix what doesn't matter.</p>
 
       <h3 id="ch10-2-1">10.2.1 Metrics Without Meaning</h3>
-      <p><strong>Plain:</strong> CPU and memory graphs are comfort food. Users don’t experience CPU—they experience errors, slow pages, and stale data.</p>
-      <p><strong>Formal:</strong> Define SLIs that represent user journeys (e.g., <em>checkout success ratio</em>, <em>P95 API latency</em>, <em>time to render first product image</em>). Your main dashboard’s first row should show SLIs; everything else explains changes in SLIs. Alerts should page only on <em>budget-threatening</em> breaches, not on resource blips.</p>
-      <p><strong>Pitfall:</strong> “Green dashboards” while the product is failing: caching hides errors, retries inflate success metrics, or thin clients retry in the background. Counter by correlating server metrics with <em>client beacons</em> and sampling traces tied to user sessions.</p>
+      <p><strong>Plain:</strong> CPU and memory graphs are comfort food. Users don't experience CPU-they experience errors, slow pages, and stale data.</p>
+      <p><strong>Formal:</strong> Define SLIs that represent user journeys (e.g., <em>checkout success ratio</em>, <em>P95 API latency</em>, <em>time to render first product image</em>). Your main dashboard's first row should show SLIs; everything else explains changes in SLIs. Alerts should page only on <em>budget-threatening</em> breaches, not on resource blips.</p>
+      <p><strong>Pitfall:</strong> "Green dashboards" while the product is failing: caching hides errors, retries inflate success metrics, or thin clients retry in the background. Counter by correlating server metrics with <em>client beacons</em> and sampling traces tied to user sessions.</p>
 
       <h3 id="ch10-2-2">10.2.2 Logs Without Structure</h3>
-      <p><strong>Plain:</strong> Walls of text are not observability. Without structure, you can’t answer “what changed?” quickly.</p>
+      <p><strong>Plain:</strong> Walls of text are not observability. Without structure, you can't answer "what changed?" quickly.</p>
       <p><strong>Formal:</strong> Log in structured form with correlation IDs and stable fields: <code>service</code>, <code>route</code>, <code>tenant</code>, <code>principal</code>, <code>trace_id</code>, <code>status</code>, <code>latency_ms</code>. Redact PII at the source. Use exemplars to link time series to traces. Choose cardinalities wisely; keep per-user context in traces, not metric labels.</p>
       <p><strong>Pitfall:</strong> Sampling traces so aggressively you miss every failure. Use <em>tail-based</em> or <em>dynamic</em> sampling to keep slow/error traces at higher rates.</p>
 
@@ -82,21 +82,21 @@
     <!-- 10.3 -->
     <section class="section" id="ch10-3">
       <h2>10.3 Misjudging Load, Capacity, and Hotspots</h2>
-      <p id="ch10-3-why">Why it matters: Systems rarely fail on average—they fail at the tails and hotspots. A handful of tenants or keys can dominate cost and risk.</p>
+      <p id="ch10-3-why">Why it matters: Systems rarely fail on average-they fail at the tails and hotspots. A handful of tenants or keys can dominate cost and risk.</p>
 
       <h3 id="ch10-3-1">10.3.1 Averages Lie, Tails Decide</h3>
-      <p><strong>Plain:</strong> An “average” user doesn’t exist. Traffic is often Zipfian: the top 1% of IDs take 20–30% of traffic.</p>
+      <p><strong>Plain:</strong> An "average" user doesn't exist. Traffic is often Zipfian: the top 1% of IDs take 20-30% of traffic.</p>
       <p><strong>Formal:</strong> Model load with percentiles and skew. Do capacity planning with P95/P99 targets and headroom. Add <em>virtual shards</em> or <em>dedicated shards</em> for hot tenants. In streaming systems, monitor <em>consumer lag</em> and budget end-to-end time, not just broker health.</p>
       <p><strong>Pitfall:</strong> Sharding by auto-increment IDs, creating time-correlated hotspots (new IDs cluster in the same shard). Prefer hash-based keys or time-windowed sharding.</p>
 
       <h3 id="ch10-3-2">10.3.2 Caches Without Invalidation Plans</h3>
-      <p><strong>Plain:</strong> Caching reduces load until it doesn’t—stampedes and incoherent layers can knock a system over.</p>
+      <p><strong>Plain:</strong> Caching reduces load until it doesn't-stampedes and incoherent layers can knock a system over.</p>
       <p><strong>Formal:</strong> Adopt <em>TTL + versioned keys</em> as your default. For high-value objects, use <em>outbox/CDC</em>-driven invalidation. Add jitter to TTLs. Implement <em>singleflight</em> to prevent thundering herd on misses. Measure <em>served-stale</em> as a first-class metric; stale beats down.</p>
       <p><strong>Pitfall:</strong> Mixing public and personalized responses behind a CDN without proper <code>Vary</code> headers or token-bound keys.</p>
 
       <h3 id="ch10-3-3">10.3.3 Elasticity Without Guardrails</h3>
-      <p><strong>Plain:</strong> Autoscaling is not magic; it’s a policy. It needs the right signals, stabilization windows, and safety caps.</p>
-      <p><strong>Formal:</strong> Scale on <em>SLI-correlated</em> metrics (inflight, queue lag, latency P95), not raw CPU alone. Use predictive schedules for known peaks (marketing blasts), then reactive controllers for shape changes. Set minimums so preemptible/spot evictions don’t zero your fleet.</p>
+      <p><strong>Plain:</strong> Autoscaling is not magic; it's a policy. It needs the right signals, stabilization windows, and safety caps.</p>
+      <p><strong>Formal:</strong> Scale on <em>SLI-correlated</em> metrics (inflight, queue lag, latency P95), not raw CPU alone. Use predictive schedules for known peaks (marketing blasts), then reactive controllers for shape changes. Set minimums so preemptible/spot evictions don't zero your fleet.</p>
       <p><strong>Pitfall:</strong> Layered autoscalers and retries amplify each other, turning a hiccup into a self-inflicted DDoS. Coordinate budgets and backoff across layers.</p>
 
       <p class="summary">Takeaway: Design for skew, plan invalidation, and tune elasticity as carefully as you design your API.</p>
@@ -108,7 +108,7 @@
       <p id="ch10-4-why">Why it matters: Most outages during change involve incompatible contracts or schema work that assumed no one else was using the old shape. Compatibility buys you independent deploys and fewer emergencies.</p>
 
       <h3 id="ch10-4-1">10.4.1 Breaking APIs Quietly</h3>
-      <p><strong>Plain:</strong> Renaming fields or tightening validation “because it’s correct” breaks clients who deploy on a different schedule.</p>
+      <p><strong>Plain:</strong> Renaming fields or tightening validation "because it's correct" breaks clients who deploy on a different schedule.</p>
       <p><strong>Formal:</strong> Treat compatibility as a feature. For JSON, prefer additive changes and tolerant readers. For Protobuf/Avro, never reuse field numbers; reserve removed ones. Version explicitly (<code>/v2/</code> or media types), run <em>contract tests</em>, and keep two adjacent versions live during migration with clear deprecation dates.</p>
       <p><strong>Pitfall:</strong> Returning new fields that collide with client-side schema validation; announce additions and offer test environments before production release.</p>
 
@@ -118,7 +118,7 @@
       <p><strong>Pitfall:</strong> Backfills that compete with user traffic. Throttle and schedule them; include them in capacity models.</p>
 
       <h3 id="ch10-4-3">10.4.3 Migrations Without Rollback</h3>
-      <p><strong>Plain:</strong> A “forward-only” plan is wishful thinking. You need a stop button.</p>
+      <p><strong>Plain:</strong> A "forward-only" plan is wishful thinking. You need a stop button.</p>
       <p><strong>Formal:</strong> For risky cutovers, use <em>blue/green</em> or <em>canary</em> deployments. Ensure rollout toggles and traffic routing can revert quickly. Keep old read paths available until confidence is high. Snapshot schemas and store migration manifests alongside code.</p>
       <p><strong>Pitfall:</strong> Data transformations that are not invertible. For anything destructive, take snapshots and checkpoints.</p>
 
@@ -128,43 +128,43 @@
     <!-- 10.5 -->
     <section class="section" id="ch10-5">
       <h2>10.5 Security, Compliance, and Operational Gaps</h2>
-      <p id="ch10-5-why">Why it matters: It’s not “just” engineering—security mistakes and weak operations undo months of feature work in a day.</p>
+      <p id="ch10-5-why">Why it matters: It's not "just" engineering-security mistakes and weak operations undo months of feature work in a day.</p>
 
       <h3 id="ch10-5-1">10.5.1 Secrets and Access</h3>
       <p><strong>Plain:</strong> Hard-coded keys and shared admin accounts are time bombs.</p>
       <p><strong>Formal:</strong> Use workload identity and short-lived credentials; centralize secrets with rotation; separate duties (who can <em>use</em> a key vs who can <em>admin</em> it). Audit accesses and changes. Prefer mTLS for service identity.</p>
-      <p><strong>Pitfall:</strong> “Temporary” keys that live forever. Automate expiry and alert on stale secrets.</p>
+      <p><strong>Pitfall:</strong> "Temporary" keys that live forever. Automate expiry and alert on stale secrets.</p>
 
       <h3 id="ch10-5-2">10.5.2 Change Management Without Guardrails</h3>
       <p><strong>Plain:</strong> Most incidents correlate with changes. Safe systems acknowledge this and build guardrails.</p>
       <p><strong>Formal:</strong> Require pull requests and automated tests; gate releases with canaries and feature flags; record change tickets automatically from CI metadata. Runbooks should name roles and mitigation steps. Practice game days.</p>
-      <p><strong>Pitfall:</strong> “Ship on Fridays” without rollback automation. If you must, reduce blast radius and staff appropriately.</p>
+      <p><strong>Pitfall:</strong> "Ship on Fridays" without rollback automation. If you must, reduce blast radius and staff appropriately.</p>
 
       <h3 id="ch10-5-3">10.5.3 Compliance by Afterthought</h3>
-      <p><strong>Plain:</strong> Auditors don’t care how clever your architecture is if you can’t prove basic controls.</p>
+      <p><strong>Plain:</strong> Auditors don't care how clever your architecture is if you can't prove basic controls.</p>
       <p><strong>Formal:</strong> Build evidence capture into normal work: logs, approvals, key rotations, and access reviews should be automatic outputs of your tools. Keep a data map and residency rules in code and config, not slides.</p>
 
-      <p class="summary">Takeaway: Make the secure and auditable path the default. If it’s hard, people will route around it.</p>
+      <p class="summary">Takeaway: Make the secure and auditable path the default. If it's hard, people will route around it.</p>
     </section>
 
     <!-- 10.6 -->
     <section class="section" id="ch10-6">
       <h2>10.6 Team and Process Anti-Patterns</h2>
-      <p id="ch10-6-why">Why it matters: Architecture lives or dies by the team’s habits. You can’t out-design a process that punishes learning and rewards heroics.</p>
+      <p id="ch10-6-why">Why it matters: Architecture lives or dies by the team's habits. You can't out-design a process that punishes learning and rewards heroics.</p>
 
       <h3 id="ch10-6-1">10.6.1 Ownership Without Boundaries</h3>
       <p><strong>Plain:</strong> If everyone is responsible for everything, no one is on call for anything.</p>
       <p><strong>Formal:</strong> Each service/domain needs a named owner, on-call rotation, and roadmap. Publish interfaces (APIs/events) and document SLOs. Avoid shared mutable databases across teams.</p>
-      <p><strong>Pitfall:</strong> “Platform” teams taking on user-feature SLAs; divide responsibilities along clear domain boundaries.</p>
+      <p><strong>Pitfall:</strong> "Platform" teams taking on user-feature SLAs; divide responsibilities along clear domain boundaries.</p>
 
-      <h3 id="ch10-6-2">10.6.2 Postmortems That Don’t Change Anything</h3>
+      <h3 id="ch10-6-2">10.6.2 Postmortems That Don't Change Anything</h3>
       <p><strong>Plain:</strong> A postmortem is only as good as the actions it produces.</p>
-      <p><strong>Formal:</strong> Keep postmortems blameless; capture timeline, contributing factors, and 3–5 prioritized actions with owners and dates. Track close-out and verify impact on SLIs/MTTR.</p>
-      <p><strong>Pitfall:</strong> Fixing only symptoms (“increase timeouts”) instead of controls (bulkheads, backpressure, pre-deploy checks).</p>
+      <p><strong>Formal:</strong> Keep postmortems blameless; capture timeline, contributing factors, and 3-5 prioritized actions with owners and dates. Track close-out and verify impact on SLIs/MTTR.</p>
+      <p><strong>Pitfall:</strong> Fixing only symptoms ("increase timeouts") instead of controls (bulkheads, backpressure, pre-deploy checks).</p>
 
       <h3 id="ch10-6-3">10.6.3 Debt With No Schedule</h3>
-      <p><strong>Plain:</strong> If paying tech debt is a “nice-to-have,” it never happens.</p>
-      <p><strong>Formal:</strong> Budget 15–20% of capacity for reliability and debt reduction. Maintain a debt register with principal, interest, risk, and target metrics (e.g., reduce P99 by 20%).</p>
+      <p><strong>Plain:</strong> If paying tech debt is a "nice-to-have," it never happens.</p>
+      <p><strong>Formal:</strong> Budget 15-20% of capacity for reliability and debt reduction. Maintain a debt register with principal, interest, risk, and target metrics (e.g., reduce P99 by 20%).</p>
       <p><strong>Pitfall:</strong> Endless refactors without success criteria; tie paydown to measurable outcomes.</p>
 
       <p class="summary">Takeaway: Culture and ownership are part of system design. Write them down and iterate like code.</p>
@@ -172,7 +172,7 @@
 
     <!-- 10.7 -->
     <section class="section" id="ch10-7">
-      <h2>10.7 Compare &amp; Contrast — Good vs Fragile Systems</h2>
+      <h2>10.7 Compare &amp; Contrast - Good vs Fragile Systems</h2>
       <p id="ch10-7-why">Why it matters: Seeing the differences side-by-side helps you spot problems early.</p>
 
       <table>
@@ -195,18 +195,18 @@
 
     <!-- 10.8 -->
     <section class="section" id="ch10-8">
-      <h2>10.8 Worked Scenarios — Spot the Smell, Apply the Fix</h2>
+      <h2>10.8 Worked Scenarios - Spot the Smell, Apply the Fix</h2>
       <p id="ch10-8-why">Why it matters: Practicing diagnosis builds intuition you can use in interviews and incidents.</p>
 
-      <h3 id="ch10-8-1">10.8.1 The “Nice and Easy” Cache</h3>
-      <p><strong>Symptom:</strong> CDN returns personalized dashboards to the wrong users after a marketing release. Logs show 200 OKs; users report “I see someone else’s data.”</p>
+      <h3 id="ch10-8-1">10.8.1 The "Nice and Easy" Cache</h3>
+      <p><strong>Symptom:</strong> CDN returns personalized dashboards to the wrong users after a marketing release. Logs show 200 OKs; users report "I see someone else's data."</p>
       <p><strong>Root Cause:</strong> Responses were cached without <code>Vary: Authorization</code> or token-bound keys. Miss ratio dropped during the release; stale personalized responses propagated.</p>
       <p><strong>Fix:</strong> Mark personalized endpoints as <code>Cache-Control: private, no-store</code> and move public data to cacheable endpoints. For semi-personalized assets, bind edge keys to a user or segment and include <code>Vary</code> headers. Add tests that simulate authenticated CDN caching.</p>
 
-      <h3 id="ch10-8-2">10.8.2 Canary That Didn’t Sing</h3>
+      <h3 id="ch10-8-2">10.8.2 Canary That Didn't Sing</h3>
       <p><strong>Symptom:</strong> A new ranking algorithm tanked engagement globally within minutes; canary alarms never fired.</p>
       <p><strong>Root Cause:</strong> Canary slice was too small, and SLIs were not segmented by variant. Global averages hid the drop; the alert compared canary to the global control, which included bots and low-activity users.</p>
-      <p><strong>Fix:</strong> Segment SLIs by variant and audience; use risk-appropriate canary sizes (≥5% for user-visible changes). Alert on <em>relative</em> deltas vs matched cohorts.</p>
+      <p><strong>Fix:</strong> Segment SLIs by variant and audience; use risk-appropriate canary sizes (>=5% for user-visible changes). Alert on <em>relative</em> deltas vs matched cohorts.</p>
 
       <h3 id="ch10-8-3">10.8.3 Migration that Froze the DB</h3>
       <p><strong>Symptom:</strong> Checkout errors spike during a schema migration; DB CPU is pegged, and lock wait time grows.</p>
@@ -230,7 +230,7 @@
         <li>Is my caching plan safe (TTL, versioned keys, invalidation triggers)?</li>
         <li>Is security built-in (OIDC/mTLS, least privilege, secrets rotation), not bolted on?</li>
         <li>Do I calculate <em>unit cost</em> and pick cost levers with SLO guardrails?</li>
-        <li>Can I present a clear <em>trade-off narrative</em> (options → pros/cons → decision → evidence)?</li>
+        <li>Can I present a clear <em>trade-off narrative</em> (options -> pros/cons -> decision -> evidence)?</li>
       </ul>
       <p class="summary">Score yourself today. Choose the lowest two areas and target them in your next sprint or study block.</p>
     </section>
@@ -251,14 +251,14 @@
 
       <h3 id="ch10-10-2">10.10.2 Practice Plan (4 Weeks)</h3>
       <ol>
-        <li><strong>Week 1:</strong> Rework a past design with explicit SLIs/SLOs; add idempotency and outbox. Write a one-page “what changed and why.”</li>
+        <li><strong>Week 1:</strong> Rework a past design with explicit SLIs/SLOs; add idempotency and outbox. Write a one-page "what changed and why."</li>
         <li><strong>Week 2:</strong> Implement a small Raft-backed leader election or lease demo; inject partitions and measure behavior.</li>
         <li><strong>Week 3:</strong> Build a latency vs throughput curve for one endpoint; identify the knee; propose two changes; measure again.</li>
         <li><strong>Week 4:</strong> Run an incident game day and a blameless postmortem; close at least two systemic actions.</li>
       </ol>
 
       <h3 id="ch10-10-3">10.10.3 Reading &amp; Source Study</h3>
-      <p>Balance vendor docs (current mechanisms) with durable texts (mental models). For each topic, keep a “claims and evidence” notebook linking choices to sources and experiments.</p>
+      <p>Balance vendor docs (current mechanisms) with durable texts (mental models). For each topic, keep a "claims and evidence" notebook linking choices to sources and experiments.</p>
 
       <p class="summary">Takeaway: Advance by alternating theory and practice: read, design, measure, and teach. Teaching forces clarity.</p>
     </section>
@@ -267,11 +267,11 @@
     <section class="section" id="ch10-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>Google SRE Book</strong> — Error budgets, alerting, and incident management, a foundation for reliable operations. <span class="badge">Free</span></li>
-        <li><strong>Designing Data-Intensive Applications (Kleppmann)</strong> — Consistency models, event-driven patterns, and migration strategies. <span class="badge">Paid</span></li>
-        <li><strong>ThoughtWorks Technology Radar</strong> — Pragmatic takes on progressive delivery, feature flags, and observability practices. <span class="badge">Free</span></li>
-        <li><strong>Vendor Docs (AWS/GCP/Azure)</strong> — Up-to-date mechanics for routing, storage replication, and TLS/mTLS configurations. <span class="badge">Free</span></li>
-        <li><strong>OpenTelemetry &amp; Jaeger</strong> — Instrumentation and tracing patterns to connect user symptoms to causes. <span class="badge">Free</span></li>
+        <li><strong>Google SRE Book</strong> - Error budgets, alerting, and incident management, a foundation for reliable operations. <span class="badge">Free</span></li>
+        <li><strong>Designing Data-Intensive Applications (Kleppmann)</strong> - Consistency models, event-driven patterns, and migration strategies. <span class="badge">Paid</span></li>
+        <li><strong>ThoughtWorks Technology Radar</strong> - Pragmatic takes on progressive delivery, feature flags, and observability practices. <span class="badge">Free</span></li>
+        <li><strong>Vendor Docs (AWS/GCP/Azure)</strong> - Up-to-date mechanics for routing, storage replication, and TLS/mTLS configurations. <span class="badge">Free</span></li>
+        <li><strong>OpenTelemetry &amp; Jaeger</strong> - Instrumentation and tracing patterns to connect user symptoms to causes. <span class="badge">Free</span></li>
       </ul>
       <p class="muted">Rationales: Evolving topics like routing, caches, and tracing benefit from vendor/standard docs, while DDIA and SRE provide durable models to reason about trade-offs.</p>
     </section>
@@ -296,17 +296,17 @@
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch09.html"><span class="muted">Prev</span><span>← Chapter 09 — Capstone Project: Architecting a Scalable System</span></a>
-      <a class="next" rel="next" href="chapters/appendix.html"><span class="muted">Next</span><span>Appendix — Pitfalls, Review, and Progression →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch09.html"><span class="muted">Prev</span><span><- Chapter 09 - Capstone Project: Architecting a Scalable System</span></a>
+      <a class="next" rel="next" href="chapters/appendix.html"><span class="muted">Next</span><span>Appendix - Pitfalls, Review, and Progression -></span></a>
     </nav>
 
     <!--
     CHECKLIST
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
-    - [x] Pager prev/next valid; ToC numbering matches (Chapter 10 last; next→Appendix)
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, tables; code blocks excluded)
+    - [x] Pager prev/next valid; ToC numbering matches (Chapter 10 last; next->Appendix)
+    - [x] Order: Hero -> Numbered Sections -> Resources -> Recap
+    - [x] >=1,800 words of prose (headings, paragraphs, tables; code blocks excluded)
     - [x] No images in this chapter (image audit N/A)
     - [x] Head/meta complete; no TODOs
     -->

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BOOK WEBSITE THEME — Dark
+   BOOK WEBSITE THEME - Dark
    File: styles/theme.css
    ========================================================================== */
 
@@ -48,7 +48,7 @@ dl{margin:0 0 1.25em} dt{font-weight:600;margin-top:.6em} dd{margin:.25em 0 .6em
 abbr[title]{border-bottom:1px dotted var(--muted);cursor:help;text-decoration:none}
 .kbd{font-family:var(--font-mono);font-size:.9em;background:#0a0f14;border:1px solid var(--border);padding:0 .4em;border-radius:6px}
 
-/* Ensure sticky header doesn’t hide anchors */
+/* Ensure sticky header doesn't hide anchors */
 h2,h3,h4,h5,h6{scroll-margin-top:84px}
 
 /* ------------------------------
@@ -136,7 +136,7 @@ details[open]{background:#0e1724}
 .resource-list{display:grid;gap:10px}
 .resource-list .item{display:grid;grid-template-columns:1fr auto;align-items:start;gap:10px;padding:12px 14px;background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius)}
 .resource-list .meta{font-size:.9rem;color:var(--muted)}
-a.external::after{content:"↗";font-size:.85em;margin-left:.35em;opacity:.8}
+a.external::after{content:"->";font-size:.85em;margin-left:.35em;opacity:.8}
 
 /* ------------------------------
    10) Code
@@ -171,8 +171,8 @@ figcaption{padding:8px 12px;font-size:.9rem;color:var(--muted);border-top:1px so
 .next-prev{display:flex;justify-content:space-between;gap:12px;margin-top:28px}
 .next-prev a{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-decoration:none;transition:transform var(--dur) var(--easing),background var(--dur) var(--easing)}
 .next-prev a:hover{background:#0e1521;transform:translateY(-1px);text-decoration:none}
-.next-prev a[rel="prev"]::before{content:"←"}
-.next-prev a[rel="next"]::after{content:"→"}
+.next-prev a[rel="prev"]::before{content:"<-"}
+.next-prev a[rel="next"]::after{content:"->"}
 @media(max-width:640px){.next-prev{flex-direction:column}}
 
 /* ------------------------------

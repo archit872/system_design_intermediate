@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chapter 09 — Capstone Project: Architecting a Scalable System</title>
-  <meta name="description" content="Integrate everything you’ve learned by designing a production-grade system. Pick a domain, analyze requirements, craft an architecture, plan reliability and observability, and evaluate cost–performance trade-offs.">
-  <meta property="og:title" content="Chapter 09 — Capstone Project: Architecting a Scalable System">
+  <title>Chapter 09 - Capstone Project: Architecting a Scalable System</title>
+  <meta name="description" content="Integrate everything you've learned by designing a production-grade system. Pick a domain, analyze requirements, craft an architecture, plan reliability and observability, and evaluate cost-performance trade-offs.">
+  <meta property="og:title" content="Chapter 09 - Capstone Project: Architecting a Scalable System">
   <meta property="og:description" content="A guided, end-to-end project with deliverables, rubrics, and worked templates for video streaming, e-commerce, or social feed architectures.">
   <meta property="og:type" content="article">
   <meta name="theme-color" content="#0b0f14">
@@ -19,7 +19,7 @@
   <!-- Canonical Top Navigation (copy verbatim to all pages) -->
   <nav class="app-nav">
     <div class="container inner">
-      <div class="brand">System Design — Intermediate</div>
+      <div class="brand">System Design - Intermediate</div>
       <button class="toggle js-nav-toggle" aria-expanded="false" aria-controls="primary-menu">Menu</button>
       <div id="primary-menu" class="menu" role="navigation" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -36,7 +36,7 @@
         <span class="badge">Capstone</span>
       </div>
       <h1>Capstone Project: Architecting a Scalable System</h1>
-      <p class="abstract">This capstone integrates all prior chapters. You will pick a realistic product, define crisp requirements and SLOs, explore design options, justify trade-offs, and present an architecture that is observable, reliable, and cost-aware. The aim isn’t a perfect diagram; it’s a coherent design with quantified decisions, an executable plan, and clear risks and mitigations.</p>
+      <p class="abstract">This capstone integrates all prior chapters. You will pick a realistic product, define crisp requirements and SLOs, explore design options, justify trade-offs, and present an architecture that is observable, reliable, and cost-aware. The aim isn't a perfect diagram; it's a coherent design with quantified decisions, an executable plan, and clear risks and mitigations.</p>
     </div>
   </header>
 
@@ -44,19 +44,19 @@
     <!-- 09.1 -->
     <section class="section" id="ch09-1">
       <h2>09.1 Choose a Domain & Scope</h2>
-      <p id="ch09-1-why">Why it matters: Good architecture starts with a good question. Selecting a domain and carving a crisp scope prevents the “boil the ocean” trap and keeps trade-offs grounded in user value.</p>
+      <p id="ch09-1-why">Why it matters: Good architecture starts with a good question. Selecting a domain and carving a crisp scope prevents the "boil the ocean" trap and keeps trade-offs grounded in user value.</p>
 
       <h3 id="ch09-1-1">09.1.1 Project Options</h3>
       <ul>
-        <li><strong>Video Streaming Platform</strong> — On-demand catalog, adaptive bitrate streaming, personalized home feed, concurrent viewers spikes.</li>
-        <li><strong>E-commerce Marketplace Backend</strong> — Product catalog & search, carts & orders, payments integration, seller tools, high read volume with hot SKUs.</li>
-        <li><strong>Social Media Feed Service</strong> — Fan-out/fan-in, ranking, real-time notifications, high write amplification, strict latency for scroll experience.</li>
+        <li><strong>Video Streaming Platform</strong> - On-demand catalog, adaptive bitrate streaming, personalized home feed, concurrent viewers spikes.</li>
+        <li><strong>E-commerce Marketplace Backend</strong> - Product catalog & search, carts & orders, payments integration, seller tools, high read volume with hot SKUs.</li>
+        <li><strong>Social Media Feed Service</strong> - Fan-out/fan-in, ranking, real-time notifications, high write amplification, strict latency for scroll experience.</li>
       </ul>
 
       <h3 id="ch09-1-2">09.1.2 Scoping Rubric</h3>
       <p><strong>Plain:</strong> Design <em>a slice</em> you can finish. Depth beats breadth.</p>
       <ol>
-        <li><strong>Pick 2–3 user journeys</strong> (e.g., “press play,” “checkout,” “scroll home feed”).</li>
+        <li><strong>Pick 2-3 user journeys</strong> (e.g., "press play," "checkout," "scroll home feed").</li>
         <li><strong>Set SLOs</strong> per journey (success rate, P95/P99 latency, freshness bounds for eventually consistent views).</li>
         <li><strong>Bound scale</strong> with order-of-magnitude numbers (QPS, daily actives, media sizes, regional split).</li>
         <li><strong>Declare constraints</strong> (single region vs multi-region v1, managed services allowed, budget ceilings).</li>
@@ -68,9 +68,9 @@
           <tr><th>Domain</th><th>Hot Path</th><th>P95</th><th>Peak QPS</th><th>Freshness</th></tr>
         </thead>
         <tbody>
-          <tr><td>Streaming</td><td>Start playback</td><td>≤ 250&nbsp;ms to first segment</td><td>5–20k</td><td>CDN cached; catalog ≤ 60&nbsp;s</td></tr>
-          <tr><td>E-commerce</td><td>Add to cart / checkout</td><td>≤ 200&nbsp;ms API</td><td>2–10k</td><td>Inventory strong; search ≤ 5&nbsp;s</td></tr>
-          <tr><td>Social feed</td><td>Home feed fetch</td><td>≤ 150&nbsp;ms</td><td>10–50k</td><td>Ranked posts ≤ 2&nbsp;s</td></tr>
+          <tr><td>Streaming</td><td>Start playback</td><td><= 250&nbsp;ms to first segment</td><td>5-20k</td><td>CDN cached; catalog <= 60&nbsp;s</td></tr>
+          <tr><td>E-commerce</td><td>Add to cart / checkout</td><td><= 200&nbsp;ms API</td><td>2-10k</td><td>Inventory strong; search <= 5&nbsp;s</td></tr>
+          <tr><td>Social feed</td><td>Home feed fetch</td><td><= 150&nbsp;ms</td><td>10-50k</td><td>Ranked posts <= 2&nbsp;s</td></tr>
         </tbody>
       </table>
 
@@ -79,7 +79,7 @@
 
     <!-- 09.2 -->
     <section class="section" id="ch09-2">
-      <h2>09.2 Phase 1 — Requirements & Constraints Analysis</h2>
+      <h2>09.2 Phase 1 - Requirements & Constraints Analysis</h2>
       <p id="ch09-2-why">Why it matters: Designs fail when requirements are implicit. Make them explicit, quantified, and testable so every component maps to a user promise.</p>
 
       <h3 id="ch09-2-1">09.2.1 Functional & Non-Functional Requirements</h3>
@@ -87,7 +87,7 @@
         <li><strong>Functional:</strong> endpoints, data entities, workflows, background jobs, admin tools.</li>
         <li><strong>Non-Functional:</strong> SLOs (availability, latency), data consistency expectations, privacy/compliance boundaries, deployment constraints, and budget.</li>
       </ul>
-      <p><strong>Worked Example — E-commerce Checkout:</strong> Create order, authorize payment, reserve inventory, compute shipping, capture payment post-fulfillment. SLOs: 99.95% create success, P95 ≤ 250&nbsp;ms for API, end-to-end ≤ 2&nbsp;minutes. Consistency: strong for inventory/charges; eventual for catalog search.</p>
+      <p><strong>Worked Example - E-commerce Checkout:</strong> Create order, authorize payment, reserve inventory, compute shipping, capture payment post-fulfillment. SLOs: 99.95% create success, P95 <= 250&nbsp;ms for API, end-to-end <= 2&nbsp;minutes. Consistency: strong for inventory/charges; eventual for catalog search.</p>
 
       <h3 id="ch09-2-2">09.2.2 Back-of-the-Envelope Capacity</h3>
       <p><strong>Plain:</strong> Size components roughly to detect non-starters early.</p>
@@ -96,17 +96,17 @@
         <li><strong>Data model:</strong> objects/day, average size, growth curve, hot/cold distribution (Zipf).</li>
         <li><strong>Storage/throughput:</strong> IOPS and bandwidth on critical stores; partition count for logs or shards for DBs.</li>
       </ol>
-      <p><strong>Example:</strong> 8k QPS feed reads with 10 calls per page → 80k internal calls/s baseline; target 40–60% headroom → 130k rps capacity in aggregates. With 2 KB avg object, network egress ~1&nbsp;Gb/s per edge PoP; CDN mandatory.</p>
+      <p><strong>Example:</strong> 8k QPS feed reads with 10 calls per page -> 80k internal calls/s baseline; target 40-60% headroom -> 130k rps capacity in aggregates. With 2 KB avg object, network egress ~1&nbsp;Gb/s per edge PoP; CDN mandatory.</p>
 
       <h3 id="ch09-2-3">09.2.3 SLIs, SLOs, and Error Budgets</h3>
-      <p>Define <em>SLIs</em> users feel, SLO targets, and error budgets for risk making. Example: “Home feed success ratio,” “P95 latency,” “freshness within 2&nbsp;s,” and acceptable weekly error minutes. Your alert policy should page on budget burn, not on CPU spikes.</p>
+      <p>Define <em>SLIs</em> users feel, SLO targets, and error budgets for risk making. Example: "Home feed success ratio," "P95 latency," "freshness within 2&nbsp;s," and acceptable weekly error minutes. Your alert policy should page on budget burn, not on CPU spikes.</p>
 
       <p class="summary">Deliverable: One-page <em>Requirements Sheet</em> with journeys, SLOs, traffic, data sizes, constraints, and an error-budget statement.</p>
     </section>
 
     <!-- 09.3 -->
     <section class="section" id="ch09-3">
-      <h2>09.3 Phase 2 — Architecture & Data Design</h2>
+      <h2>09.3 Phase 2 - Architecture & Data Design</h2>
       <p id="ch09-3-why">Why it matters: Architecture is the mapping from promises to mechanisms. Choose communication models, state placements, and replication that align with your SLOs and growth path.</p>
 
       <h3 id="ch09-3-1">09.3.1 Canonical Building Blocks</h3>
@@ -121,28 +121,28 @@
       <h3 id="ch09-3-2">09.3.2 Data Ownership & Consistency</h3>
       <p><strong>Plain:</strong> Give every entity a clear owner and consistency promise.</p>
       <ul>
-        <li><strong>Orders (e-commerce):</strong> Single-writer OLTP with semi-sync replicas; outbox → events → read models (status updates).</li>
-        <li><strong>Catalog:</strong> Source of truth in OLTP; project to search engine; eventual consistency ≤ 5&nbsp;s SLA.</li>
+        <li><strong>Orders (e-commerce):</strong> Single-writer OLTP with semi-sync replicas; outbox -> events -> read models (status updates).</li>
+        <li><strong>Catalog:</strong> Source of truth in OLTP; project to search engine; eventual consistency <= 5&nbsp;s SLA.</li>
         <li><strong>Feed (social):</strong> Write paths append to user activity logs; read models precompute timelines with bounded staleness; idempotent fan-out.</li>
         <li><strong>Streaming:</strong> Metadata in OLTP; media in object storage; CDN serves segments; manifest generation uses consistent writes.</li>
       </ul>
 
       <h3 id="ch09-3-3">09.3.3 Partitioning & Hotspots</h3>
-      <p>Hash by stable keys (user_id, tenant_id) for even load; add virtual shards so you can reassign hotspots. For feed services, use <em>per-user</em> partitions; for catalog, shard by product_id; for logs/queues, start with 48–96 partitions and scale.</p>
+      <p>Hash by stable keys (user_id, tenant_id) for even load; add virtual shards so you can reassign hotspots. For feed services, use <em>per-user</em> partitions; for catalog, shard by product_id; for logs/queues, start with 48-96 partitions and scale.</p>
 
       <h3 id="ch09-3-4">09.3.4 API & Schema Versioning</h3>
       <p>Adopt explicit versions. For JSON, additive changes only for minor versions; deprecate with dates and usage dashboards. For Protobuf/Avro, never reuse field numbers; tolerant readers ignore unknowns; use expand/contract for DB migrations with backfills.</p>
 
-      <p class="summary">Deliverable: A <em>Logical Architecture Diagram</em> and a <em>Data Ownership Table</em> listing entity → source of truth → replicas → consistency.</p>
+      <p class="summary">Deliverable: A <em>Logical Architecture Diagram</em> and a <em>Data Ownership Table</em> listing entity -> source of truth -> replicas -> consistency.</p>
     </section>
 
     <!-- 09.4 -->
     <section class="section" id="ch09-4">
-      <h2>09.4 Phase 3 — Reliability, Observability, and Deployment</h2>
+      <h2>09.4 Phase 3 - Reliability, Observability, and Deployment</h2>
       <p id="ch09-4-why">Why it matters: Users care about outcomes, not designs. Reliability and visibility determine whether your system keeps its promises on bad days.</p>
 
       <h3 id="ch09-4-1">09.4.1 Fault Domains & Redundancy</h3>
-      <p>Start with <em>multi-AZ</em> redundancy. For read latency or regional resilience, add global read replicas and latency-based routing. Selective multi-region writes only where necessary (e.g., social “likes” may accept last-writer-wins; orders may not).</p>
+      <p>Start with <em>multi-AZ</em> redundancy. For read latency or regional resilience, add global read replicas and latency-based routing. Selective multi-region writes only where necessary (e.g., social "likes" may accept last-writer-wins; orders may not).</p>
 
       <h3 id="ch09-4-2">09.4.2 Graceful Degradation & Bulkheads</h3>
       <ul>
@@ -154,32 +154,32 @@
       <h3 id="ch09-4-3">09.4.3 Observability Plan</h3>
       <ul>
         <li><strong>Metrics:</strong> Golden signals per journey; consumer lag for streams; saturation indicators.</li>
-        <li><strong>Tracing:</strong> End-to-end spans across gateway → services → DB/search/cache; exemplars link metrics to traces.</li>
+        <li><strong>Tracing:</strong> End-to-end spans across gateway -> services -> DB/search/cache; exemplars link metrics to traces.</li>
         <li><strong>Logging:</strong> Structured with correlation IDs; privacy-safe with redaction; immutable audit for admin and auth decisions.</li>
         <li><strong>Dashboards:</strong> User SLIs first row; dependencies second; capacity third; error-budget burn last.</li>
       </ul>
 
       <h3 id="ch09-4-4">09.4.4 Deployments & Rollouts</h3>
-      <p>Use progressive delivery: canary → ramp → full. Blue/green for risky changes (schema or storage migrations). Feature flags with owners and expiry dates. Automate rollback. Write runbooks for failover, cache flushes, and topic backlogs.</p>
+      <p>Use progressive delivery: canary -> ramp -> full. Blue/green for risky changes (schema or storage migrations). Feature flags with owners and expiry dates. Automate rollback. Write runbooks for failover, cache flushes, and topic backlogs.</p>
 
       <p class="summary">Deliverable: A <em>Reliability Plan</em> (fault domains, redundancy, breakers, bulkheads), an <em>Observability Spec</em> (SLIs/SLOs, metrics, traces, logs), and two <em>Runbooks</em> (failover, incident triage).</p>
     </section>
 
     <!-- 09.5 -->
     <section class="section" id="ch09-5">
-      <h2>09.5 Phase 4 — Cost–Performance Evaluation</h2>
+      <h2>09.5 Phase 4 - Cost-Performance Evaluation</h2>
       <p id="ch09-5-why">Why it matters: Systems that are too expensive get turned off; systems that are too slow get abandoned. Evaluate both together and state why your choices are right for now.</p>
 
       <h3 id="ch09-5-1">09.5.1 Benchmark Protocol</h3>
       <ol>
-        <li><strong>Define target:</strong> “P95 ≤ 200&nbsp;ms at 8k RPS” or equivalent per journey.</li>
+        <li><strong>Define target:</strong> "P95 <= 200&nbsp;ms at 8k RPS" or equivalent per journey.</li>
         <li><strong>Data realism:</strong> Zipfian keys, real payload sizes, warmed caches.</li>
-        <li><strong>Runs:</strong> Step-load to find knee; soak for 2–4 hours to catch leaks and GC pathologies.</li>
-        <li><strong>Report:</strong> P50/95/99 vs RPS, error rates, queue depth, cache hit ratios, and unit cost (₹/1k requests).</li>
+        <li><strong>Runs:</strong> Step-load to find knee; soak for 2-4 hours to catch leaks and GC pathologies.</li>
+        <li><strong>Report:</strong> P50/95/99 vs RPS, error rates, queue depth, cache hit ratios, and unit cost (INR/1k requests).</li>
       </ol>
 
       <h3 id="ch09-5-2">09.5.2 Unit Economics</h3>
-      <p>Express trade-offs in business terms: “₹0.42 per 1k feed loads at target SLO,” “₹1.80 per 1k checkouts.” Show how CDN offload, caching, or right-sizing changes unit cost. Identify the top three cost levers and their risk to reliability.</p>
+      <p>Express trade-offs in business terms: "INR0.42 per 1k feed loads at target SLO," "INR1.80 per 1k checkouts." Show how CDN offload, caching, or right-sizing changes unit cost. Identify the top three cost levers and their risk to reliability.</p>
 
       <h3 id="ch09-5-3">09.5.3 Scaling Plan</h3>
       <ul>
@@ -196,32 +196,32 @@
       <h2>09.6 Domain-Specific Templates</h2>
       <p id="ch09-6-why">Why it matters: Each domain has signature bottlenecks. Use these starter templates to avoid classic dead ends.</p>
 
-      <h3 id="ch09-6-1">09.6.1 Video Streaming — Starter Blueprint</h3>
+      <h3 id="ch09-6-1">09.6.1 Video Streaming - Starter Blueprint</h3>
       <ul>
         <li><strong>Edge:</strong> CDN with origin shield; tokenized URLs; signed manifests.</li>
         <li><strong>Media:</strong> Object storage for masters; transcode pipeline to HLS/DASH with multiple bitrates; just-in-time packaging optional.</li>
         <li><strong>Metadata:</strong> OLTP for titles, episodes, entitlements; search index for discovery.</li>
-        <li><strong>Playback:</strong> Manifest service near users; first-segment latency budget ≤ 250&nbsp;ms; prefetch next segments.</li>
-        <li><strong>Observability:</strong> Player beacons (stall rate, startup time), CDN cache hit, origin egress, error budget on “start view” success.</li>
+        <li><strong>Playback:</strong> Manifest service near users; first-segment latency budget <= 250&nbsp;ms; prefetch next segments.</li>
+        <li><strong>Observability:</strong> Player beacons (stall rate, startup time), CDN cache hit, origin egress, error budget on "start view" success.</li>
       </ul>
       <p><strong>Trade-offs:</strong> Transcode cost vs quality; multi-CDN complexity vs resilience; watermarking overhead vs piracy risk.</p>
 
-      <h3 id="ch09-6-2">09.6.2 E-commerce — Starter Blueprint</h3>
+      <h3 id="ch09-6-2">09.6.2 E-commerce - Starter Blueprint</h3>
       <ul>
         <li><strong>API:</strong> Public REST behind gateway; internal gRPC.</li>
         <li><strong>State:</strong> Orders in relational OLTP (single writer + read replicas). Inventory strong consistency with CAS updates. Catalog projected to search engine.</li>
-        <li><strong>Messaging:</strong> Outbox → topics for order lifecycle; DLQs with redrive.</li>
+        <li><strong>Messaging:</strong> Outbox -> topics for order lifecycle; DLQs with redrive.</li>
         <li><strong>Cache:</strong> CDN for product images & public details; Redis for product blobs; write-through for price changes.</li>
         <li><strong>Security:</strong> OIDC + PKCE; workload identity for services; PCI out of scope via PSP.</li>
       </ul>
       <p><strong>Trade-offs:</strong> Search freshness vs write cost; single-writer orders vs multi-region write latency; denormalization vs update fan-out.</p>
 
-      <h3 id="ch09-6-3">09.6.3 Social Feed — Starter Blueprint</h3>
+      <h3 id="ch09-6-3">09.6.3 Social Feed - Starter Blueprint</h3>
       <ul>
         <li><strong>Write path:</strong> Append posts to author log; enrich; publish <em>PostCreated</em> events.</li>
         <li><strong>Read path:</strong> Fan-out on write for small/medium accounts; fan-in on read for large accounts; ranker combines real-time and offline features.</li>
         <li><strong>Storage:</strong> KV/doc store for posts; time-series for engagement; feature store for ranking signals.</li>
-        <li><strong>Latency:</strong> P95 ≤ 150&nbsp;ms; prefetch; cache timelines with TTL seconds; invalidate on new posts from followed authors.</li>
+        <li><strong>Latency:</strong> P95 <= 150&nbsp;ms; prefetch; cache timelines with TTL seconds; invalidate on new posts from followed authors.</li>
         <li><strong>Abuse & safety:</strong> Rate limits, spam detection queues, moderation workflow.</li>
       </ul>
       <p><strong>Trade-offs:</strong> Consistency (out-of-order posts) vs latency; freshness vs compute for re-ranking; storage cost of pre-computed timelines.</p>
@@ -251,7 +251,7 @@
         <li><strong>Recovery:</strong> Runbooks executed in staging; MTTR and accuracy recorded.</li>
       </ul>
 
-      <p class="summary">Deliverable: A <em>Risk Register</em> (risk × likelihood × impact × mitigation) and a <em>Test Matrix</em> aligned to SLOs.</p>
+      <p class="summary">Deliverable: A <em>Risk Register</em> (risk x likelihood x impact x mitigation) and a <em>Test Matrix</em> aligned to SLOs.</p>
     </section>
 
     <!-- 09.8 -->
@@ -261,13 +261,13 @@
 
       <h3 id="ch09-8-1">09.8.1 Required Artifacts</h3>
       <ul>
-        <li><strong>Design Document (8–10 pages):</strong> Problem statement, requirements, architecture, data design, reliability/observability, cost–performance, risks.</li>
+        <li><strong>Design Document (8-10 pages):</strong> Problem statement, requirements, architecture, data design, reliability/observability, cost-performance, risks.</li>
         <li><strong>Architecture Diagrams:</strong> Logical (components & flows), physical (regions/AZs), data flow (CDC/outbox), and deployment topologies.</li>
-        <li><strong>Trade-off Slides (6–10):</strong> 1 slide per major decision with options, pros/cons, and the chosen path tied to SLOs.</li>
+        <li><strong>Trade-off Slides (6-10):</strong> 1 slide per major decision with options, pros/cons, and the chosen path tied to SLOs.</li>
       </ul>
 
       <h3 id="ch09-8-2">09.8.2 Review Rubric</h3>
-      <p>Score your own work (or a peer’s) on these axes (0–5 each):</p>
+      <p>Score your own work (or a peer's) on these axes (0-5 each):</p>
       <ol>
         <li><strong>Clarity:</strong> Requirements quantified; diagrams legible; glossary provided.</li>
         <li><strong>Correctness:</strong> Design matches SLOs; data consistency states are explicit; failure modes covered.</li>
@@ -277,17 +277,17 @@
         <li><strong>Risk Management:</strong> Risks prioritized; tests and runbooks ready.</li>
       </ol>
 
-      <p class="summary">Deliverable: A <em>review checklist</em> completed for your design; identify two improvements before calling it “done.”</p>
+      <p class="summary">Deliverable: A <em>review checklist</em> completed for your design; identify two improvements before calling it "done."</p>
     </section>
 
     <!-- Resources -->
     <section class="section" id="ch09-resources">
       <h2>Resources</h2>
       <ul class="resource-list">
-        <li><strong>System Design Primer (GitHub)</strong> — Breadth of patterns and practice prompts; use for ideation, not as a checklist.</li>
-        <li><strong>Designing Data-Intensive Applications (Kleppmann)</strong> — Mental models for data systems, consistency, and event-driven architectures.</li>
-        <li><strong>Google SRE Book</strong> — SLOs, error budgets, alerting, incident response; the operational backbone of your capstone.</li>
-        <li><strong>Cloud Provider Architecture Guides</strong> — Practical reference patterns for multi-AZ/region, networking, and storage (AWS/GCP/Azure).</li>
+        <li><strong>System Design Primer (GitHub)</strong> - Breadth of patterns and practice prompts; use for ideation, not as a checklist.</li>
+        <li><strong>Designing Data-Intensive Applications (Kleppmann)</strong> - Mental models for data systems, consistency, and event-driven architectures.</li>
+        <li><strong>Google SRE Book</strong> - SLOs, error budgets, alerting, incident response; the operational backbone of your capstone.</li>
+        <li><strong>Cloud Provider Architecture Guides</strong> - Practical reference patterns for multi-AZ/region, networking, and storage (AWS/GCP/Azure).</li>
       </ul>
       <p class="muted">Rationales: The capstone sits at the intersection of product promises, data semantics, and operations. These sources anchor evolving practices with enduring principles.</p>
     </section>
@@ -297,10 +297,10 @@
       <h2>Recap & Next Steps</h2>
       <ul>
         <li>Anchor design in <strong>explicit SLOs and traffic</strong>; they drive every consequential choice.</li>
-        <li>Map <strong>data ownership and consistency</strong>—what is strong, what is eventual, and why that’s acceptable.</li>
+        <li>Map <strong>data ownership and consistency</strong>-what is strong, what is eventual, and why that's acceptable.</li>
         <li>Design for <strong>failure and visibility</strong> from day one; bulkheads, breakers, traces, and budget-based alerts.</li>
         <li>Make <strong>cost a first-class constraint</strong>; report unit economics and show levers with risks.</li>
-        <li>Deliver a <strong>clear narrative</strong>: requirements → options → choice → validation → next milestones.</li>
+        <li>Deliver a <strong>clear narrative</strong>: requirements -> options -> choice -> validation -> next milestones.</li>
       </ul>
       <p><strong>Next Steps:</strong></p>
       <ol>
@@ -312,8 +312,8 @@
 
     <!-- Pager -->
     <nav class="next-prev">
-      <a class="prev" rel="prev" href="chapters/ch08.html"><span class="muted">Prev</span><span>← Chapter 08 — Designing for Evolution and Extensibility</span></a>
-      <a class="next" rel="next" href="chapters/ch10.html"><span class="muted">Next</span><span>Chapter 10 — Common Pitfalls and Next Steps →</span></a>
+      <a class="prev" rel="prev" href="chapters/ch08.html"><span class="muted">Prev</span><span><- Chapter 08 - Designing for Evolution and Extensibility</span></a>
+      <a class="next" rel="next" href="chapters/ch10.html"><span class="muted">Next</span><span>Chapter 10 - Common Pitfalls and Next Steps -></span></a>
     </nav>
 
     <!--
@@ -321,8 +321,8 @@
     - [x] /styles/theme.css + /scripts/app.js linked; <base> correct; no inline nav JS
     - [x] Canonical nav (Home / Appendix / Glossary only)
     - [x] Pager prev/next valid; ToC numbering matches
-    - [x] Order: Hero → Numbered Sections → Resources → Recap
-    - [x] ≥1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
+    - [x] Order: Hero -> Numbered Sections -> Resources -> Recap
+    - [x] >=1,800 words of prose (headings, paragraphs, lists, tables; code blocks excluded)
     - [x] No images in this chapter (image audit N/A)
     - [x] Head/meta complete; no TODOs
     -->
